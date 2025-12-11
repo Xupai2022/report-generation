@@ -1,0 +1,320 @@
+{
+  "schema_version": "1.0",
+  "tenant": {
+    "id": "tenant_acme",
+    "name": "ACME 电子商务",
+    "industry": "E-commerce",
+    "region": "CN",
+    "contacts": [
+      {
+        "name": "王工",
+        "role": "IT负责人",
+        "email": "wang@example.com"
+      },
+      {
+        "name": "李经理",
+        "role": "安全负责人",
+        "email": "li@example.com"
+      }
+    ]
+  },
+  "period": {
+    "start": "2025-11-01",
+    "end": "2025-11-30",
+    "timezone": "UTC"
+  },
+  "report_meta": {
+    "report_title": "ACME 电子商务 MSS 月度安全报告",
+    "audience_default": "management",
+    "language_default": "zh-CN",
+    "secrecy_default": "internal",
+    "generated_at": "2025-12-10T09:29:56Z"
+  },
+  "assets": {
+    "asset_groups": [
+      {
+        "id": "ag-core-prod",
+        "name": "核心生产资产组",
+        "assets": 250
+      },
+      {
+        "id": "ag-office",
+        "name": "办公终端资产组",
+        "assets": 495
+      }
+    ],
+    "cloud_accounts": 7,
+    "key_services": [
+      "Kubernetes",
+      "MySQL",
+      "Redis",
+      "Nginx",
+      "Office 365"
+    ]
+  },
+  "alerts": {
+    "total": 12414,
+    "by_severity": {
+      "high": 62,
+      "medium": 837,
+      "low": 9914,
+      "info": 1601
+    },
+    "top_categories": [
+      {
+        "category": "Phishing",
+        "count": 1977,
+        "mom_change_pct": -14
+      },
+      {
+        "category": "Brute Force",
+        "count": 2546,
+        "mom_change_pct": 11
+      },
+      {
+        "category": "Cloud Misconfig",
+        "count": 1574,
+        "mom_change_pct": 25
+      },
+      {
+        "category": "Malware",
+        "count": 828,
+        "mom_change_pct": 15
+      },
+      {
+        "category": "Data Exfil",
+        "count": 97,
+        "mom_change_pct": -2
+      }
+    ],
+    "top_rules": [
+      {
+        "rule_id": "R-SSH-BRUTE-01",
+        "name": "SSH 暴力破解",
+        "count": 857,
+        "false_positive_rate": 0.13
+      },
+      {
+        "rule_id": "R-O365-PHISH-02",
+        "name": "O365 钓鱼邮件",
+        "count": 785,
+        "false_positive_rate": 0.23
+      },
+      {
+        "rule_id": "R-CLOUD-S3-OPEN",
+        "name": "对象存储公开访问",
+        "count": 475,
+        "false_positive_rate": 0.08
+      }
+    ],
+    "false_positive_rate": 0.16,
+    "trend_weekly": {
+      "labels": [
+        "W1",
+        "W2",
+        "W3",
+        "W4"
+      ],
+      "values": [
+        3099,
+        3325,
+        3002,
+        2988
+      ],
+      "unit": "count"
+    },
+    "notes": "说明：告警口径为去重后的规则触发次数；WAF与EDR重复告警已在聚合时合并。"
+  },
+  "incidents": [
+    {
+      "incident_id": "INC-20251101-001",
+      "title": "云侧AccessKey泄露风险处置",
+      "severity": "medium",
+      "detected_at": "2025-11-01T03:49:00Z",
+      "contained_at": "2025-11-01T10:43:00Z",
+      "mttd_minutes": 9,
+      "mttr_minutes": 90,
+      "impacted_assets": [
+        "prod-web-02"
+      ],
+      "actions_taken": [
+        "隔离主机/账号",
+        "封禁可疑IP"
+      ],
+      "status": "closed"
+    },
+    {
+      "incident_id": "INC-20251101-002",
+      "title": "生产环境对外暴露服务被扫描利用",
+      "severity": "medium",
+      "detected_at": "2025-11-01T08:47:00Z",
+      "contained_at": "2025-11-01T23:22:00Z",
+      "mttd_minutes": 38,
+      "mttr_minutes": 179,
+      "impacted_assets": [
+        "db-core-01",
+        "bastion-01",
+        "prod-web-01"
+      ],
+      "actions_taken": [
+        "隔离主机/账号",
+        "封禁可疑IP",
+        "重置凭据并强制MFA",
+        "补丁加固与WAF规则更新"
+      ],
+      "status": "closed"
+    },
+    {
+      "incident_id": "INC-20251101-003",
+      "title": "生产环境对外暴露服务被扫描利用",
+      "severity": "medium",
+      "detected_at": "2025-11-01T07:45:00Z",
+      "contained_at": "2025-11-01T23:15:00Z",
+      "mttd_minutes": 50,
+      "mttr_minutes": 190,
+      "impacted_assets": [
+        "cdn-edge",
+        "prod-web-02"
+      ],
+      "actions_taken": [
+        "隔离主机/账号",
+        "封禁可疑IP",
+        "重置凭据并强制MFA",
+        "补丁加固与WAF规则更新"
+      ],
+      "status": "monitoring"
+    },
+    {
+      "incident_id": "INC-20251101-004",
+      "title": "疑似勒索前置横向移动",
+      "severity": "high",
+      "detected_at": "2025-11-01T02:35:00Z",
+      "contained_at": "2025-11-01T11:28:00Z",
+      "mttd_minutes": 29,
+      "mttr_minutes": 94,
+      "impacted_assets": [
+        "cdn-edge"
+      ],
+      "actions_taken": [
+        "隔离主机/账号",
+        "封禁可疑IP",
+        "重置凭据并强制MFA",
+        "补丁加固与WAF规则更新"
+      ],
+      "status": "closed"
+    },
+    {
+      "incident_id": "INC-20251101-005",
+      "title": "可疑账号异常登录与提权",
+      "severity": "high",
+      "detected_at": "2025-11-01T01:40:00Z",
+      "contained_at": "2025-11-01T16:55:00Z",
+      "mttd_minutes": 30,
+      "mttr_minutes": 274,
+      "impacted_assets": [
+        "k8s-node-03"
+      ],
+      "actions_taken": [
+        "隔离主机/账号",
+        "封禁可疑IP",
+        "重置凭据并强制MFA",
+        "补丁加固与WAF规则更新"
+      ],
+      "status": "closed"
+    }
+  ],
+  "vulnerabilities": {
+    "counts": {
+      "critical": 4,
+      "high": 15,
+      "medium": 20,
+      "low": 92
+    },
+    "top_vulns": [
+      {
+        "cve": "CVE-2024-3094",
+        "name": "XZ Utils 后门风险",
+        "severity": "critical",
+        "affected_assets": 2,
+        "patch_status": "patched"
+      },
+      {
+        "cve": "CVE-2023-46604",
+        "name": "ActiveMQ RCE",
+        "severity": "high",
+        "affected_assets": 2,
+        "patch_status": "in_progress"
+      },
+      {
+        "cve": "CVE-2024-6387",
+        "name": "OpenSSH regreSSHion",
+        "severity": "high",
+        "affected_assets": 1,
+        "patch_status": "patched"
+      }
+    ],
+    "notes": "漏洞统计基于本期扫描与资产清单比对，含云镜像与容器镜像基线扫描结果。"
+  },
+  "exposure": {
+    "exposed_services": [
+      {
+        "service": "SSH(22)",
+        "assets": 17
+      },
+      {
+        "service": "RDP(3389)",
+        "assets": 1
+      },
+      {
+        "service": "Kibana(5601)",
+        "assets": 1
+      },
+      {
+        "service": "Grafana(3000)",
+        "assets": 3
+      }
+    ],
+    "external_ips": 12,
+    "new_exposed_since_last_period": 3
+  },
+  "mss_ops": {
+    "mttd_minutes_avg": 31,
+    "mttr_hours_avg": 2.8,
+    "coverage": {
+      "log_sources": 38,
+      "edr_agents": "91%",
+      "cloud_audit": "enabled"
+    },
+    "sla_notes": "重大事件7x24响应；普通告警工作日响应。"
+  },
+  "evidence": {
+    "query_ids": {
+      "alerts_total": "qry_alerts_total_v7",
+      "trend_weekly": "qry_alerts_trend_weekly_v4",
+      "top_categories": "qry_top_categories_v5",
+      "top_rules": "qry_top_rules_v3",
+      "incidents": "qry_incidents_v3",
+      "vulnerabilities": "qry_vuln_summary_v2",
+      "exposure": "qry_exposure_v2"
+    },
+    "data_freshness": "T+1 day",
+    "notes": "证据索引用于审计追溯；外部交付时可移除query_id。"
+  },
+  "cloud_risks": [
+    {
+      "type": "安全组0.0.0.0/0暴露",
+      "count": 7,
+      "trend": "up"
+    },
+    {
+      "type": "对象存储公开访问",
+      "count": 2,
+      "trend": "flat"
+    },
+    {
+      "type": "未启用MFA的高权限账号",
+      "count": 1,
+      "trend": "down"
+    }
+  ]
+}

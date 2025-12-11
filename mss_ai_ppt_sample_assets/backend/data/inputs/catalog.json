@@ -1,0 +1,28 @@
+{
+  "datasets": [
+    {
+      "id": "tenant_acme_2025-11",
+      "file": "tenant_acme_2025-11_mss_input.json",
+      "tenant_id": "tenant_acme",
+      "tenant_name": "ACME 电子商务",
+      "period": "2025-11",
+      "notes": "包含多起事件、告警趋势、漏洞与云风险（较丰富）"
+    },
+    {
+      "id": "tenant_acme_2025-12",
+      "file": "tenant_acme_2025-12_mss_input.json",
+      "tenant_id": "tenant_acme",
+      "tenant_name": "ACME 电子商务",
+      "period": "2025-12",
+      "notes": "与11月对比有变化，可用于验证环比逻辑"
+    },
+    {
+      "id": "tenant_globex_2025-11",
+      "file": "tenant_globex_2025-11_mss_input.json",
+      "tenant_id": "tenant_globex",
+      "tenant_name": "Globex 制造",
+      "period": "2025-11",
+      "notes": "制造业场景，资产与告警分布不同"
+    }
+  ]
+}

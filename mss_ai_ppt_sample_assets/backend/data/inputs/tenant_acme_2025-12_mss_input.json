@@ -1,0 +1,280 @@
+{
+  "schema_version": "1.0",
+  "tenant": {
+    "id": "tenant_acme",
+    "name": "ACME 电子商务",
+    "industry": "E-commerce",
+    "region": "CN",
+    "contacts": [
+      {
+        "name": "王工",
+        "role": "IT负责人",
+        "email": "wang@example.com"
+      },
+      {
+        "name": "李经理",
+        "role": "安全负责人",
+        "email": "li@example.com"
+      }
+    ]
+  },
+  "period": {
+    "start": "2025-12-01",
+    "end": "2025-12-31",
+    "timezone": "UTC"
+  },
+  "report_meta": {
+    "report_title": "ACME 电子商务 MSS 月度安全报告",
+    "audience_default": "management",
+    "language_default": "zh-CN",
+    "secrecy_default": "internal",
+    "generated_at": "2025-12-10T09:29:56Z"
+  },
+  "assets": {
+    "asset_groups": [
+      {
+        "id": "ag-core-prod",
+        "name": "核心生产资产组",
+        "assets": 217
+      },
+      {
+        "id": "ag-office",
+        "name": "办公终端资产组",
+        "assets": 740
+      }
+    ],
+    "cloud_accounts": 2,
+    "key_services": [
+      "Kubernetes",
+      "MySQL",
+      "Redis",
+      "Nginx",
+      "Office 365"
+    ]
+  },
+  "alerts": {
+    "total": 12455,
+    "by_severity": {
+      "high": 52,
+      "medium": 473,
+      "low": 10540,
+      "info": 1390
+    },
+    "top_categories": [
+      {
+        "category": "Phishing",
+        "count": 1244,
+        "mom_change_pct": -2
+      },
+      {
+        "category": "Brute Force",
+        "count": 1888,
+        "mom_change_pct": 3
+      },
+      {
+        "category": "Cloud Misconfig",
+        "count": 1917,
+        "mom_change_pct": 30
+      },
+      {
+        "category": "Malware",
+        "count": 671,
+        "mom_change_pct": 12
+      },
+      {
+        "category": "Data Exfil",
+        "count": 271,
+        "mom_change_pct": 2
+      }
+    ],
+    "top_rules": [
+      {
+        "rule_id": "R-SSH-BRUTE-01",
+        "name": "SSH 暴力破解",
+        "count": 971,
+        "false_positive_rate": 0.08
+      },
+      {
+        "rule_id": "R-O365-PHISH-02",
+        "name": "O365 钓鱼邮件",
+        "count": 897,
+        "false_positive_rate": 0.34
+      },
+      {
+        "rule_id": "R-CLOUD-S3-OPEN",
+        "name": "对象存储公开访问",
+        "count": 308,
+        "false_positive_rate": 0.04
+      }
+    ],
+    "false_positive_rate": 0.18,
+    "trend_weekly": {
+      "labels": [
+        "W1",
+        "W2",
+        "W3",
+        "W4"
+      ],
+      "values": [
+        2846,
+        3244,
+        3112,
+        3253
+      ],
+      "unit": "count"
+    },
+    "notes": "说明：告警口径为去重后的规则触发次数；WAF与EDR重复告警已在聚合时合并。"
+  },
+  "incidents": [
+    {
+      "incident_id": "INC-20251201-001",
+      "title": "云侧AccessKey泄露风险处置",
+      "severity": "high",
+      "detected_at": "2025-12-01T04:14:00Z",
+      "contained_at": "2025-12-01T18:53:00Z",
+      "mttd_minutes": 57,
+      "mttr_minutes": 232,
+      "impacted_assets": [
+        "bastion-01",
+        "prod-web-01",
+        "o365-tenant"
+      ],
+      "actions_taken": [
+        "隔离主机/账号",
+        "封禁可疑IP"
+      ],
+      "status": "closed"
+    },
+    {
+      "incident_id": "INC-20251201-002",
+      "title": "邮件投递导致终端恶意软件执行",
+      "severity": "high",
+      "detected_at": "2025-12-01T08:17:00Z",
+      "contained_at": "2025-12-01T20:37:00Z",
+      "mttd_minutes": 13,
+      "mttr_minutes": 336,
+      "impacted_assets": [
+        "k8s-node-03",
+        "cdn-edge"
+      ],
+      "actions_taken": [
+        "隔离主机/账号",
+        "封禁可疑IP"
+      ],
+      "status": "closed"
+    },
+    {
+      "incident_id": "INC-20251201-003",
+      "title": "云侧AccessKey泄露风险处置",
+      "severity": "high",
+      "detected_at": "2025-12-01T02:35:00Z",
+      "contained_at": "2025-12-01T19:36:00Z",
+      "mttd_minutes": 47,
+      "mttr_minutes": 365,
+      "impacted_assets": [
+        "bastion-01",
+        "k8s-node-03"
+      ],
+      "actions_taken": [
+        "隔离主机/账号",
+        "封禁可疑IP",
+        "重置凭据并强制MFA"
+      ],
+      "status": "closed"
+    }
+  ],
+  "vulnerabilities": {
+    "counts": {
+      "critical": 4,
+      "high": 16,
+      "medium": 80,
+      "low": 86
+    },
+    "top_vulns": [
+      {
+        "cve": "CVE-2024-3094",
+        "name": "XZ Utils 后门风险",
+        "severity": "critical",
+        "affected_assets": 0,
+        "patch_status": "patched"
+      },
+      {
+        "cve": "CVE-2023-46604",
+        "name": "ActiveMQ RCE",
+        "severity": "high",
+        "affected_assets": 1,
+        "patch_status": "in_progress"
+      },
+      {
+        "cve": "CVE-2024-6387",
+        "name": "OpenSSH regreSSHion",
+        "severity": "high",
+        "affected_assets": 10,
+        "patch_status": "patched"
+      }
+    ],
+    "notes": "漏洞统计基于本期扫描与资产清单比对，含云镜像与容器镜像基线扫描结果。"
+  },
+  "exposure": {
+    "exposed_services": [
+      {
+        "service": "SSH(22)",
+        "assets": 13
+      },
+      {
+        "service": "RDP(3389)",
+        "assets": 4
+      },
+      {
+        "service": "Kibana(5601)",
+        "assets": 1
+      },
+      {
+        "service": "Grafana(3000)",
+        "assets": 0
+      }
+    ],
+    "external_ips": 24,
+    "new_exposed_since_last_period": 0
+  },
+  "mss_ops": {
+    "mttd_minutes_avg": 39,
+    "mttr_hours_avg": 5.2,
+    "coverage": {
+      "log_sources": 25,
+      "edr_agents": "95%",
+      "cloud_audit": "enabled"
+    },
+    "sla_notes": "重大事件7x24响应；普通告警工作日响应。"
+  },
+  "evidence": {
+    "query_ids": {
+      "alerts_total": "qry_alerts_total_v7",
+      "trend_weekly": "qry_alerts_trend_weekly_v4",
+      "top_categories": "qry_top_categories_v5",
+      "top_rules": "qry_top_rules_v3",
+      "incidents": "qry_incidents_v3",
+      "vulnerabilities": "qry_vuln_summary_v2",
+      "exposure": "qry_exposure_v2"
+    },
+    "data_freshness": "T+1 day",
+    "notes": "证据索引用于审计追溯；外部交付时可移除query_id。"
+  },
+  "cloud_risks": [
+    {
+      "type": "安全组0.0.0.0/0暴露",
+      "count": 7,
+      "trend": "up"
+    },
+    {
+      "type": "对象存储公开访问",
+      "count": 2,
+      "trend": "flat"
+    },
+    {
+      "type": "未启用MFA的高权限账号",
+      "count": 1,
+      "trend": "down"
+    }
+  ]
+}

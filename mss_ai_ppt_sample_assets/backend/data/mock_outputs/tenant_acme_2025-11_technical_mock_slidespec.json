@@ -1,0 +1,66 @@
+{
+  "template_id": "mss_technical_dark_v1",
+  "slides": [
+    {
+      "slide_no": 1,
+      "slide_key": "cover",
+      "data": {
+        "cover": {
+          "report_title": "ACME 电子商务 MSS 月度安全报告",
+          "customer_name": "ACME 电子商务",
+          "period": "2025-11-01 ~ 2025-11-30",
+          "confidentiality": "INTERNAL",
+          "generated_at": "2025-12-10T09:29:56Z"
+        }
+      }
+    },
+    {
+      "slide_no": 2,
+      "slide_key": "alerts_detail",
+      "data": {
+        "title": "Detection & Alerts (Detail)",
+        "alerts_detail_text": "Severity breakdown: high=62, medium=837, low=9914, info=1601\nTop rules:\n - R-SSH-BRUTE-01 SSH 暴力破解: 857 (FPR 13%)\n - R-O365-PHISH-02 O365 钓鱼邮件: 785 (FPR 23%)\n - R-CLOUD-S3-OPEN 对象存储公开访问: 475 (FPR 8%)",
+        "false_positive_notes": "Overall false positive rate (weighted): 16%\n治理建议：优先对Top规则做样本回溯与阈值调优。",
+        "footer": "tenant_acme | 2025-11"
+      }
+    },
+    {
+      "slide_no": 3,
+      "slide_key": "incident_timeline",
+      "data": {
+        "title": "Incident Timeline",
+        "incident_timeline_text": "[medium] INC-20251101-001 2025-11-01T03:49:00Z -> 2025-11-01T10:43:00Z | 云侧AccessKey泄露风险处置 | assets=prod-web-02\n[medium] INC-20251101-002 2025-11-01T08:47:00Z -> 2025-11-01T23:22:00Z | 生产环境对外暴露服务被扫描利用 | assets=db-core-01,bastion-01,prod-web-01\n[medium] INC-20251101-003 2025-11-01T07:45:00Z -> 2025-11-01T23:15:00Z | 生产环境对外暴露服务被扫描利用 | assets=cdn-edge,prod-web-02\n[high] INC-20251101-004 2025-11-01T02:35:00Z -> 2025-11-01T11:28:00Z | 疑似勒索前置横向移动 | assets=cdn-edge\n[high] INC-20251101-005 2025-11-01T01:40:00Z -> 2025-11-01T16:55:00Z | 可疑账号异常登录与提权 | assets=k8s-node-03",
+        "footer": "All timestamps in UTC"
+      }
+    },
+    {
+      "slide_no": 4,
+      "slide_key": "vulnerability_exposure",
+      "data": {
+        "title": "Vulnerability Exposure",
+        "vuln_summary_text": "Counts: critical=4, high=15, medium=20, low=92\nNotes: 漏洞统计基于本期扫描与资产清单比对，含云镜像与容器镜像基线扫描结果。",
+        "top_vulns_text": "- CVE-2024-3094 XZ Utils 后门风险 [critical] affected=2 status=patched\n- CVE-2023-46604 ActiveMQ RCE [high] affected=2 status=in_progress\n- CVE-2024-6387 OpenSSH regreSSHion [high] affected=1 status=patched",
+        "footer": "Data source: vuln scan + inventory"
+      }
+    },
+    {
+      "slide_no": 5,
+      "slide_key": "cloud_attack_surface",
+      "data": {
+        "title": "Cloud & Attack Surface",
+        "cloud_risks_text": "Cloud misconfigurations:\n- 安全组0.0.0.0/0暴露: 7 (trend=up)\n- 对象存储公开访问: 2 (trend=flat)\n- 未启用MFA的高权限账号: 1 (trend=down)",
+        "exposure_findings_text": "External IPs: 12 | New exposed since last period: 3\nExposed services:\n- SSH(22): 17 assets\n- RDP(3389): 1 assets\n- Kibana(5601): 1 assets\n- Grafana(3000): 3 assets",
+        "footer": "Focus: misconfig + external exposure"
+      }
+    },
+    {
+      "slide_no": 6,
+      "slide_key": "appendix_evidence",
+      "data": {
+        "title": "Appendix - Evidence",
+        "evidence_index_text": "Evidence Index (query ids)\n- alerts_total: qry_alerts_total_v7\n- trend_weekly: qry_alerts_trend_weekly_v4\n- top_categories: qry_top_categories_v5\n- top_rules: qry_top_rules_v3\n- incidents: qry_incidents_v3\n- vulnerabilities: qry_vuln_summary_v2\n- exposure: qry_exposure_v2\nFreshness: T+1 day\nNotes: 证据索引用于审计追溯；外部交付时可移除query_id。",
+        "footer": "For internal audit tracing"
+      }
+    }
+  ]
+}

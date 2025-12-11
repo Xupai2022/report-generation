@@ -1,0 +1,277 @@
+{
+  "schema_version": "1.0",
+  "tenant": {
+    "id": "tenant_globex",
+    "name": "Globex 制造",
+    "industry": "Manufacturing",
+    "region": "CN",
+    "contacts": [
+      {
+        "name": "王工",
+        "role": "IT负责人",
+        "email": "wang@example.com"
+      },
+      {
+        "name": "李经理",
+        "role": "安全负责人",
+        "email": "li@example.com"
+      }
+    ]
+  },
+  "period": {
+    "start": "2025-11-01",
+    "end": "2025-11-30",
+    "timezone": "UTC"
+  },
+  "report_meta": {
+    "report_title": "Globex 制造 MSS 月度安全报告",
+    "audience_default": "management",
+    "language_default": "zh-CN",
+    "secrecy_default": "internal",
+    "generated_at": "2025-12-10T09:29:56Z"
+  },
+  "assets": {
+    "asset_groups": [
+      {
+        "id": "ag-core-prod",
+        "name": "核心生产资产组",
+        "assets": 244
+      },
+      {
+        "id": "ag-office",
+        "name": "办公终端资产组",
+        "assets": 695
+      }
+    ],
+    "cloud_accounts": 4,
+    "key_services": [
+      "Kubernetes",
+      "MySQL",
+      "Redis",
+      "Nginx",
+      "Office 365"
+    ]
+  },
+  "alerts": {
+    "total": 9960,
+    "by_severity": {
+      "high": 48,
+      "medium": 645,
+      "low": 7404,
+      "info": 1863
+    },
+    "top_categories": [
+      {
+        "category": "Phishing",
+        "count": 2084,
+        "mom_change_pct": 5
+      },
+      {
+        "category": "Brute Force",
+        "count": 2554,
+        "mom_change_pct": 11
+      },
+      {
+        "category": "Cloud Misconfig",
+        "count": 975,
+        "mom_change_pct": 21
+      },
+      {
+        "category": "Malware",
+        "count": 740,
+        "mom_change_pct": -3
+      },
+      {
+        "category": "Data Exfil",
+        "count": 251,
+        "mom_change_pct": -5
+      }
+    ],
+    "top_rules": [
+      {
+        "rule_id": "R-SSH-BRUTE-01",
+        "name": "SSH 暴力破解",
+        "count": 414,
+        "false_positive_rate": 0.14
+      },
+      {
+        "rule_id": "R-O365-PHISH-02",
+        "name": "O365 钓鱼邮件",
+        "count": 1798,
+        "false_positive_rate": 0.21
+      },
+      {
+        "rule_id": "R-CLOUD-S3-OPEN",
+        "name": "对象存储公开访问",
+        "count": 194,
+        "false_positive_rate": 0.1
+      }
+    ],
+    "false_positive_rate": 0.19,
+    "trend_weekly": {
+      "labels": [
+        "W1",
+        "W2",
+        "W3",
+        "W4"
+      ],
+      "values": [
+        2365,
+        2643,
+        2365,
+        2587
+      ],
+      "unit": "count"
+    },
+    "notes": "说明：告警口径为去重后的规则触发次数；WAF与EDR重复告警已在聚合时合并。"
+  },
+  "incidents": [
+    {
+      "incident_id": "INC-20251101-001",
+      "title": "疑似勒索前置横向移动",
+      "severity": "high",
+      "detected_at": "2025-11-01T07:57:00Z",
+      "contained_at": "2025-11-01T22:36:00Z",
+      "mttd_minutes": 44,
+      "mttr_minutes": 286,
+      "impacted_assets": [
+        "db-core-01"
+      ],
+      "actions_taken": [
+        "隔离主机/账号",
+        "封禁可疑IP",
+        "重置凭据并强制MFA",
+        "补丁加固与WAF规则更新"
+      ],
+      "status": "monitoring"
+    },
+    {
+      "incident_id": "INC-20251101-002",
+      "title": "生产环境对外暴露服务被扫描利用",
+      "severity": "high",
+      "detected_at": "2025-11-01T01:19:00Z",
+      "contained_at": "2025-11-01T21:15:00Z",
+      "mttd_minutes": 12,
+      "mttr_minutes": 474,
+      "impacted_assets": [
+        "bastion-01"
+      ],
+      "actions_taken": [
+        "隔离主机/账号",
+        "封禁可疑IP"
+      ],
+      "status": "monitoring"
+    },
+    {
+      "incident_id": "INC-20251101-003",
+      "title": "邮件投递导致终端恶意软件执行",
+      "severity": "medium",
+      "detected_at": "2025-11-01T03:21:00Z",
+      "contained_at": "2025-11-01T20:12:00Z",
+      "mttd_minutes": 35,
+      "mttr_minutes": 479,
+      "impacted_assets": [
+        "prod-web-01"
+      ],
+      "actions_taken": [
+        "隔离主机/账号",
+        "封禁可疑IP"
+      ],
+      "status": "closed"
+    }
+  ],
+  "vulnerabilities": {
+    "counts": {
+      "critical": 1,
+      "high": 22,
+      "medium": 50,
+      "low": 111
+    },
+    "top_vulns": [
+      {
+        "cve": "CVE-2024-3094",
+        "name": "XZ Utils 后门风险",
+        "severity": "critical",
+        "affected_assets": 4,
+        "patch_status": "patched"
+      },
+      {
+        "cve": "CVE-2023-46604",
+        "name": "ActiveMQ RCE",
+        "severity": "high",
+        "affected_assets": 5,
+        "patch_status": "in_progress"
+      },
+      {
+        "cve": "CVE-2024-6387",
+        "name": "OpenSSH regreSSHion",
+        "severity": "high",
+        "affected_assets": 1,
+        "patch_status": "patched"
+      }
+    ],
+    "notes": "漏洞统计基于本期扫描与资产清单比对，含云镜像与容器镜像基线扫描结果。"
+  },
+  "exposure": {
+    "exposed_services": [
+      {
+        "service": "SSH(22)",
+        "assets": 16
+      },
+      {
+        "service": "RDP(3389)",
+        "assets": 4
+      },
+      {
+        "service": "Kibana(5601)",
+        "assets": 3
+      },
+      {
+        "service": "Grafana(3000)",
+        "assets": 2
+      }
+    ],
+    "external_ips": 8,
+    "new_exposed_since_last_period": 6
+  },
+  "mss_ops": {
+    "mttd_minutes_avg": 30,
+    "mttr_hours_avg": 6.9,
+    "coverage": {
+      "log_sources": 20,
+      "edr_agents": "87%",
+      "cloud_audit": "enabled"
+    },
+    "sla_notes": "重大事件7x24响应；普通告警工作日响应。"
+  },
+  "evidence": {
+    "query_ids": {
+      "alerts_total": "qry_alerts_total_v7",
+      "trend_weekly": "qry_alerts_trend_weekly_v4",
+      "top_categories": "qry_top_categories_v5",
+      "top_rules": "qry_top_rules_v3",
+      "incidents": "qry_incidents_v3",
+      "vulnerabilities": "qry_vuln_summary_v2",
+      "exposure": "qry_exposure_v2"
+    },
+    "data_freshness": "T+1 day",
+    "notes": "证据索引用于审计追溯；外部交付时可移除query_id。"
+  },
+  "cloud_risks": [
+    {
+      "type": "安全组0.0.0.0/0暴露",
+      "count": 7,
+      "trend": "up"
+    },
+    {
+      "type": "对象存储公开访问",
+      "count": 2,
+      "trend": "flat"
+    },
+    {
+      "type": "未启用MFA的高权限账号",
+      "count": 1,
+      "trend": "down"
+    }
+  ]
+}

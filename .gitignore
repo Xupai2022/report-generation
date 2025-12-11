@@ -1,0 +1,25 @@
+# Node / frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Python / backend
+.venv/
+env/
+__pycache__/
+*.pyc
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Env / secrets
+.env
+
+# Generated outputs
+mss_ai_ppt_sample_assets/backend/outputs/reports/
+mss_ai_ppt_sample_assets/backend/outputs/logs/
+mss_ai_ppt_sample_assets/backend/outputs/previews/
+mss_ai_ppt_sample_assets/backend/outputs/slidespecs/
