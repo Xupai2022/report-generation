@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from typing import Any, Dict, Optional
 from openai import OpenAI, APIError, RateLimitError, APIConnectionError
 import time
@@ -197,7 +198,10 @@ class LLMOrchestrator:
         logger.debug(f"Raw response: {response_content[:500]}...")
 
         try:
-            data = json.loads(response_content)
+            cleaned = self._sanitize_llm_json(response_content)
+            if cleaned != response_content:
+                logger.info("Sanitized LLM response before JSON parse")
+            data = json.loads(cleaned)
             logger.info(f"✓ JSON parsed successfully")
 
             # Validate structure
@@ -229,6 +233,36 @@ class LLMOrchestrator:
             logger.error(f"❌ Failed to parse LLM response: {e}")
             logger.exception("Full traceback:")
             raise LLMGenerationError(f"Failed to parse LLM response: {e}") from e
+
+    def _sanitize_llm_json(self, content: str) -> str:
+        """Best-effort cleanup for models that wrap JSON in code fences or extra text."""
+        if not content:
+            return content
+
+        text = content.strip()
+
+        fenced_match = re.match(
+            r"^```(?:json)?\s*([\s\S]*?)\s*```$",
+            text,
+            flags=re.IGNORECASE,
+        )
+        if fenced_match:
+            text = fenced_match.group(1).strip()
+        else:
+            fenced_search = re.search(
+                r"```(?:json)?\s*([\s\S]*?)\s*```",
+                text,
+                flags=re.IGNORECASE,
+            )
+            if fenced_search:
+                text = fenced_search.group(1).strip()
+
+        first_brace = text.find("{")
+        last_brace = text.rfind("}")
+        if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
+            return text[first_brace:last_brace + 1].strip()
+
+        return text
 
     def generate_slidespec(
         self,
