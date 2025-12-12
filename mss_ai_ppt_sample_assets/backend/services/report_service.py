@@ -16,7 +16,6 @@ from mss_ai_ppt_sample_assets.backend.modules import (
 )
 from mss_ai_ppt_sample_assets.backend.modules.preview_generator import (
     PPTPreviewGenerator,
-    PreviewGenerationError,
     sanitize_job_id,
 )
 from mss_ai_ppt_sample_assets.backend.modules.data_prep import DataPrepResult, prepare_facts_for_template
@@ -201,35 +200,25 @@ class ReportService:
             # images the preview pipeline produces.
             slides_count = None
 
-        try:
-            # Generate physical image files for the PPTX
-            images = self.preview_generator.to_images(tmp_copy, job_id, expected_count=slides_count)
+        # Generate physical image files for the PPTX
+        images = self.preview_generator.to_images(tmp_copy, job_id)
 
-            # Determine how many slides the logical slidespec has,
-            # so we can align preview URLs with slide_no.
-            if slides_count is None:
-                slides_count = len(images)
+        # Determine how many slides the logical slidespec has,
+        # so we can align preview URLs with slide_no.
+        if slides_count is None:
+            slides_count = len(images)
 
-            urls: list[str] = []
-            if slides_count <= 0:
-                # No logical slides; just expose whatever was generated
-                urls = [f"{base_url_prefix}/{img_path.name}" for img_path in images]
-            else:
-                # For each logical slide, map to a physical PNG.
-                # If LibreOffice only produced a single PNG, reuse it for all slides
-                # so that at least something is shown for every slide card.
-                for idx in range(slides_count):
-                    img_idx = idx if idx < len(images) else len(images) - 1
-                    img_path = images[img_idx]
-                    urls.append(f"{base_url_prefix}/{img_path.name}")
+        urls: list[str] = []
+        if slides_count <= 0:
+            # No logical slides; just expose whatever was generated
+            urls = [f"{base_url_prefix}/{img_path.name}" for img_path in images]
+        else:
+            # For each logical slide, map to a physical PNG.
+            # If LibreOffice only produced a single PNG, reuse it for all slides
+            # so that at least something is shown for every slide card.
+            for idx in range(slides_count):
+                img_idx = idx if idx < len(images) else len(images) - 1
+                img_path = images[img_idx]
+                urls.append(f"{base_url_prefix}/{img_path.name}")
 
-            return {"job_id": job_id, "images": urls}
-        except PreviewGenerationError:
-            # If image generation fails (e.g. Poppler crash on this machine),
-            # fall back to returning the generated PDF for browser preview
-            # instead of raising 500, so frontend至少可以用 PDF 做预览。
-            pdf_dir = config.PREVIEWS_DIR / job_dir
-            pdf_dir.mkdir(parents=True, exist_ok=True)
-            pdf_path = self.preview_generator._with_libreoffice_pdf(tmp_copy, pdf_dir)
-            pdf_url = f"{base_url_prefix}/{pdf_path.name}"
-            return {"job_id": job_id, "images": [], "pdf": pdf_url}
+        return {"job_id": job_id, "images": urls}

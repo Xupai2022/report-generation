@@ -4,7 +4,7 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 from mss_ai_ppt_sample_assets.backend import config
 
@@ -25,10 +25,9 @@ def sanitize_job_id(job_id: str) -> str:
 
 
 class PPTPreviewGenerator:
-    """Convert PPTX to slide images using real rendering engines.
+    """Convert PPTX to slide images using LibreOffice and PyMuPDF.
 
-    Priority:
-      1. LibreOffice / OpenOffice (via `soffice` CLI, if installed)
+    Pipeline: PPTX → LibreOffice → PDF → PyMuPDF → PNG images
     """
 
     def __init__(self, base_dir: Path = config.PREVIEWS_DIR):
@@ -57,14 +56,13 @@ class PPTPreviewGenerator:
 
         return shutil.which("soffice") or "soffice"
 
-    def _with_libreoffice_pdf(self, ppt_path: Path, output_dir: Path) -> Path:
+    def _pptx_to_pdf(self, ppt_path: Path, output_dir: Path) -> Path:
         """
-        Use LibreOffice/OpenOffice in headless mode to render PPTX to a PDF file.
+        Use LibreOffice in headless mode to convert PPTX to PDF.
 
-        Requires local installation of LibreOffice with `soffice` CLI available.
+        Requires LibreOffice with `soffice` CLI available.
         """
         soffice = self._find_soffice()
-
         output_dir.mkdir(parents=True, exist_ok=True)
 
         try:
@@ -86,214 +84,63 @@ class PPTPreviewGenerator:
             )
         except Exception as exc:
             raise PreviewGenerationError(
-                "LibreOffice/OpenOffice (`soffice`) is required for PPT preview "
-                "if PowerPoint is not available. Please install LibreOffice and, "
-                "if needed, set environment variable LIBREOFFICE_PATH to the "
-                "full path of soffice.exe."
+                "LibreOffice (`soffice`) is required for PPTX to PDF conversion. "
+                "Please install LibreOffice and, if needed, set environment variable "
+                "LIBREOFFICE_PATH to the full path of soffice.exe."
             ) from exc
 
         pdf_files = sorted(output_dir.glob("*.pdf"))
         if not pdf_files:
             raise PreviewGenerationError("No PDF generated from LibreOffice export")
-        # Usually only one PDF is generated
         return pdf_files[0]
-
-    def _with_libreoffice_png(self, ppt_path: Path, output_dir: Path) -> List[Path]:
-        """
-        Use LibreOffice/OpenOffice in headless mode to render PPTX directly to PNG slides.
-
-        This avoids dependence on Poppler/pdf2image and is more robust on Windows.
-        """
-        soffice = self._find_soffice()
-
-        output_dir.mkdir(parents=True, exist_ok=True)
-
-        try:
-            # Use Impress PNG filter + PageRange to export each slide as one PNG.
-            # The upper bound (e.g. 1-50) is generous; extra pages are ignored.
-            subprocess.run(
-                [
-                    soffice,
-                    "--headless",
-                    "--nologo",
-                    "--nofirststartwizard",
-                    "--convert-to",
-                    "png:impress_png_Export:PageRange=1-50",
-                    "--outdir",
-                    str(output_dir),
-                    str(ppt_path),
-                ],
-                check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-        except Exception as exc:
-            raise PreviewGenerationError(
-                "LibreOffice/OpenOffice (`soffice`) is required for PPT preview "
-                "if PowerPoint is not available. Please install LibreOffice and, "
-                "if needed, set environment variable LIBREOFFICE_PATH to the "
-                "full path of soffice.exe."
-            ) from exc
-
-        images = sorted(output_dir.glob("*.png"))
-        if not images:
-            raise PreviewGenerationError("No PNG images generated from LibreOffice export")
-        return images
 
     def _pdf_to_images(self, pdf_path: Path, output_dir: Path) -> List[Path]:
         """
-        Convert a multi-page PDF into slide1.png, slide2.png, ... trying PyMuPDF (fitz),
-        Poppler, then pdf2image, and finally LibreOffice as a last resort.
+        Convert PDF to PNG images using PyMuPDF (fitz).
 
-        Requires poppler binaries installed on the system. On Windows you may set
-        POPPLER_PATH to the directory containing the poppler executables.
+        Uses a zoom factor of 2.0 for 144 DPI output quality.
         """
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        # 1. Try PyMuPDF (fitz) - Robust, no external binaries required
         try:
             import fitz  # PyMuPDF
+        except ImportError as exc:
+            raise PreviewGenerationError(
+                "PyMuPDF (pymupdf) is required for PDF to PNG conversion. "
+                "Install it with: pip install pymupdf"
+            ) from exc
 
+        try:
             doc = fitz.open(str(pdf_path))
             result: List[Path] = []
-            
+
             # Use a zoom factor of 2.0 to get approx 144 DPI (72 * 2)
             mat = fitz.Matrix(2.0, 2.0)
-            
+
             for i, page in enumerate(doc):
                 pix = page.get_pixmap(matrix=mat)
                 target = output_dir / f"slide{i+1}.png"
                 pix.save(str(target))
                 result.append(target)
-            
+
             doc.close()
-            
-            if result:
-                return sorted(result)
-
-        except ImportError:
-            # pymupdf not installed, fall back to others
-            pass
-        except Exception as exc:
-            # If PyMuPDF fails, log/ignore and fall back
-            # In a real app, logging 'exc' would be good.
-            pass
-
-        # Prefer Poppler's pdftoppm if available
-        poppler_dir = os.getenv("POPPLER_PATH")
-        pdftoppm_path: Optional[str] = None
-        if poppler_dir:
-            candidate = Path(poppler_dir) / ("pdftoppm.exe" if os.name == "nt" else "pdftoppm")
-            if candidate.is_file():
-                pdftoppm_path = str(candidate)
-        if pdftoppm_path is None:
-            which_pdftoppm = shutil.which("pdftoppm")
-            if which_pdftoppm:
-                pdftoppm_path = which_pdftoppm
-
-        if pdftoppm_path:
-            output_dir.mkdir(parents=True, exist_ok=True)
-            try:
-                subprocess.run(
-                    [
-                        pdftoppm_path,
-                        "-png",
-                        "-r",
-                        "150",
-                        str(pdf_path),
-                        "slide",
-                    ],
-                    check=True,
-                    cwd=str(output_dir),
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                )
-            except Exception as exc:
-                raise PreviewGenerationError(
-                    f"Poppler pdftoppm failed. PATH/POPPLER_PATH used. Underlying error: {exc}"
-                ) from exc
-
-            result: List[Path] = sorted(output_dir.glob("slide-*.png"))
-            if not result:
-                raise PreviewGenerationError(f"Poppler pdftoppm produced no images in {output_dir}")
-            return result
-
-        # Next try python-based pdf2image (if installed)
-        try:
-            from pdf2image import convert_from_path  # type: ignore
-        except ImportError:
-            convert_from_path = None
-
-        if convert_from_path:
-            try:
-                images = convert_from_path(
-                    str(pdf_path),
-                    dpi=150,
-                    fmt="png",
-                    output_folder=None,
-                    poppler_path=poppler_dir,
-                )
-            except Exception as exc:
-                raise PreviewGenerationError(
-                    f"Poppler is required for PDF preview via pdf2image. "
-                    f"POPPLER_PATH={poppler_dir!r}. Underlying error: {exc}"
-                ) from exc
-
-            output_dir.mkdir(parents=True, exist_ok=True)
-            result: List[Path] = []
-            for idx, img in enumerate(images, start=1):
-                target = output_dir / f"slide{idx}.png"
-                img.save(target, "PNG")
-                result.append(target)
 
             if not result:
-                raise PreviewGenerationError("No images generated from PDF export")
-            return result
+                raise PreviewGenerationError("No images generated from PDF")
 
-        # Last resort: use LibreOffice to convert the PDF into PNG pages
-        soffice = self._find_soffice()
-        output_dir.mkdir(parents=True, exist_ok=True)
-        try:
-            subprocess.run(
-                [
-                    soffice,
-                    "--headless",
-                    "--nologo",
-                    "--nofirststartwizard",
-                    "--convert-to",
-                    "png:draw_png_Export:PageRange=1-50",
-                    "--outdir",
-                    str(output_dir),
-                    str(pdf_path),
-                ],
-                check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
+            return sorted(result)
+
         except Exception as exc:
             raise PreviewGenerationError(
-                "Failed to convert PDF to images via LibreOffice. Please install Poppler (pdftoppm) "
-                "or python package pdf2image with Poppler binaries available."
+                f"Failed to convert PDF to images using PyMuPDF: {exc}"
             ) from exc
 
-        result: List[Path] = sorted(output_dir.glob("*.png"))
-        if not result:
-            raise PreviewGenerationError("LibreOffice PDF->PNG produced no images")
-        return result
-
-    def _via_pdf_pipeline(self, ppt_path: Path, output_dir: Path) -> List[Path]:
+    def to_images(self, ppt_path: Path, job_id: str) -> List[Path]:
         """
-        Render PPT -> PDF -> PNG to ensure we get one image per slide.
+        Convert PPTX to PNG images.
 
-        LibreOffice sometimes only emits the first slide when exporting
-        directly to PNG, so this path forces a multi-page PDF first.
+        Pipeline: PPTX → LibreOffice → PDF → PyMuPDF → PNG
         """
-        pdf_path = self._with_libreoffice_pdf(ppt_path, output_dir)
-        return self._pdf_to_images(pdf_path, output_dir)
-
-    def to_images(
-        self, ppt_path: Path, job_id: str, expected_count: Optional[int] = None
-    ) -> List[Path]:
         if not ppt_path.exists():
             raise PreviewGenerationError(f"PPT file not found: {ppt_path}")
 
@@ -302,25 +149,10 @@ class PPTPreviewGenerator:
         if output_dir.exists():
             shutil.rmtree(output_dir)
 
-        # Only use LibreOffice / OpenOffice (PPTX -> PNG directly, no Poppler, no PowerPoint)
-        try:
-            images = self._with_libreoffice_png(ppt_path, output_dir)
+        # Step 1: PPTX → PDF (LibreOffice)
+        pdf_path = self._pptx_to_pdf(ppt_path, output_dir)
 
-            needs_pdf_fallback = False
-            if expected_count is not None:
-                # We know how many slides should exist; if LibreOffice only gave us
-                # one (common on Windows), force PDF pipeline to get per-slide images.
-                needs_pdf_fallback = expected_count > 1 and len(images) < expected_count
-            else:
-                # When count is unknown, a single image is suspicious for PPT decks.
-                needs_pdf_fallback = len(images) <= 1
+        # Step 2: PDF → PNG (PyMuPDF)
+        images = self._pdf_to_images(pdf_path, output_dir)
 
-            if needs_pdf_fallback:
-                shutil.rmtree(output_dir, ignore_errors=True)
-                images = self._via_pdf_pipeline(ppt_path, output_dir)
-
-            return images
-        except Exception as second_error:
-            raise PreviewGenerationError(
-                f"Failed to export preview via LibreOffice/OpenOffice only. Underlying error: {second_error}"
-            ) from second_error
+        return images
