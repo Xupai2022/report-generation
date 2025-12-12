@@ -31,4 +31,4 @@ class AuditLogger:
             severity=severity,
         )
         with self.log_path.open("a", encoding="utf-8") as f:
-            f.write(json.dumps(entry.dict(), ensure_ascii=False) + "\n")
+            f.write(json.dumps(entry.dict(), ensure_ascii=False, default=str) + "\n")

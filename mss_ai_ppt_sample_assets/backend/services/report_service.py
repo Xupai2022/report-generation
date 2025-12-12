@@ -72,7 +72,7 @@ class ReportService:
         return TenantInput.load_from_file(path)
 
     def generate(
-        self, input_id: str, template_id: str, use_mock: bool = True
+        self, input_id: str, template_id: str
     ) -> Dict[str, Any]:
         tenant_input = self.load_input(input_id)
         template = self.template_repo.get_descriptor(template_id)
@@ -82,7 +82,7 @@ class ReportService:
             input_id=input_id,
             template_id=template_id,
             prepared=prepared,
-            use_mock=use_mock,
+            use_mock=False,
         )
 
         validator = Validator(template, facts=prepared.facts)
@@ -107,7 +107,7 @@ class ReportService:
             "job_id": f"{input_id}:{template_id}",
             "report_path": str(report_path),
             "warnings": warnings,
-            "slidespec": slidespec.dict(),
+            "slidespec": slidespec.model_dump(),
             "slidespec_path": str(slidespec_path),
         }
 
@@ -158,7 +158,7 @@ class ReportService:
             "slide_key": slide_key,
             "report_path": str(report_path),
             "warnings": warnings,
-            "slidespec": updated.dict(),
+            "slidespec": updated.model_dump(),
         }
 
     def read_logs(self, limit: int = 100) -> str:
@@ -190,11 +190,46 @@ class ReportService:
         job_dir = sanitize_job_id(job_id)
         tmp_copy = tmp_dir / f"{job_dir}.pptx"
         shutil.copyfile(report_path, tmp_copy)
-
-        images = self.preview_generator.to_images(tmp_copy, job_id)
         base_url_prefix = f"/static/previews/{job_dir}"
-        urls = []
-        for idx, _ in enumerate(images, start=1):
-            urls.append(f"{base_url_prefix}/slide{idx}.png")
 
-        return {"job_id": job_id, "images": urls}
+        slides_count = None
+        try:
+            slidespec = self._load_slidespec(input_id, template_id)
+            slides_count = len(slidespec.slides)
+        except Exception:
+            # If slidespec cannot be loaded, we will fall back to however many
+            # images the preview pipeline produces.
+            slides_count = None
+
+        try:
+            # Generate physical image files for the PPTX
+            images = self.preview_generator.to_images(tmp_copy, job_id, expected_count=slides_count)
+
+            # Determine how many slides the logical slidespec has,
+            # so we can align preview URLs with slide_no.
+            if slides_count is None:
+                slides_count = len(images)
+
+            urls: list[str] = []
+            if slides_count <= 0:
+                # No logical slides; just expose whatever was generated
+                urls = [f"{base_url_prefix}/{img_path.name}" for img_path in images]
+            else:
+                # For each logical slide, map to a physical PNG.
+                # If LibreOffice only produced a single PNG, reuse it for all slides
+                # so that at least something is shown for every slide card.
+                for idx in range(slides_count):
+                    img_idx = idx if idx < len(images) else len(images) - 1
+                    img_path = images[img_idx]
+                    urls.append(f"{base_url_prefix}/{img_path.name}")
+
+            return {"job_id": job_id, "images": urls}
+        except PreviewGenerationError:
+            # If image generation fails (e.g. Poppler crash on this machine),
+            # fall back to returning the generated PDF for browser preview
+            # instead of raising 500, so frontend至少可以用 PDF 做预览。
+            pdf_dir = config.PREVIEWS_DIR / job_dir
+            pdf_dir.mkdir(parents=True, exist_ok=True)
+            pdf_path = self.preview_generator._with_libreoffice_pdf(tmp_copy, pdf_dir)
+            pdf_url = f"{base_url_prefix}/{pdf_path.name}"
+            return {"job_id": job_id, "images": [], "pdf": pdf_url}

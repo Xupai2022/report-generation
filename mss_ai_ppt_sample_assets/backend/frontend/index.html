@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MSS AI PPT | Intelligent Report Generator</title>
+    
+    <style>
+        /* --- CSS Reset & Variables --- */
+        :root {
+            /* Colors: Slate (Grays) */
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1;
+            --slate-400: #94a3b8;
+            --slate-500: #64748b;
+            --slate-600: #475569;
+            --slate-700: #334155;
+            --slate-800: #1e293b;
+            --slate-900: #0f172a;
+
+            /* Colors: Brand (Indigo/Blue) */
+            --brand-50: #eff6ff;
+            --brand-100: #dbeafe;
+            --brand-500: #3b82f6;
+            --brand-600: #2563eb;
+            --brand-700: #1d4ed8;
+
+            /* Colors: Semantic */
+            --danger-bg: #fef2f2;
+            --danger-text: #991b1b;
+            --success-text: #10b981;
+            
+            /* Dimensions */
+            --header-height: 64px;
+            --toolbar-height: 60px;
+            --sidebar-width: 260px;
+            --editor-width: 350px;
+        }
+
+        * { box-sizing: border-box; }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--slate-50);
+            color: var(--slate-900);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* App-like feel */
+        }
+
+        /* --- Typography --- */
+        h1, h2, h3, h4, p { margin: 0; }
+        .text-xs { font-size: 12px; }
+        .text-sm { font-size: 14px; }
+        .font-bold { font-weight: 600; }
+        .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+        .uppercase { text-transform: uppercase; letter-spacing: 0.05em; }
+        .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* --- Components: Layout --- */
+        header {
+            height: var(--header-height);
+            background: rgba(255, 255, 255, 0.9);
+            border-bottom: 1px solid var(--slate-200);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            flex-shrink: 0;
+            backdrop-filter: blur(8px);
+        }
+
+        .logo-area { display: flex; align-items: center; gap: 12px; }
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+        }
+        
+        .toolbar {
+            height: var(--toolbar-height);
+            background: #fff;
+            border-bottom: 1px solid var(--slate-200);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            flex-shrink: 0;
+            z-index: 10;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        /* --- Sidebar (Left) --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: #fff;
+            border-right: 1px solid var(--slate-200);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            z-index: 5;
+        }
+        
+        .sidebar-header { padding: 12px 16px; border-bottom: 1px solid var(--slate-100); display: flex; justify-content: space-between; align-items: center; }
+        .sidebar-content { flex: 1; overflow-y: auto; padding: 8px; }
+        
+        .slide-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+            background: #fff;
+        }
+        .slide-item:hover { border-color: var(--slate-200); background: var(--slate-50); }
+        .slide-item.active {
+            background: var(--brand-50);
+            border-color: var(--brand-500);
+        }
+        .slide-num {
+            width: 24px; height: 24px;
+            background: var(--slate-100);
+            color: var(--slate-500);
+            border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: bold;
+        }
+        .slide-item.active .slide-num { background: var(--brand-500); color: white; }
+
+        /* --- Canvas (Center) --- */
+        .canvas-area {
+            flex: 1;
+            background-color: var(--slate-100);
+            background-image: radial-gradient(var(--slate-300) 1px, transparent 1px);
+            background-size: 20px 20px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            min-width: 0;
+        }
+        
+        .canvas-toolbar {
+            height: 40px;
+            background: #fff;
+            border-bottom: 1px solid var(--slate-200);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 16px;
+            flex-shrink: 0;
+        }
+        
+        .canvas-viewport {
+            flex: 1;
+            overflow: auto;
+            display: block; /* changed for scrolling list */
+            padding: 32px;
+            scroll-behavior: smooth;
+        }
+
+        .preview-list {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 48px;
+            padding-bottom: 100px;
+            min-height: 100%;
+        }
+
+        .slide-view-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: transform 0.2s;
+        }
+
+        .slide-view-label {
+            font-size: 11px;
+            color: var(--slate-500);
+            font-weight: 600;
+            text-align: center;
+            opacity: 0.7;
+        }
+
+        .preview-card {
+            background: white;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0,0,0,0.05);
+            width: auto;
+            max-width: 100%;
+            height: auto;
+            max-height: 80vh; /* prevent too tall */
+            display: block;
+        }
+
+        .placeholder-card {
+            width: 800px; 
+            max-width: 100%;
+            aspect-ratio: 16/9;
+            background: white;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--slate-300);
+            font-size: 14px;
+            border: 1px dashed var(--slate-300);
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: var(--slate-400);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* --- Editor (Right) --- */
+        .editor-panel {
+            width: var(--editor-width);
+            background: #fff;
+            border-left: 1px solid var(--slate-200);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            box-shadow: -4px 0 15px rgba(0,0,0,0.02);
+            z-index: 5;
+        }
+        
+        .editor-header {
+            padding: 12px 16px;
+            background: var(--slate-50);
+            border-bottom: 1px solid var(--slate-200);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        
+        textarea.code-editor {
+            flex: 1;
+            width: 100%;
+            border: none;
+            padding: 16px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+            color: var(--slate-700);
+        }
+        textarea.code-editor:focus { background-color: #fafafa; }
+
+        /* --- Logs (Bottom Left) --- */
+        .logs-section {
+            border-top: 1px solid var(--slate-200);
+            background: var(--slate-50);
+        }
+        .logs-toggle {
+            width: 100%;
+            padding: 10px 16px;
+            border: none;
+            background: none;
+            text-align: left;
+            cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 12px; font-weight: 600; color: var(--slate-600);
+        }
+        .logs-toggle:hover { background: var(--slate-100); }
+        .logs-container {
+            height: 150px;
+            background: var(--slate-900);
+            color: #10b981;
+            overflow-y: auto;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 11px;
+            display: none;
+        }
+        .logs-container.open { display: block; }
+
+        /* --- UI Elements --- */
+        select {
+            padding: 8px 12px;
+            border: 1px solid var(--slate-300);
+            border-radius: 6px;
+            font-size: 13px;
+            background-color: var(--slate-50);
+            min-width: 200px;
+            outline: none;
+        }
+        select:focus { border-color: var(--brand-500); ring: 2px var(--brand-100); }
+        
+        button.btn-primary {
+            background: var(--brand-600);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex; align-items: center; gap: 8px;
+            transition: background 0.2s;
+        }
+        button.btn-primary:hover { background: var(--brand-700); }
+        button.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        button.btn-sm { padding: 4px 12px; font-size: 12px; }
+
+        .badge {
+            background: var(--slate-100);
+            padding: 2px 8px;
+            border-radius: 99px;
+            font-size: 10px;
+            color: var(--slate-500);
+        }
+
+        /* --- Loader --- */
+        .spinner {
+            width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* --- Scrollbars --- */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--slate-300); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--slate-400); }
+        
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="logo-area">
+            <div class="logo-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+            </div>
+            <div>
+                <h1 style="font-size: 16px; font-weight: 700;">MSS AI PPT</h1>
+                <div style="font-size: 10px; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.5px;">Intelligent Generator</div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <div style="font-size: 12px; color: var(--slate-400);">v0.1.0-beta</div>
+            <div style="width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></div>
+        </div>
+    </header>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <div style="display: flex; gap: 20px; align-items: center;">
+            <div>
+                <div class="text-xs uppercase font-bold" style="color: var(--slate-400); margin-bottom: 4px;">Input Data</div>
+                <select id="inputSelect"><option>Loading...</option></select>
+            </div>
+            <div style="width: 1px; height: 32px; background: var(--slate-200);"></div>
+            <div>
+                <div class="text-xs uppercase font-bold" style="color: var(--slate-400); margin-bottom: 4px;">Template</div>
+                <select id="templateSelect"><option>Loading...</option></select>
+            </div>
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 16px;">
+            <label style="font-size: 12px; color: var(--slate-600); display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="useMock" checked>
+                Use Mock (Fast)
+            </label>
+            <button id="generateBtn" class="btn-primary">
+                <span id="genIcon">
+                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                </span>
+                <span id="genSpinner" class="spinner hidden"></span>
+                Generate Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-container">
+        
+        <!-- Left Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <span class="text-xs font-bold uppercase" style="color: var(--slate-500);">Slides</span>
+                <span id="slideCount" class="badge">0</span>
+            </div>
+            <div id="slidesList" class="sidebar-content">
+                <div class="empty-state" style="margin-top: 40px;">
+                    <div style="font-size: 12px;">No slides yet</div>
+                </div>
+            </div>
+            
+            <div class="logs-section">
+                <button id="toggleLogsBtn" class="logs-toggle">
+                    <span>System Logs</span>
+                    <span id="logArrow" style="transition: transform 0.2s;">▲</span>
+                </button>
+                <div id="logContainer" class="logs-container">
+                    <div id="logsContent">Waiting for logs...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Canvas -->
+        <div class="canvas-area">
+            <div class="canvas-toolbar">
+                <span id="activeSlideTitle" style="font-size: 12px; font-weight: 600; color: var(--slate-700);">Overview</span>
+                <button id="refreshPreviewBtn" style="background:none; border:none; color: var(--brand-600); font-size: 12px; font-weight: 600; cursor: pointer;">
+                    Refresh Preview
+                </button>
+            </div>
+            
+            <div id="canvasViewport" class="canvas-viewport">
+                <div id="previewList" class="preview-list hidden">
+                    <!-- Slides injected here -->
+                </div>
+                <div id="emptyState" class="empty-state">
+                    <div style="font-size: 40px; color: var(--slate-300); margin-bottom: 16px;">▨</div>
+                    <div style="font-size: 14px; font-weight: 500; color: var(--slate-500);">Select data & template to start</div>
+                </div>
+            </div>
+            
+            <div style="padding: 6px 16px; background: #fff; border-top: 1px solid var(--slate-200); font-size: 10px; color: var(--slate-400); display: flex; justify-content: space-between;">
+                <span id="jobIdDisplay">Job: None</span>
+                <span>1920 x 1080</span>
+            </div>
+        </div>
+
+        <!-- Right Editor -->
+        <div class="editor-panel">
+            <div class="editor-header">
+                <span class="text-xs font-bold uppercase" style="color: var(--slate-500);">JSON Property Editor</span>
+                <button id="rewriteBtn" class="btn-primary btn-sm">Apply & Regenerate</button>
+            </div>
+            <textarea id="slideJson" class="code-editor" spellcheck="false" placeholder="// Select a slide to edit properties..."></textarea>
+            <div style="padding: 8px 16px; background: var(--slate-50); border-top: 1px solid var(--slate-200); font-size: 10px; color: var(--slate-400); text-align: right;">
+                JSON Format
+            </div>
+        </div>
+    </div>
+
+    <!-- Logic -->
+    <script>
+        const state = {
+            jobId: null,
+            slidespec: null,
+            previews: [],
+            activeSlideKey: null,
+            loading: false,
+            logsVisible: false,
+            isClickScrolling: false // flag to prevent intersection observer conflict
+        };
+
+        const $ = (id) => document.getElementById(id);
+        
+        // --- API Client ---
+        async function api(path, opts = {}) {
+            try {
+                const res = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...opts });
+                if (!res.ok) throw new Error(await res.text() || res.statusText);
+                return await res.json();
+            } catch (e) {
+                alert("Error: " + e.message);
+                throw e;
+            }
+        }
+
+        // --- Init ---
+        async function init() {
+            try {
+                const [tpls, inputs, logs] = await Promise.all([
+                    api('/templates'),
+                    api('/inputs'),
+                    api('/logs?limit=20')
+                ]);
+
+                const inputSel = $('inputSelect');
+                inputSel.innerHTML = '<option value="">Select Data Source...</option>';
+                inputs.forEach(i => {
+                    const opt = document.createElement('option');
+                    opt.value = i.id;
+                    opt.textContent = `${i.tenant_name || i.id} (${i.period})`;
+                    inputSel.appendChild(opt);
+                });
+
+                const tplSel = $('templateSelect');
+                tplSel.innerHTML = '<option value="">Select Template...</option>';
+                tpls.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.template_id;
+                    opt.textContent = t.name;
+                    tplSel.appendChild(opt);
+                });
+
+                renderLogs(logs.lines || []);
+            } catch (e) { console.error(e); }
+        }
+
+        // --- Intersection Observer for Scroll Sync ---
+        const observer = new IntersectionObserver((entries) => {
+            if (state.isClickScrolling) return;
+
+            // Find the entry with largest intersection ratio
+            let maxRatio = 0;
+            let maxEntry = null;
+            
+            entries.forEach(e => {
+                if(e.intersectionRatio > maxRatio) {
+                    maxRatio = e.intersectionRatio;
+                    maxEntry = e;
+                }
+            });
+
+            if (maxEntry && maxRatio > 0.4) { // 40% visible
+                const key = maxEntry.target.dataset.key;
+                if (key && key !== state.activeSlideKey) {
+                    updateActiveState(key, false); // false = do not scroll right view
+                }
+            }
+        }, {
+            root: $('canvasViewport'),
+            threshold: [0.1, 0.4, 0.6, 0.8]
+        });
+
+        // --- Renderers ---
+        function renderLogs(lines) {
+            const container = $('logsContent');
+            if (!lines.length) {
+                container.innerHTML = '<span style="opacity:0.5">No logs.</span>';
+                return;
+            }
+            container.innerHTML = lines.map((l, i) => 
+                `<div><span style="opacity:0.3; margin-right:8px;">${i+1}</span>${l}</div>`
+            ).join('');
+            $('logContainer').scrollTop = $('logContainer').scrollHeight;
+        }
+
+        function renderSlides() {
+            const list = $('slidesList');
+            const slides = state.slidespec?.slides || [];
+            $('slideCount').textContent = slides.length;
+            
+            if (!slides.length) {
+                list.innerHTML = '<div class="empty-state" style="margin-top:40px;"><div style="font-size:12px;">No slides</div></div>';
+                return;
+            }
+
+            // Only rebuild list if count changes or force update needed. 
+            // For simplicity, we rebuild but try to maintain scroll pos if possible? 
+            // Actually, rebuilding is fine for this scale.
+            list.innerHTML = '';
+            slides.forEach((s, idx) => {
+                const div = document.createElement('div');
+                div.className = 'slide-item';
+                div.dataset.key = s.slide_key; // For selector lookup
+                div.onclick = () => updateActiveState(s.slide_key, true); // true = click scroll
+                div.innerHTML = `
+                    <div class="slide-num">${idx + 1}</div>
+                    <div style="flex:1; overflow:hidden;">
+                        <div class="text-sm font-bold truncate">${s.slide_key}</div>
+                        <div class="text-xs truncate" style="color: var(--slate-400)">${s.layout || 'Layout'}</div>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+            
+            // Highlight current
+            highlightSidebar(state.activeSlideKey);
+        }
+
+        function renderPreviewList() {
+            const list = $('previewList');
+            const slides = state.slidespec?.slides || [];
+            
+            if (!slides.length) {
+                list.classList.add('hidden');
+                $('emptyState').classList.remove('hidden');
+                return;
+            }
+
+            list.innerHTML = '';
+            
+            slides.forEach((s, idx) => {
+                const imgUrl = state.previews[idx];
+                const viewItem = document.createElement('div');
+                viewItem.className = 'slide-view-item';
+                viewItem.id = 'view-' + s.slide_key;
+                viewItem.dataset.key = s.slide_key;
+
+                const label = document.createElement('div');
+                label.className = 'slide-view-label';
+                label.textContent = `Slide ${idx+1}: ${s.slide_key}`;
+                viewItem.appendChild(label);
+
+                if (imgUrl) {
+                    const img = document.createElement('img');
+                    img.src = imgUrl;
+                    img.className = 'preview-card';
+                    img.loading = 'lazy';
+                    viewItem.appendChild(img);
+                } else {
+                    const ph = document.createElement('div');
+                    ph.className = 'placeholder-card';
+                    ph.textContent = 'Generating Preview...';
+                    viewItem.appendChild(ph);
+                }
+                
+                list.appendChild(viewItem);
+                observer.observe(viewItem);
+            });
+
+            $('emptyState').classList.add('hidden');
+            list.classList.remove('hidden');
+        }
+
+        function highlightSidebar(key) {
+            const items = document.querySelectorAll('.slide-item');
+            items.forEach(el => {
+                if (el.dataset.key === key) {
+                    el.classList.add('active');
+                    // Scroll sidebar to keep active item in view
+                    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+        }
+
+        function updateActiveState(key, scrollRightView) {
+            state.activeSlideKey = key;
+            
+            // 1. Sidebar Highlight
+            highlightSidebar(key);
+            
+            // 2. Editor & Header
+            $('activeSlideTitle').textContent = key;
+            const slide = state.slidespec.slides.find(s => s.slide_key === key);
+            if (slide) {
+                $('slideJson').value = JSON.stringify(slide.data || {}, null, 2);
+            }
+
+            // 3. Scroll Right View (Only if clicked)
+            if (scrollRightView) {
+                const viewItem = document.getElementById('view-' + key);
+                if (viewItem) {
+                    state.isClickScrolling = true;
+                    viewItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // Release lock after animation roughly finishes
+                    setTimeout(() => { state.isClickScrolling = false; }, 800);
+                }
+            }
+        }
+
+        function setLoading(flag) {
+            state.loading = flag;
+            $('generateBtn').disabled = flag;
+            $('rewriteBtn').disabled = flag;
+            
+            if (flag) {
+                $('genIcon').classList.add('hidden');
+                $('genSpinner').classList.remove('hidden');
+            } else {
+                $('genIcon').classList.remove('hidden');
+                $('genSpinner').classList.add('hidden');
+            }
+        }
+
+        // --- Actions ---
+        $('generateBtn').onclick = async () => {
+            const iId = $('inputSelect').value;
+            const tId = $('templateSelect').value;
+            if (!iId || !tId) return alert("Please select input and template");
+
+            setLoading(true);
+            try {
+                // 1. Generate SlideSpec
+                const res = await api('/generate', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        input_id: iId, template_id: tId, use_mock: $('useMock').checked
+                    })
+                });
+                
+                state.jobId = res.job_id;
+                state.slidespec = res.slidespec;
+                state.previews = []; // reset
+                $('jobIdDisplay').textContent = "Job: " + res.job_id;
+
+                if (res.slidespec.slides.length) {
+                    state.activeSlideKey = res.slidespec.slides[0].slide_key;
+                }
+                
+                renderSlides(); // Left Sidebar
+                renderPreviewList(); // Right List (Placeholders)
+                
+                // 2. Fetch Previews (Async)
+                const prevRes = await api(`/preview?job_id=${res.job_id}&regenerate_if_missing=true`);
+                state.previews = prevRes.images || [];
+                renderPreviewList(); // Refresh with images
+
+                // 3. Set Active (Scroll to top)
+                updateActiveState(state.activeSlideKey, true);
+                
+                // 4. Logs
+                const l = await api('/logs?limit=20');
+                renderLogs(l.lines || []);
+            } catch (e) { console.error(e); } 
+            finally { setLoading(false); }
+        };
+
+        $('rewriteBtn').onclick = async () => {
+            if (!state.jobId) return;
+            try {
+                const data = JSON.parse($('slideJson').value);
+                setLoading(true);
+                const res = await api('/rewrite', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        job_id: state.jobId, slide_key: state.activeSlideKey, new_content: data
+                    })
+                });
+                
+                // Update Spec? The API returns full spec usually?
+                // Assuming res.slidespec is updated
+                if (res.slidespec) state.slidespec = res.slidespec;
+
+                // Refresh Previews
+                const prevRes = await api(`/preview?job_id=${state.jobId}&regenerate_if_missing=true`);
+                state.previews = prevRes.images || [];
+                renderPreviewList(); // Refresh images (will keep scroll pos usually as DOM IDs match)
+                
+                const l = await api('/logs?limit=20');
+                renderLogs(l.lines || []);
+                
+            } catch(e) { alert("Failed: " + e.message); }
+            finally { setLoading(false); }
+        };
+
+        $('toggleLogsBtn').onclick = () => {
+            const c = $('logContainer');
+            const a = $('logArrow');
+            if (c.style.display === 'block') {
+                c.style.display = 'none';
+                a.style.transform = 'rotate(0deg)';
+            } else {
+                c.style.display = 'block';
+                a.style.transform = 'rotate(180deg)';
+            }
+        };
+
+        $('refreshPreviewBtn').onclick = async () => {
+            if(state.jobId) {
+                const prevRes = await api(`/preview?job_id=${state.jobId}&regenerate_if_missing=true`);
+                state.previews = prevRes.images || [];
+                renderPreviewList();
+            }
+        };
+
+        init();
+    </script>
+</body>
+</html>
