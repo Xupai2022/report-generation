@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python -m pytest --co -q)"
+      "Bash(python -m pytest --co -q)",
+      "Bash(python mss_ai_ppt_sample_assets/backend/generate_v2_templates.py)"
     ],
     "deny": [],
     "ask": []

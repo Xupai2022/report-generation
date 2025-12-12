@@ -1,0 +1,391 @@
+{
+  "template_id": "mss_executive_v2",
+  "name": "MSS月度安全报告（管理层版）",
+  "version": "2.0.0",
+  "pptx_file": "mss_executive_v2.pptx",
+  "audience": "management",
+  "language": "zh-CN",
+  "style": {
+    "theme": "light",
+    "primaryColor": "#1E40AF",
+    "accentColor": "#3B82F6",
+    "backgroundColor": "#F8FAFC"
+  },
+  "slides": [
+    {
+      "slide_no": 1,
+      "slide_key": "cover",
+      "title": "封面",
+      "placeholders": [
+        {
+          "token": "REPORT_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "source": "report_meta.report_title"
+        },
+        {
+          "token": "CUSTOMER_NAME",
+          "type": "text",
+          "ai_generate": false,
+          "source": "tenant.name"
+        },
+        {
+          "token": "PERIOD",
+          "type": "text",
+          "ai_generate": false,
+          "source": "period",
+          "format": "{start} ~ {end}"
+        },
+        {
+          "token": "CONFIDENTIALITY",
+          "type": "text",
+          "ai_generate": false,
+          "source": "report_meta.secrecy_default",
+          "transform": "uppercase"
+        },
+        {
+          "token": "GENERATED_AT",
+          "type": "text",
+          "ai_generate": false,
+          "source": "report_meta.generated_at"
+        }
+      ]
+    },
+    {
+      "slide_no": 2,
+      "slide_key": "executive_summary",
+      "title": "安全态势总览",
+      "placeholders": [
+        {
+          "token": "SLIDE_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "安全态势总览"
+        },
+        {
+          "token": "HEADLINE",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "用一句话（15-25字）概括本期安全态势的核心特点。要点明最显著的安全趋势或需要关注的风险，例如：'告警量环比下降15%，但高危事件增加，需重点关注横向移动威胁'",
+          "max_length": 50
+        },
+        {
+          "token": "KPI_ALERTS_TOTAL",
+          "type": "kpi",
+          "ai_generate": false,
+          "source": "alerts.total",
+          "validation": "alerts.total"
+        },
+        {
+          "token": "KPI_ALERTS_HIGH",
+          "type": "kpi",
+          "ai_generate": false,
+          "source": "alerts.by_severity.high",
+          "validation": "alerts.by_severity.high"
+        },
+        {
+          "token": "KPI_INCIDENTS_COUNT",
+          "type": "kpi",
+          "ai_generate": false,
+          "source": "incidents.length",
+          "validation": "incidents_count"
+        },
+        {
+          "token": "KPI_INCIDENTS_HIGH",
+          "type": "kpi",
+          "ai_generate": false,
+          "source": "incidents.high_count",
+          "validation": "incidents_high_count"
+        },
+        {
+          "token": "KPI_MTTR_HOURS",
+          "type": "kpi",
+          "ai_generate": false,
+          "source": "mss_ops.mttr_hours_avg",
+          "validation": "mss_ops.mttr_hours_avg",
+          "format": "{value}小时"
+        },
+        {
+          "token": "KPI_FALSE_POSITIVE",
+          "type": "kpi",
+          "ai_generate": false,
+          "source": "alerts.false_positive_rate",
+          "format": "percent"
+        },
+        {
+          "token": "SUMMARY_PARAGRAPH",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "为管理层撰写3-4句话的安全态势总结摘要。要求：1）评估本期整体安全状况（良好/需关注/存在风险）2）指出最需要管理层关注的1-2个关键问题 3）简述MSS团队的响应效率。语言要简洁有力，避免过多技术术语，让非技术背景的管理层能快速理解。",
+          "max_length": 350
+        },
+        {
+          "token": "KEY_INSIGHTS",
+          "type": "bullet_list",
+          "ai_generate": true,
+          "ai_instruction": "基于本期安全数据，提炼3-4条最重要的安全洞察要点。每条要点应该：1）包含具体数据支撑 2）指出业务影响或风险 3）简洁明了，每条不超过50字。示例格式：'暴力破解告警环比上升11%，主要针对SSH服务，建议加强访问控制'",
+          "max_items": 4,
+          "max_chars_per_item": 60
+        }
+      ]
+    },
+    {
+      "slide_no": 3,
+      "slide_key": "alert_trends",
+      "title": "告警趋势分析",
+      "placeholders": [
+        {
+          "token": "SLIDE_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "告警趋势分析"
+        },
+        {
+          "token": "TREND_CHART_DATA",
+          "type": "chart_data",
+          "ai_generate": false,
+          "source": "alerts.trend_weekly"
+        },
+        {
+          "token": "TREND_ANALYSIS",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "基于周度告警趋势数据，分析告警量的变化规律和可能原因。要点：1）识别趋势方向（上升/下降/平稳）2）分析波动原因（如节假日、攻击活动、系统变更等）3）预测下期趋势。用2-3句话概述，数据要准确引用。",
+          "max_length": 200
+        },
+        {
+          "token": "TOP_CATEGORIES_LIST",
+          "type": "bullet_list",
+          "ai_generate": false,
+          "source": "alerts.top_categories",
+          "format": "{category}: {count} (环比{mom_change_pct}%)"
+        },
+        {
+          "token": "TOP_CATEGORIES_INSIGHT",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "分析Top告警类别的分布特点和业务影响。要点：1）哪些类别占比最高，为什么 2）环比变化最大的类别及其原因 3）对业务的潜在影响。特别关注Brute Force、Phishing、Cloud Misconfig等高风险类别的变化。",
+          "max_length": 250
+        },
+        {
+          "token": "MOM_COMPARISON",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "与上月同期对比，解读环比变化的含义。重点关注：1）告警总量的环比变化是否正常 2）各类别环比变化中是否有异常信号 3）变化背后可能的安全风险或改进效果。",
+          "max_length": 200
+        }
+      ]
+    },
+    {
+      "slide_no": 4,
+      "slide_key": "major_incidents",
+      "title": "重点安全事件",
+      "placeholders": [
+        {
+          "token": "SLIDE_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "重点安全事件"
+        },
+        {
+          "token": "INCIDENT_SUMMARY",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "用2-3句话概述本期安全事件情况。包含：1）事件总数和严重程度分布 2）处置效率评估（对比SLA或行业基准）3）整体事件态势判断。要准确引用事件数量。",
+          "max_length": 200
+        },
+        {
+          "token": "INCIDENT_DETAILS",
+          "type": "incident_list",
+          "ai_generate": true,
+          "ai_instruction": "为本期每个高危和中危事件生成简洁描述。每个事件包含：1）事件标题 2）严重程度 3）影响范围（受影响资产）4）处置结果和耗时。按严重程度排序，高危优先。格式示例：'【高危】疑似勒索前置横向移动 | 影响: cdn-edge | MTTR: 94分钟 | 已关闭'",
+          "source": "incidents",
+          "max_items": 5
+        },
+        {
+          "token": "INCIDENT_INSIGHT",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "从本期事件中提炼安全趋势和攻击者行为模式。要点：1）攻击者主要针对哪些资产或服务 2）常见的攻击手法和入侵路径 3）需要加强防护的薄弱环节。提供有洞察力的分析，而不仅仅是事件罗列。",
+          "max_length": 250
+        }
+      ]
+    },
+    {
+      "slide_no": 5,
+      "slide_key": "vulnerability_exposure",
+      "title": "漏洞与暴露面",
+      "placeholders": [
+        {
+          "token": "SLIDE_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "漏洞与暴露面分析"
+        },
+        {
+          "token": "VULN_STATS",
+          "type": "kpi_group",
+          "ai_generate": false,
+          "source": "vulnerabilities.counts"
+        },
+        {
+          "token": "VULN_OVERVIEW",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "总结本期漏洞态势。包含：1）各等级漏洞数量和分布 2）修复进度评估 3）整体风险水平判断。要准确引用漏洞数量（critical/high/medium/low）。",
+          "max_length": 200
+        },
+        {
+          "token": "TOP_CVE_LIST",
+          "type": "bullet_list",
+          "ai_generate": false,
+          "source": "vulnerabilities.top_vulns",
+          "format": "{cve} - {name} ({severity}) | 影响资产: {affected_assets} | 状态: {patch_status}"
+        },
+        {
+          "token": "TOP_CVE_ANALYSIS",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "对Top CVE进行风险分析和修复优先级建议。针对每个关键CVE：1）评估其在当前环境中的实际风险 2）给出修复优先级建议 3）如有未修复的高危漏洞，强调其紧迫性。",
+          "max_length": 300
+        },
+        {
+          "token": "EXPOSURE_STATS",
+          "type": "text",
+          "ai_generate": false,
+          "source": "exposure",
+          "format": "对外IP: {external_ips} | 新增暴露: {new_exposed_since_last_period}"
+        },
+        {
+          "token": "EXPOSURE_SUMMARY",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "分析对外暴露服务的风险状况。包含：1）暴露服务类型和数量 2）高风险暴露点（如SSH、RDP直接暴露）3）与上期对比的变化 4）收敛建议。特别关注新增暴露的服务。",
+          "max_length": 250
+        }
+      ]
+    },
+    {
+      "slide_no": 6,
+      "slide_key": "cloud_security",
+      "title": "云安全态势",
+      "placeholders": [
+        {
+          "token": "SLIDE_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "云安全态势"
+        },
+        {
+          "token": "CLOUD_ACCOUNTS_COUNT",
+          "type": "kpi",
+          "ai_generate": false,
+          "source": "assets.cloud_accounts"
+        },
+        {
+          "token": "CLOUD_RISK_LIST",
+          "type": "bullet_list",
+          "ai_generate": false,
+          "source": "cloud_risks",
+          "format": "{type}: {count}个 (趋势: {trend})"
+        },
+        {
+          "token": "CLOUD_RISK_SUMMARY",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "总结云侧安全风险状况。分析：1）主要的云配置问题及其风险等级 2）IAM权限风险（如未启用MFA的高权限账号）3）数据泄露风险（如公开的存储桶）。结合cloud_risks数据，给出整体风险评估。",
+          "max_length": 250
+        },
+        {
+          "token": "CLOUD_RECOMMENDATIONS",
+          "type": "bullet_list",
+          "ai_generate": true,
+          "ai_instruction": "针对云风险生成3-4条具体整改建议。每条建议要：1）针对具体的云风险类型 2）给出可执行的操作步骤 3）说明优先级。示例：'【紧急】收敛安全组0.0.0.0/0规则，仅开放必要端口给指定IP段'",
+          "max_items": 4,
+          "max_chars_per_item": 80
+        }
+      ]
+    },
+    {
+      "slide_no": 7,
+      "slide_key": "recommendations",
+      "title": "整改建议与行动计划",
+      "placeholders": [
+        {
+          "token": "SLIDE_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "整改建议与行动计划"
+        },
+        {
+          "token": "P0_ACTIONS",
+          "type": "bullet_list",
+          "ai_generate": true,
+          "ai_instruction": "基于本期发现的安全问题，生成3-5条P0优先级（紧急/7天内）整改建议。P0建议应针对：1）已发现的高危漏洞 2）活跃的攻击威胁 3）严重的配置缺陷。每条建议要具体可执行，包含责任方和完成标准。",
+          "max_items": 5,
+          "max_chars_per_item": 80
+        },
+        {
+          "token": "P1_ACTIONS",
+          "type": "bullet_list",
+          "ai_generate": true,
+          "ai_instruction": "生成3-5条P1优先级（重要/30天内）整改建议。P1建议应针对：1）中危漏洞修复 2）安全基线加固 3）检测能力提升。建议要结合客户的资产和服务特点。",
+          "max_items": 5,
+          "max_chars_per_item": 80
+        },
+        {
+          "token": "STRATEGIC_RECOMMENDATIONS",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "基于数据趋势，提供2-3条中长期安全建设建议。考虑：1）告警和事件趋势反映的系统性问题 2）需要持续投入的安全能力建设 3）与行业最佳实践的差距。建议要有战略高度，适合向管理层汇报。",
+          "max_length": 300
+        }
+      ]
+    },
+    {
+      "slide_no": 8,
+      "slide_key": "appendix",
+      "title": "附录与说明",
+      "placeholders": [
+        {
+          "token": "SLIDE_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "附录与说明"
+        },
+        {
+          "token": "DATA_SCOPE",
+          "type": "paragraph",
+          "ai_generate": false,
+          "source": "alerts.notes"
+        },
+        {
+          "token": "ASSET_COVERAGE",
+          "type": "text",
+          "ai_generate": false,
+          "source": "assets",
+          "format": "监控资产组: {asset_groups.length}个 | 云账号: {cloud_accounts}个 | 日志源: {mss_ops.coverage.log_sources}"
+        },
+        {
+          "token": "SLA_NOTES",
+          "type": "text",
+          "ai_generate": false,
+          "source": "mss_ops.sla_notes"
+        },
+        {
+          "token": "CONTACT_INFO",
+          "type": "text",
+          "ai_generate": false,
+          "default": "如有问题，请联系MSS运营团队"
+        },
+        {
+          "token": "TERMINOLOGY",
+          "type": "bullet_list",
+          "ai_generate": true,
+          "ai_instruction": "根据报告中使用的专业术语，生成3-5条术语解释，帮助非技术人员理解。如：MTTR（平均修复时间）、MTTD（平均检测时间）、误报率等。",
+          "max_items": 5
+        }
+      ]
+    }
+  ]
+}

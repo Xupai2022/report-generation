@@ -1,8 +1,34 @@
 {
   "templates": [
     {
+      "template_id": "mss_executive_v2",
+      "name": "MSS月度安全报告（管理层版）",
+      "version": "2.0.0",
+      "descriptor_file": "mss_executive_v2_descriptor.json",
+      "pptx_file": "mss_executive_v2.pptx",
+      "recommended_audience": [
+        "management",
+        "executive"
+      ],
+      "slides_count": 8,
+      "features": ["ai_generated_content", "rich_insights"]
+    },
+    {
+      "template_id": "mss_technical_v2",
+      "name": "MSS月度安全报告（技术版）",
+      "version": "2.0.0",
+      "descriptor_file": "mss_technical_v2_descriptor.json",
+      "pptx_file": "mss_technical_v2.pptx",
+      "recommended_audience": [
+        "technical",
+        "security_ops"
+      ],
+      "slides_count": 10,
+      "features": ["ai_generated_content", "deep_analysis", "technical_details"]
+    },
+    {
       "template_id": "mss_management_light_v1",
-      "name": "MSS Management Light",
+      "name": "MSS Management Light (Legacy)",
       "version": "1.0.0",
       "descriptor_file": "mss_management_light_v1_descriptor.json",
       "pptx_file": "mss_management_light_v1.pptx",
@@ -10,11 +36,12 @@
         "management",
         "executive"
       ],
-      "slides_count": 5
+      "slides_count": 5,
+      "deprecated": true
     },
     {
       "template_id": "mss_technical_dark_v1",
-      "name": "MSS Technical Dark",
+      "name": "MSS Technical Dark (Legacy)",
       "version": "1.0.0",
       "descriptor_file": "mss_technical_dark_v1_descriptor.json",
       "pptx_file": "mss_technical_dark_v1.pptx",
@@ -22,7 +49,8 @@
         "technical",
         "security_ops"
       ],
-      "slides_count": 6
+      "slides_count": 6,
+      "deprecated": true
     }
   ]
 }

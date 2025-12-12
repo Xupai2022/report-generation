@@ -9,9 +9,35 @@ from mss_ai_ppt_sample_assets.backend.models.templates import TemplateDescriptor
 
 @dataclass
 class DataPrepResult:
+    """Result of data preparation for V1 templates."""
     slide_inputs: Dict[str, Dict[str, Any]]
     facts: Dict[str, Any]
 
+
+# ============================================================================
+# V2 Data Preparation - Minimal, just passes raw data
+# ============================================================================
+
+def prepare_data_v2(tenant_input: TenantInput) -> TenantInput:
+    """Prepare data for V2 templates.
+
+    For V2, we pass the raw TenantInput directly to the LLM.
+    No pre-processing of content is needed - the AI generates all text.
+
+    Args:
+        tenant_input: Raw tenant input data
+
+    Returns:
+        The same TenantInput (no transformation needed for V2)
+    """
+    # V2 doesn't need any data preparation - the raw input goes directly to LLM
+    # The LLMOrchestratorV2 handles all data extraction and AI generation
+    return tenant_input
+
+
+# ============================================================================
+# V1 Data Preparation - Legacy (kept for backward compatibility)
+# ============================================================================
 
 def _format_period(tenant_input: TenantInput) -> str:
     period = tenant_input.get("period", {})
@@ -129,7 +155,6 @@ def _build_major_incidents(tenant_input: TenantInput) -> Dict[str, Any]:
 
 
 def _build_recommendations(tenant_input: TenantInput) -> Dict[str, Any]:
-    exposure = tenant_input.get("exposure", {})
     cloud_risks = tenant_input.get("cloud_risks", [])
 
     p0_actions = [
@@ -160,7 +185,11 @@ def _build_recommendations(tenant_input: TenantInput) -> Dict[str, Any]:
 def prepare_facts_for_template(
     tenant_input: TenantInput, template: TemplateDescriptor
 ) -> DataPrepResult:
-    """Prepare deterministic facts from tenant input for downstream steps."""
+    """Prepare deterministic facts from tenant input for V1 templates (legacy).
+
+    Note: For V2 templates, use prepare_data_v2() instead - it simply returns
+    the raw data for the AI to process.
+    """
     slide_inputs: Dict[str, Dict[str, Any]] = {}
 
     # Common slide data for known templates
