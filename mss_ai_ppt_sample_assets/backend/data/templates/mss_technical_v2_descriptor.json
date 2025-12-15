@@ -85,48 +85,6 @@
           "ai_generate": true,
           "ai_instruction": "从技术视角评估本期整体安全态势。分析：1）告警和事件数据反映的威胁态势 2）检测和响应能力的有效性（基于MTTD/MTTR）3）存在的技术短板。用专业但简洁的语言，3-4句话概述。",
           "max_length": 300
-        }
-      ]
-    },
-    {
-      "slide_no": 3,
-      "slide_key": "charts_demo",
-      "title": "数据可视化示例",
-      "placeholders": [
-        {
-          "token": "SLIDE_TITLE",
-          "type": "text",
-          "ai_generate": false,
-          "default": "数据可视化示例"
-        },
-        {
-          "token": "TREND_CHART_TITLE",
-          "type": "text",
-          "ai_generate": true,
-          "ai_instruction": "生成告警周度趋势图的标题，格式如：告警周度趋势分析"
-        },
-        {
-          "token": "ALERT_TREND_CHART",
-          "type": "bar_chart",
-          "ai_generate": false,
-          "chart_config": {
-            "data_source": "alerts.trend_weekly",
-            "x_field": "labels",
-            "y_field": "values",
-            "series_name": "告警数量",
-            "position": {
-              "left": 0.5,
-              "top": 1.5,
-              "width": 5.0,
-              "height": 3.5
-            }
-          }
-        },
-        {
-          "token": "SEVERITY_PIE_TITLE",
-          "type": "text",
-          "ai_generate": true,
-          "ai_instruction": "生成告警严重程度分布饼图的标题，格式如：告警严重程度分布"
         },
         {
           "token": "SEVERITY_PIE_CHART",
@@ -141,57 +99,34 @@
               "info": "信息"
             },
             "position": {
-              "left": 6.0,
-              "top": 1.5,
-              "width": 4.0,
-              "height": 3.5
+              "left": 8.5,
+              "top": 1.3,
+              "width": 4.5,
+              "height": 3.3
             }
           }
         },
         {
-          "token": "TOP_RULES_NATIVE_TABLE",
-          "type": "native_table",
+          "token": "ALERT_TREND_CHART",
+          "type": "bar_chart",
           "ai_generate": false,
-          "table_config": {
-            "data_source": "alerts.top_rules",
-            "columns": [
-              {
-                "header": "规则名称",
-                "field": "name",
-                "width": 3.0
-              },
-              {
-                "header": "触发次数",
-                "field": "count",
-                "width": 1.5
-              },
-              {
-                "header": "误报率",
-                "field": "false_positive_rate",
-                "width": 1.5,
-                "format": "percent"
-              }
-            ],
-            "max_rows": 5,
+          "chart_config": {
+            "data_source": "alerts.trend_weekly",
+            "x_field": "labels",
+            "y_field": "values",
+            "series_name": "告警数量",
             "position": {
-              "left": 0.5,
-              "top": 5.2,
-              "width": 9.5,
-              "height": 2.0
+              "left": 8.5,
+              "top": 4.8,
+              "width": 4.5,
+              "height": 2.3
             }
           }
-        },
-        {
-          "token": "ANALYSIS_TEXT",
-          "type": "paragraph",
-          "ai_generate": true,
-          "ai_instruction": "基于上述图表和表格的数据，提供简要的综合分析。包含：1）周度趋势变化 2）严重程度分布特点 3）Top规则的有效性评估。3-4句话。",
-          "max_length": 250
         }
       ]
     },
     {
-      "slide_no": 4,
+      "slide_no": 3,
       "slide_key": "alert_deep_analysis",
       "title": "告警深度分析",
       "placeholders": [
@@ -222,10 +157,42 @@
         },
         {
           "token": "TOP_RULES_TABLE",
-          "type": "table",
-          "ai_generate": true,
-          "ai_instruction": "基于alerts.top_rules数据，生成Top告警规则表格内容。格式为每行一条规则：\n规则ID | 规则名称 | 触发次数 | 误报率\n\n示例：\nRULE-001 | SSH暴力破解检测 | 234 | 8%\nRULE-002 | 可疑横向移动 | 156 | 15%\n\n按触发次数降序排列，最多5条规则。",
-          "max_length": 400
+          "type": "native_table",
+          "ai_generate": false,
+          "max_length": 400,
+          "table_config": {
+            "data_source": "alerts.top_rules",
+            "columns": [
+              {
+                "header": "规则ID",
+                "field": "rule_id",
+                "width": 2.0
+              },
+              {
+                "header": "规则名称",
+                "field": "name",
+                "width": 2.5
+              },
+              {
+                "header": "触发次数",
+                "field": "count",
+                "width": 1.0
+              },
+              {
+                "header": "误报率",
+                "field": "false_positive_rate",
+                "width": 1.0,
+                "format": "percent"
+              }
+            ],
+            "max_rows": 5,
+            "position": {
+              "left": 0.8,
+              "top": 3.0,
+              "width": 5.7,
+              "height": 1.6
+            }
+          }
         },
         {
           "token": "RULES_ANALYSIS_TITLE",
@@ -257,7 +224,7 @@
       ]
     },
     {
-      "slide_no": 5,
+      "slide_no": 4,
       "slide_key": "incident_timeline",
       "title": "事件时间线与处置轨迹",
       "placeholders": [
@@ -310,7 +277,7 @@
       ]
     },
     {
-      "slide_no": 6,
+      "slide_no": 5,
       "slide_key": "incident_details",
       "title": "高危事件详情",
       "placeholders": [
@@ -358,7 +325,7 @@
       ]
     },
     {
-      "slide_no": 7,
+      "slide_no": 6,
       "slide_key": "vulnerability_details",
       "title": "漏洞态势详情",
       "placeholders": [
@@ -411,7 +378,7 @@
       ]
     },
     {
-      "slide_no": 8,
+      "slide_no": 7,
       "slide_key": "attack_surface",
       "title": "攻击面与暴露分析",
       "placeholders": [
@@ -477,7 +444,7 @@
       ]
     },
     {
-      "slide_no": 9,
+      "slide_no": 8,
       "slide_key": "cloud_security_details",
       "title": "云安全详细分析",
       "placeholders": [
@@ -530,7 +497,7 @@
       ]
     },
     {
-      "slide_no": 10,
+      "slide_no": 9,
       "slide_key": "technical_recommendations",
       "title": "技术整改建议",
       "placeholders": [
@@ -584,7 +551,7 @@
       ]
     },
     {
-      "slide_no": 11,
+      "slide_no": 10,
       "slide_key": "appendix_technical",
       "title": "附录",
       "placeholders": [
