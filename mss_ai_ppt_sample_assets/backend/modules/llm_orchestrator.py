@@ -9,7 +9,6 @@ from typing import Any, Dict, List, Optional
 from openai import OpenAI, APIError, RateLimitError, APIConnectionError
 
 from mss_ai_ppt_sample_assets.backend import config
-from mss_ai_ppt_sample_assets.backend.models.slideplan import SlidePlan, SlidePlanSlide
 from mss_ai_ppt_sample_assets.backend.models.slidespec import (
     SlideSpecV2, create_empty_slidespec_v2
 )
@@ -77,212 +76,6 @@ class LLMOrchestratorV2:
             if current is None:
                 return None
         return current
-
-    def _path_exists(self, data: Any, path: str) -> bool:
-        """Return True if a dotted path exists (value may be None)."""
-        if not path:
-            return False
-
-        if hasattr(data, "raw"):
-            current: Any = data.raw
-        else:
-            current = data
-
-        for part in path.split("."):
-            if isinstance(current, dict):
-                if part not in current:
-                    return False
-                current = current.get(part)
-            elif isinstance(current, list) and part.isdigit():
-                idx = int(part)
-                if idx < 0 or idx >= len(current):
-                    return False
-                current = current[idx]
-            else:
-                return False
-        return True
-
-    def _normalize_fact_ref(self, path: str) -> str:
-        """Normalize internal/computed paths to a real input-data path."""
-        if not path:
-            return path
-
-        computed_to_raw = {
-            "incidents_count": "incidents",
-            "incidents_high_count": "incidents",
-        }
-        if path in computed_to_raw:
-            return computed_to_raw[path]
-
-        if path.endswith(".length"):
-            return path[: -len(".length")]
-
-        if path.startswith("incidents."):
-            return "incidents"
-
-        return path
-
-    def _collect_fact_refs_for_slide(self, tenant_input: TenantInput, slide_def: Any) -> List[str]:
-        """Collect the minimal set of fact paths needed for a slide."""
-        refs: List[str] = []
-
-        for ph in getattr(slide_def, "placeholders", []) or []:
-            if getattr(ph, "source", None):
-                refs.append(self._normalize_fact_ref(ph.source))
-            if getattr(ph, "validation", None):
-                refs.append(self._normalize_fact_ref(ph.validation))
-            if getattr(ph, "ai_instruction", None):
-                instr = ph.ai_instruction or ""
-                for m in re.findall(r"[a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z0-9_]+)+", instr):
-                    refs.append(self._normalize_fact_ref(m))
-                # Also capture bare top-level fact keys mentioned in instructions (e.g. "incidents").
-                for m in re.findall(r"\b[a-zA-Z_][a-zA-Z0-9_]*\b", instr):
-                    if self._path_exists(tenant_input, m):
-                        refs.append(self._normalize_fact_ref(m))
-            chart_config = getattr(ph, "chart_config", None)
-            if isinstance(chart_config, dict):
-                ds = chart_config.get("data_source")
-                if isinstance(ds, str) and ds:
-                    refs.append(self._normalize_fact_ref(ds))
-            table_config = getattr(ph, "table_config", None)
-            if isinstance(table_config, dict):
-                ds = table_config.get("data_source")
-                if isinstance(ds, str) and ds:
-                    refs.append(self._normalize_fact_ref(ds))
-
-        seen: set[str] = set()
-        out: List[str] = []
-        for ref in refs:
-            if not ref or ref in seen:
-                continue
-            if not self._path_exists(tenant_input, ref):
-                continue
-            seen.add(ref)
-            out.append(ref)
-
-        return out
-
-    def _deep_set_path(self, obj: Any, parts: List[str], value: Any) -> None:
-        """Set a dotted-path value on a nested dict/list structure (mutates obj)."""
-        if not parts:
-            return
-
-        head = parts[0]
-        tail = parts[1:]
-
-        if not tail:
-            if isinstance(obj, dict):
-                obj[head] = value
-            elif isinstance(obj, list) and head.isdigit():
-                idx = int(head)
-                while len(obj) <= idx:
-                    obj.append(None)
-                obj[idx] = value
-            return
-
-        next_part = tail[0]
-        wants_list = next_part.isdigit()
-
-        if isinstance(obj, dict):
-            if head not in obj or obj[head] is None or not isinstance(obj[head], (dict, list)):
-                obj[head] = [] if wants_list else {}
-            self._deep_set_path(obj[head], tail, value)
-            return
-
-        if isinstance(obj, list) and head.isdigit():
-            idx = int(head)
-            while len(obj) <= idx:
-                obj.append(None)
-            if obj[idx] is None or not isinstance(obj[idx], (dict, list)):
-                obj[idx] = [] if wants_list else {}
-            self._deep_set_path(obj[idx], tail, value)
-            return
-
-    def _extract_facts_subset(self, tenant_input: TenantInput, fact_refs: List[str]) -> Dict[str, Any]:
-        """Extract a nested subset of facts that contains exactly the given fact paths."""
-        subset: Dict[str, Any] = {}
-        for ref in fact_refs:
-            if not ref or not self._path_exists(tenant_input, ref):
-                continue
-            value = self._get_nested(tenant_input, ref)
-            if value is None:
-                continue
-            self._deep_set_path(subset, ref.split("."), value)
-        return subset
-
-    def _generate_outline_deterministic(
-        self,
-        template: TemplateDescriptorV2,
-        tenant_input: TenantInput,
-        options: Optional[Dict[str, Any]] = None,
-    ) -> SlidePlan:
-        """Deterministically generate a SlidePlan from the template and available facts."""
-        options = options or {}
-        max_slides = options.get("max_slides")
-
-        slides: List[SlidePlanSlide] = []
-        for slide_def in template.slides:
-            enabled = True
-            if isinstance(max_slides, int) and max_slides > 0:
-                enabled = slide_def.slide_no <= max_slides
-
-            slides.append(
-                SlidePlanSlide(
-                    slide_no=slide_def.slide_no,
-                    slide_key=slide_def.slide_key,
-                    enabled=enabled,
-                    title=slide_def.title or "",
-                    intent="基于模板与事实数据生成本页内容",
-                    fact_refs=self._collect_fact_refs_for_slide(tenant_input, slide_def),
-                )
-            )
-
-        return SlidePlan(template_id=template.template_id, slides=slides)
-
-    def _validate_slideplan_against_template(
-        self, slideplan: SlidePlan, template: TemplateDescriptorV2, tenant_input: TenantInput
-    ) -> None:
-        if slideplan.template_id != template.template_id:
-            raise LLMGenerationError(
-                f"SlidePlan template_id mismatch: expected {template.template_id}, got {slideplan.template_id}"
-            )
-
-        if len(slideplan.slides) != len(template.slides):
-            raise LLMGenerationError(
-                f"SlidePlan slides length mismatch: expected {len(template.slides)}, got {len(slideplan.slides)}"
-            )
-
-        for idx, slide_def in enumerate(template.slides):
-            plan_slide = slideplan.slides[idx]
-            if plan_slide.slide_no != slide_def.slide_no or plan_slide.slide_key != slide_def.slide_key:
-                raise LLMGenerationError(
-                    "SlidePlan slide order/identity mismatch at index "
-                    f"{idx}: expected ({slide_def.slide_no},{slide_def.slide_key}), "
-                    f"got ({plan_slide.slide_no},{plan_slide.slide_key})"
-                )
-
-            invalid_refs = [r for r in plan_slide.fact_refs if not self._path_exists(tenant_input, r)]
-            if invalid_refs:
-                raise LLMGenerationError(
-                    f"SlidePlan fact_refs contain non-existent paths for slide {plan_slide.slide_key}: {invalid_refs}"
-                )
-
-    def generate_outline(
-        self,
-        template: TemplateDescriptorV2,
-        tenant_input: TenantInput,
-        options: Optional[Dict[str, Any]] = None,
-        use_mock: bool = False,
-    ) -> SlidePlan:
-        """Generate SlidePlan (Outline Step)."""
-        # Current project templates are strongly structured; deterministic SlidePlan keeps behavior stable.
-        slideplan = self._generate_outline_deterministic(template, tenant_input, options=options)
-        self._validate_slideplan_against_template(slideplan, template, tenant_input)
-        return slideplan
-
-    def _save_slideplan(self, slideplan: SlidePlan, report_id: str) -> None:
-        path = config.OUTLINE_DIR / f"{report_id}_slideplan.json"
-        slideplan.save(path)
 
     def _resolve_format_path(self, data: Dict[str, Any], path: str) -> Any:
         """Resolve a dotted path in data, handling .length for lists."""
@@ -510,7 +303,6 @@ class LLMOrchestratorV2:
         self,
         tenant_input: TenantInput,
         template: TemplateDescriptorV2,
-        enabled_slide_keys: Optional[set[str]] = None,
     ) -> Dict[str, Dict[str, Any]]:
         """Extract all non-AI placeholders from input data.
 
@@ -533,8 +325,6 @@ class LLMOrchestratorV2:
         }
 
         for slide_key, token, placeholder in template.get_data_placeholders():
-            if enabled_slide_keys is not None and slide_key not in enabled_slide_keys:
-                continue
             if slide_key not in result:
                 result[slide_key] = {}
 
@@ -681,87 +471,6 @@ class LLMOrchestratorV2:
         prompt_parts.append(",\n".join(slide_examples))
         prompt_parts.extend([
             "  ],",
-            "}",
-            "```",
-        ])
-
-        return "\n".join(prompt_parts)
-
-    def _build_user_prompt_for_slideplan(
-        self,
-        tenant_input: TenantInput,
-        template: TemplateDescriptorV2,
-        slideplan: SlidePlan,
-    ) -> str:
-        """Build user prompt using per-slide fact subsets from SlidePlan."""
-        enabled_slides = [s for s in slideplan.slides if s.enabled]
-        slide_def_by_key = {s.slide_key: s for s in template.slides}
-
-        prompt_parts: List[str] = [
-            "## 生成任务",
-            "请严格基于每页提供的 allowed_facts 生成对应占位符内容；不得引用未提供的数据。",
-            "",
-        ]
-
-        for plan_slide in enabled_slides:
-            slide_def = slide_def_by_key.get(plan_slide.slide_key)
-            if not slide_def:
-                continue
-
-            facts_subset = self._extract_facts_subset(tenant_input, plan_slide.fact_refs)
-
-            prompt_parts.extend([
-                f"### Slide {plan_slide.slide_no}: {plan_slide.title} ({plan_slide.slide_key})",
-                f"- intent: {plan_slide.intent}",
-                "- allowed_facts:",
-                "```json",
-                json.dumps(facts_subset, ensure_ascii=False, indent=2),
-                "```",
-                "",
-                "- placeholders_to_generate:",
-            ])
-
-            for ph in slide_def.placeholders:
-                if not ph.ai_generate:
-                    continue
-
-                constraints = []
-                if ph.max_length:
-                    constraints.append(f"max_length={ph.max_length}")
-                if ph.max_items:
-                    constraints.append(f"max_items={ph.max_items}")
-                if ph.max_chars_per_item:
-                    constraints.append(f"max_chars_per_item={ph.max_chars_per_item}")
-                constraint_str = f" ({', '.join(constraints)})" if constraints else ""
-
-                prompt_parts.append(f"\n**{ph.token}**{constraint_str}")
-                prompt_parts.append(ph.ai_instruction or "")
-
-            prompt_parts.append("")
-
-        # Output format reminder (only enabled slides with AI tokens)
-        prompt_parts.extend([
-            "## 请按以下JSON格式返回：",
-            "```json",
-            "{",
-            '  \"slides\": [',
-        ])
-
-        slide_examples: List[str] = []
-        for slide_def in template.slides:
-            if not any(s.slide_key == slide_def.slide_key and s.enabled for s in enabled_slides):
-                continue
-            ai_tokens = [ph.token for ph in slide_def.placeholders if ph.ai_generate]
-            if not ai_tokens:
-                continue
-            tokens_str = ", ".join(f'\"{t}\": \"...\"' for t in ai_tokens)
-            slide_examples.append(
-                f'    {{\"slide_key\": \"{slide_def.slide_key}\", \"placeholders\": {{{tokens_str}}}}}'
-            )
-
-        prompt_parts.append(",\n".join(slide_examples))
-        prompt_parts.extend([
-            "  ]",
             "}",
             "```",
         ])
@@ -947,8 +656,6 @@ class LLMOrchestratorV2:
         tenant_input: TenantInput,
         template_id: str,
         use_mock: bool = False,
-        report_id: Optional[str] = None,
-        options: Optional[Dict[str, Any]] = None,
     ) -> SlideSpecV2:
         """Generate SlideSpec for V2 template using AI.
 
@@ -967,52 +674,31 @@ class LLMOrchestratorV2:
         # Load V2 template descriptor
         template = self.template_repo.get_descriptor_v2(template_id)
 
-        # Outline Step (SlidePlan)
-        slideplan = self.generate_outline(template, tenant_input, options=options, use_mock=use_mock)
-        if report_id:
-            self._save_slideplan(slideplan, report_id)
-        else:
-            logger.info("SlidePlan not persisted because report_id was not provided")
-
-        enabled_slide_keys = {s.slide_key for s in slideplan.slides if s.enabled}
-
         # Create empty slidespec structure
         slide_keys = [(s.slide_no, s.slide_key) for s in template.slides]
         slidespec = create_empty_slidespec_v2(template_id, slide_keys)
 
         # Step 1: Extract data placeholders (non-AI)
         logger.info("📊 Extracting data placeholders...")
-        data_placeholders = self._extract_data_placeholders(
-            tenant_input, template, enabled_slide_keys=enabled_slide_keys
-        )
+        data_placeholders = self._extract_data_placeholders(tenant_input, template)
 
         for slide_key, tokens in data_placeholders.items():
             slide = slidespec.get_slide(slide_key)
             if slide:
                 slide.placeholders.update(tokens)
 
-        # Prefer SlidePlan titles where applicable
-        for plan_slide in slideplan.slides:
-            if not plan_slide.enabled or not plan_slide.title:
-                continue
-            slide = slidespec.get_slide(plan_slide.slide_key)
-            if slide:
-                slide.placeholders["SLIDE_TITLE"] = plan_slide.title
-
         # Step 2: Generate AI placeholders
         if config.settings.enable_llm and not use_mock:
             logger.info("🤖 Generating AI content...")
             try:
                 system_prompt = self._build_system_prompt(template)
-                user_prompt = self._build_user_prompt_for_slideplan(tenant_input, template, slideplan)
+                user_prompt = self._build_user_prompt(tenant_input, template)
 
                 response = self._call_openai_with_retry(system_prompt, user_prompt)
                 ai_placeholders = self._parse_llm_response(response, template)
 
                 # Merge AI content
                 for slide_key, tokens in ai_placeholders.items():
-                    if slide_key not in enabled_slide_keys:
-                        continue
                     slide = slidespec.get_slide(slide_key)
                     if slide:
                         slide.placeholders.update(tokens)
@@ -1025,14 +711,10 @@ class LLMOrchestratorV2:
             except LLMGenerationError as e:
                 logger.error(f"❌ AI generation failed: {e}")
                 logger.warning("⚠️ Falling back to placeholder text")
-                self._fill_ai_placeholders_with_fallback(
-                    slidespec, template, enabled_slide_keys=enabled_slide_keys
-                )
+                self._fill_ai_placeholders_with_fallback(slidespec, template)
         else:
             logger.info(f"📝 {'Using mock mode' if use_mock else 'LLM disabled'}, using fallback content")
-            self._fill_ai_placeholders_with_fallback(
-                slidespec, template, enabled_slide_keys=enabled_slide_keys
-            )
+            self._fill_ai_placeholders_with_fallback(slidespec, template)
 
         logger.info(f"✅ V2 slidespec generation complete: {len(slidespec.slides)} slides")
         return slidespec
@@ -1041,12 +723,9 @@ class LLMOrchestratorV2:
         self,
         slidespec: SlideSpecV2,
         template: TemplateDescriptorV2,
-        enabled_slide_keys: Optional[set[str]] = None,
     ) -> None:
         """Fill AI placeholders with fallback text when LLM is unavailable."""
         for slide_key, token, placeholder in template.get_ai_placeholders():
-            if enabled_slide_keys is not None and slide_key not in enabled_slide_keys:
-                continue
             slide = slidespec.get_slide(slide_key)
             if slide and token not in slide.placeholders:
                 if placeholder.type == "bullet_list":
