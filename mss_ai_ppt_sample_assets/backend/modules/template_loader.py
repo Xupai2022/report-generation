@@ -6,7 +6,6 @@ from typing import Dict, List, Union
 
 from mss_ai_ppt_sample_assets.backend.config import TEMPLATES_DIR
 from mss_ai_ppt_sample_assets.backend.models.templates import (
-    TemplateDescriptor,
     TemplateDescriptorV2,
     is_v2_template,
     load_template_descriptor,
@@ -20,13 +19,13 @@ class TemplateNotFoundError(Exception):
 class TemplateRepository:
     """Loads and caches template descriptors from the local filesystem.
 
-    Supports both V1 (legacy) and V2 (AI-driven) template formats.
+    Supports V2 (AI-driven) template formats.
     """
 
     def __init__(self, base_dir: Path = TEMPLATES_DIR):
         self.base_dir = base_dir
         self._catalog = self._load_catalog()
-        self._descriptor_cache: Dict[str, Union[TemplateDescriptor, TemplateDescriptorV2]] = {}
+        self._descriptor_cache: Dict[str, TemplateDescriptorV2] = {}
 
     def _load_catalog(self) -> List[Dict]:
         catalog_path = self.base_dir / "catalog.json"
@@ -34,14 +33,7 @@ class TemplateRepository:
             return json.load(f).get("templates", [])
 
     def list_templates(self, include_deprecated: bool = False) -> List[Dict]:
-        """List available templates.
-
-        Args:
-            include_deprecated: If True, include deprecated V1 templates
-
-        Returns:
-            List of template catalog entries
-        """
+        """List available templates."""
         if include_deprecated:
             return self._catalog
         return [t for t in self._catalog if not t.get("deprecated", False)]
@@ -49,22 +41,6 @@ class TemplateRepository:
     def list_v2_templates(self) -> List[Dict]:
         """List only V2 (AI-driven) templates."""
         return [t for t in self._catalog if is_v2_template(t["template_id"])]
-
-    def get_descriptor(self, template_id: str) -> TemplateDescriptor:
-        """Get V1 template descriptor (legacy).
-
-        For V2 templates, use get_descriptor_v2() instead.
-        """
-        if template_id in self._descriptor_cache:
-            cached = self._descriptor_cache[template_id]
-            if isinstance(cached, TemplateDescriptor):
-                return cached
-
-        entry = self._get_catalog_entry(template_id)
-        descriptor_path = self.base_dir / entry["descriptor_file"]
-        descriptor = TemplateDescriptor.load_from_file(descriptor_path)
-        self._descriptor_cache[template_id] = descriptor
-        return descriptor
 
     def get_descriptor_v2(self, template_id: str) -> TemplateDescriptorV2:
         """Get V2 template descriptor.
@@ -80,9 +56,7 @@ class TemplateRepository:
             ValueError: If template is not V2 format
         """
         if template_id in self._descriptor_cache:
-            cached = self._descriptor_cache[template_id]
-            if isinstance(cached, TemplateDescriptorV2):
-                return cached
+            return self._descriptor_cache[template_id]
 
         entry = self._get_catalog_entry(template_id)
         descriptor_path = self.base_dir / entry["descriptor_file"]
@@ -91,24 +65,6 @@ class TemplateRepository:
         if not isinstance(descriptor, TemplateDescriptorV2):
             raise ValueError(f"Template {template_id} is not a V2 template")
 
-        self._descriptor_cache[template_id] = descriptor
-        return descriptor
-
-    def get_descriptor_auto(self, template_id: str) -> Union[TemplateDescriptor, TemplateDescriptorV2]:
-        """Get template descriptor, auto-detecting V1 or V2 format.
-
-        Args:
-            template_id: Template ID
-
-        Returns:
-            Either TemplateDescriptor (V1) or TemplateDescriptorV2 (V2)
-        """
-        if template_id in self._descriptor_cache:
-            return self._descriptor_cache[template_id]
-
-        entry = self._get_catalog_entry(template_id)
-        descriptor_path = self.base_dir / entry["descriptor_file"]
-        descriptor = load_template_descriptor(descriptor_path)
         self._descriptor_cache[template_id] = descriptor
         return descriptor
 

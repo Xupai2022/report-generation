@@ -107,42 +107,6 @@ class TemplateDescriptorV2(BaseModel):
 
 
 # ============================================================================
-# V1 Models - Legacy template system (kept for backward compatibility)
-# ============================================================================
-
-class SlideDescriptor(BaseModel):
-    """Slide descriptor for V1 (legacy) templates."""
-    slide_no: int
-    slide_key: str
-    description: Optional[str] = None
-    render_map: Dict[str, str]
-    schema: Optional[Dict[str, Any]] = None
-    constraints: Optional[Dict[str, Any]] = None
-
-
-class TemplateDescriptor(BaseModel):
-    """Template descriptor for V1 (legacy) templates."""
-    template_id: str
-    name: str
-    version: str
-    pptx_file: str
-    token_syntax: str = "{{TOKEN}}"
-    style: Dict[str, Any] = Field(default_factory=dict)
-    slides: List[SlideDescriptor]
-
-    @classmethod
-    def load_from_file(cls, path: Path) -> "TemplateDescriptor":
-        with path.open("r", encoding="utf-8") as f:
-            data = json.load(f)
-        return cls.model_validate(data)
-
-    @validator("slides", pre=True)
-    def sort_slides(cls, slides: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Ensure slides are ordered by slide_no for deterministic processing."""
-        return sorted(slides, key=lambda s: s.get("slide_no", 0))
-
-
-# ============================================================================
 # Utility functions
 # ============================================================================
 
@@ -151,22 +115,17 @@ def is_v2_template(template_id: str) -> bool:
     return "_v2" in template_id
 
 
-def load_template_descriptor(path: Path) -> Union[TemplateDescriptor, TemplateDescriptorV2]:
-    """Load a template descriptor, auto-detecting V1 or V2 format.
+def load_template_descriptor(path: Path) -> TemplateDescriptorV2:
+    """Load a template descriptor, ensuring it is V2 format.
 
     Args:
         path: Path to the descriptor JSON file
 
     Returns:
-        Either TemplateDescriptor (V1) or TemplateDescriptorV2 (V2)
+        TemplateDescriptorV2
     """
     with path.open("r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # Detect V2 by checking for 'placeholders' in slides
-    if data.get("slides") and len(data["slides"]) > 0:
-        first_slide = data["slides"][0]
-        if "placeholders" in first_slide:
-            return TemplateDescriptorV2.model_validate(data)
-
-    return TemplateDescriptor.model_validate(data)
+    # Simplified check or just direct validation
+    return TemplateDescriptorV2.model_validate(data)

@@ -3,28 +3,23 @@ from __future__ import annotations
 import json
 import logging
 import re
-from typing import Any, Dict, List, Optional, Union
+import time
+from typing import Any, Dict, List, Optional
 
 from openai import OpenAI, APIError, RateLimitError, APIConnectionError
-import time
 
 from mss_ai_ppt_sample_assets.backend import config
 from mss_ai_ppt_sample_assets.backend.models.slidespec import (
-    SlideSpec, SlideSpecItem, SlideSpecV2, SlideContentV2, create_empty_slidespec_v2
+    SlideSpecV2, create_empty_slidespec_v2
 )
 from mss_ai_ppt_sample_assets.backend.models.templates import (
-    TemplateDescriptor, TemplateDescriptorV2, PlaceholderDefinition,
-    is_v2_template, load_template_descriptor
+    TemplateDescriptorV2, PlaceholderDefinition
 )
 from mss_ai_ppt_sample_assets.backend.models.inputs import TenantInput
 from mss_ai_ppt_sample_assets.backend.modules.template_loader import TemplateRepository
 
 # Configure logging
 logger = logging.getLogger(__name__)
-
-
-class MockOutputNotFound(Exception):
-    pass
 
 
 class LLMGenerationError(Exception):
@@ -57,13 +52,20 @@ class LLMOrchestratorV2:
                 logger.error(f"Failed to initialize OpenAI client: {e}")
                 raise LLMGenerationError(f"OpenAI client initialization failed: {e}") from e
 
-    def _get_nested(self, data: Dict[str, Any], path: str) -> Any:
-        """Get nested value from dict using dot notation path."""
+    def _get_nested(self, data: Any, path: str) -> Any:
+        """Get nested value from dict or TenantInput using dot notation path."""
         if not path:
             return None
 
-        current = data
-        for part in path.split("."):
+        # Handle TenantInput by getting its raw data
+        if hasattr(data, 'raw'):
+            current = data.raw
+        elif isinstance(data, dict):
+            current = data
+        else:
+            return None
+
+        for part in path.split('.'):
             if isinstance(current, dict):
                 current = current.get(part)
             elif isinstance(current, list) and part.isdigit():
@@ -74,6 +76,43 @@ class LLMOrchestratorV2:
             if current is None:
                 return None
         return current
+
+    def _resolve_format_path(self, data: Dict[str, Any], path: str) -> Any:
+        """Resolve a dotted path in data, handling .length for lists."""
+        parts = path.split('.')
+        current = data
+
+        for i, part in enumerate(parts):
+            if part == "length" and isinstance(current, list):
+                return len(current)
+
+            if isinstance(current, dict):
+                current = current.get(part)
+            elif isinstance(current, list) and part.isdigit():
+                idx = int(part)
+                current = current[idx] if idx < len(current) else None
+            else:
+                return None
+
+            if current is None:
+                return None
+
+        return current
+
+    def _format_template_string(self, template: str, data: Dict[str, Any]) -> str:
+        """Format a template string with custom path resolution supporting .length."""
+        import re
+
+        def replace_placeholder(match):
+            path = match.group(1)
+            value = self._resolve_format_path(data, path)
+            if value is None:
+                return match.group(0)  # Keep original if not found
+            return str(value)
+
+        # Find all {path} patterns and replace them
+        result = re.sub(r'\{([^}]+)\}', replace_placeholder, template)
+        return result
 
     def _format_value(self, value: Any, placeholder: PlaceholderDefinition) -> str:
         """Format a value according to placeholder definition."""
@@ -90,40 +129,44 @@ class LLMOrchestratorV2:
                 if isinstance(value, (int, float)):
                     value = f"{round(value * 100)}%"
 
-        # Apply format template
+        # Handle list values FIRST (before format check)
+        if isinstance(value, list):
+            if placeholder.format and "{" in placeholder.format:
+                # Format each list item using the format template
+                formatted_items = []
+                for item in value:
+                    if isinstance(item, dict):
+                        try:
+                            formatted_items.append(self._format_template_string(placeholder.format, item))
+                        except Exception:
+                            formatted_items.append(str(item))
+                    else:
+                        formatted_items.append(str(item))
+                return "\n".join(f"• {item}" for item in formatted_items)
+            elif placeholder.format == "join_comma":
+                return ", ".join(str(v) for v in value)
+            else:
+                return "\n".join(f"• {str(v)}" for v in value)
+
+        # Apply format template for non-list values
         if placeholder.format:
             if placeholder.format == "percent":
                 if isinstance(value, (int, float)):
                     return f"{round(value * 100)}%"
             elif placeholder.format == "join_comma":
-                if isinstance(value, list):
-                    return ", ".join(str(v) for v in value)
+                return str(value)
             elif "{" in placeholder.format:
                 # Template format like "{value}小时" or "{start} ~ {end}"
                 if isinstance(value, dict):
                     try:
-                        return placeholder.format.format(**value)
-                    except KeyError:
+                        return self._format_template_string(placeholder.format, value)
+                    except Exception:
                         pass
                 else:
-                    return placeholder.format.format(value=value)
-
-        # Handle list values
-        if isinstance(value, list):
-            if placeholder.source and "." in placeholder.source:
-                # Format list items if format is specified
-                if placeholder.format:
-                    formatted_items = []
-                    for item in value:
-                        if isinstance(item, dict):
-                            try:
-                                formatted_items.append(placeholder.format.format(**item))
-                            except KeyError:
-                                formatted_items.append(str(item))
-                        else:
-                            formatted_items.append(str(item))
-                    return "\n".join(f"• {item}" for item in formatted_items)
-            return "\n".join(f"• {str(v)}" for v in value)
+                    try:
+                        return placeholder.format.format(value=value)
+                    except (KeyError, ValueError):
+                        pass
 
         return str(value)
 
@@ -280,7 +323,7 @@ class LLMOrchestratorV2:
 
         prompt_parts.append(",\n".join(slide_examples))
         prompt_parts.extend([
-            "  ]",
+            "  ],",
             "}",
             "```",
         ])
@@ -464,7 +507,8 @@ class LLMOrchestratorV2:
     def generate_slidespec_v2(
         self,
         tenant_input: TenantInput,
-        template_id: str
+        template_id: str,
+        use_mock: bool = False
     ) -> SlideSpecV2:
         """Generate SlideSpec for V2 template using AI.
 
@@ -473,11 +517,12 @@ class LLMOrchestratorV2:
         Args:
             tenant_input: Raw tenant input data
             template_id: V2 template ID
+            use_mock: Whether to force mock/fallback generation
 
         Returns:
             SlideSpecV2 with all placeholders filled
         """
-        logger.info(f"🎯 Generating V2 slidespec for template: {template_id}")
+        logger.info(f"🎯 Generating V2 slidespec for template: {template_id}, use_mock={use_mock}")
 
         # Load V2 template descriptor
         template = self.template_repo.get_descriptor_v2(template_id)
@@ -496,7 +541,7 @@ class LLMOrchestratorV2:
                 slide.placeholders.update(tokens)
 
         # Step 2: Generate AI placeholders
-        if config.settings.enable_llm:
+        if config.settings.enable_llm and not use_mock:
             logger.info("🤖 Generating AI content...")
             try:
                 system_prompt = self._build_system_prompt(template)
@@ -521,7 +566,7 @@ class LLMOrchestratorV2:
                 logger.warning("⚠️ Falling back to placeholder text")
                 self._fill_ai_placeholders_with_fallback(slidespec, template)
         else:
-            logger.info("📝 LLM disabled, using fallback content")
+            logger.info(f"📝 {'Using mock mode' if use_mock else 'LLM disabled'}, using fallback content")
             self._fill_ai_placeholders_with_fallback(slidespec, template)
 
         logger.info(f"✅ V2 slidespec generation complete: {len(slidespec.slides)} slides")

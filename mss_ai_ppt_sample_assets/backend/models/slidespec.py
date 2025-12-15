@@ -15,7 +15,6 @@ class SlideContentV2(BaseModel):
     """Content for a single slide in V2 format.
 
     In V2, data is a flat dict mapping token names directly to their values.
-    This simplifies the structure compared to V1.
     """
     slide_no: int
     slide_key: str
@@ -61,41 +60,6 @@ class SlideSpecV2(BaseModel):
         slide = self.get_slide(slide_key)
         if slide:
             slide.placeholders[token] = value
-
-
-# ============================================================================
-# V1 SlideSpec - Legacy structure (kept for backward compatibility)
-# ============================================================================
-
-class SlideSpecItem(BaseModel):
-    """Slide item for V1 format."""
-    slide_no: int
-    slide_key: str
-    data: Dict[str, Any]
-
-
-class SlideSpec(BaseModel):
-    """SlideSpec for V1 templates (legacy)."""
-    template_id: str
-    slides: List[SlideSpecItem]
-
-    @classmethod
-    def load_from_file(cls, path: Path) -> "SlideSpec":
-        with path.open("r", encoding="utf-8") as f:
-            data = json.load(f)
-        return cls.model_validate(data)
-
-    def save(self, path: Path) -> None:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("w", encoding="utf-8") as f:
-            json.dump(self.model_dump(), f, ensure_ascii=False, indent=2)
-
-
-class RenderedSlide(BaseModel):
-    """Rendered slide with final placeholder values."""
-    slide_no: int
-    slide_key: str
-    placeholders: Dict[str, str]
 
 
 # ============================================================================

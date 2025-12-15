@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MSS AI PPT | Intelligent Report Generator</title>
+    <title>MSS AI PPT | 智能报告生成器</title>
     
     <style>
         /* --- CSS Reset & Variables --- */
@@ -44,7 +44,7 @@
         body {
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", Helvetica, Arial, sans-serif;
             background-color: var(--slate-50);
             color: var(--slate-900);
             height: 100vh;
@@ -365,7 +365,7 @@
             </div>
             <div>
                 <h1 style="font-size: 16px; font-weight: 700;">MSS AI PPT</h1>
-                <div style="font-size: 10px; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.5px;">Intelligent Generator</div>
+                <div style="font-size: 10px; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.5px;">智能报告生成器</div>
             </div>
         </div>
         <div style="display: flex; gap: 12px; align-items: center;">
@@ -378,27 +378,27 @@
     <div class="toolbar">
         <div style="display: flex; gap: 20px; align-items: center;">
             <div>
-                <div class="text-xs uppercase font-bold" style="color: var(--slate-400); margin-bottom: 4px;">Input Data</div>
-                <select id="inputSelect"><option>Loading...</option></select>
+                <div class="text-xs uppercase font-bold" style="color: var(--slate-400); margin-bottom: 4px;">输入数据</div>
+                <select id="inputSelect"><option>加载中...</option></select>
             </div>
             <div style="width: 1px; height: 32px; background: var(--slate-200);"></div>
             <div>
-                <div class="text-xs uppercase font-bold" style="color: var(--slate-400); margin-bottom: 4px;">Template</div>
-                <select id="templateSelect"><option>Loading...</option></select>
+                <div class="text-xs uppercase font-bold" style="color: var(--slate-400); margin-bottom: 4px;">选择模板</div>
+                <select id="templateSelect"><option>加载中...</option></select>
             </div>
         </div>
         
         <div style="display: flex; align-items: center; gap: 16px;">
             <label style="font-size: 12px; color: var(--slate-600); display: flex; align-items: center; gap: 6px; cursor: pointer;">
                 <input type="checkbox" id="useMock" checked>
-                Use Mock (Fast)
+                快速生成 (Mock)
             </label>
             <button id="generateBtn" class="btn-primary">
                 <span id="genIcon">
                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                 </span>
                 <span id="genSpinner" class="spinner hidden"></span>
-                Generate Report
+                生成报告
             </button>
         </div>
     </div>
@@ -409,22 +409,22 @@
         <!-- Left Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <span class="text-xs font-bold uppercase" style="color: var(--slate-500);">Slides</span>
+                <span class="text-xs font-bold uppercase" style="color: var(--slate-500);">幻灯片列表</span>
                 <span id="slideCount" class="badge">0</span>
             </div>
             <div id="slidesList" class="sidebar-content">
                 <div class="empty-state" style="margin-top: 40px;">
-                    <div style="font-size: 12px;">No slides yet</div>
+                    <div style="font-size: 12px;">暂无幻灯片</div>
                 </div>
             </div>
             
             <div class="logs-section">
                 <button id="toggleLogsBtn" class="logs-toggle">
-                    <span>System Logs</span>
+                    <span>系统日志</span>
                     <span id="logArrow" style="transition: transform 0.2s;">▲</span>
                 </button>
                 <div id="logContainer" class="logs-container">
-                    <div id="logsContent">Waiting for logs...</div>
+                    <div id="logsContent">等待日志...</div>
                 </div>
             </div>
         </div>
@@ -432,9 +432,9 @@
         <!-- Center Canvas -->
         <div class="canvas-area">
             <div class="canvas-toolbar">
-                <span id="activeSlideTitle" style="font-size: 12px; font-weight: 600; color: var(--slate-700);">Overview</span>
+                <span id="activeSlideTitle" style="font-size: 12px; font-weight: 600; color: var(--slate-700);">总览</span>
                 <button id="refreshPreviewBtn" style="background:none; border:none; color: var(--brand-600); font-size: 12px; font-weight: 600; cursor: pointer;">
-                    Refresh Preview
+                    刷新预览
                 </button>
             </div>
             
@@ -444,12 +444,12 @@
                 </div>
                 <div id="emptyState" class="empty-state">
                     <div style="font-size: 40px; color: var(--slate-300); margin-bottom: 16px;">▨</div>
-                    <div style="font-size: 14px; font-weight: 500; color: var(--slate-500);">Select data & template to start</div>
+                    <div style="font-size: 14px; font-weight: 500; color: var(--slate-500);">请选择数据和模板以开始</div>
                 </div>
             </div>
             
             <div style="padding: 6px 16px; background: #fff; border-top: 1px solid var(--slate-200); font-size: 10px; color: var(--slate-400); display: flex; justify-content: space-between;">
-                <span id="jobIdDisplay">Job: None</span>
+                <span id="jobIdDisplay">任务ID: 无</span>
                 <span>1920 x 1080</span>
             </div>
         </div>
@@ -457,12 +457,12 @@
         <!-- Right Editor -->
         <div class="editor-panel">
             <div class="editor-header">
-                <span class="text-xs font-bold uppercase" style="color: var(--slate-500);">JSON Property Editor</span>
-                <button id="rewriteBtn" class="btn-primary btn-sm">Apply & Regenerate</button>
+                <span class="text-xs font-bold uppercase" style="color: var(--slate-500);">JSON 属性编辑器</span>
+                <button id="rewriteBtn" class="btn-primary btn-sm">应用并重新生成</button>
             </div>
-            <textarea id="slideJson" class="code-editor" spellcheck="false" placeholder="// Select a slide to edit properties..."></textarea>
+            <textarea id="slideJson" class="code-editor" spellcheck="false" placeholder="// 选择幻灯片以编辑属性..."></textarea>
             <div style="padding: 8px 16px; background: var(--slate-50); border-top: 1px solid var(--slate-200); font-size: 10px; color: var(--slate-400); text-align: right;">
-                JSON Format
+                JSON 格式
             </div>
         </div>
     </div>
@@ -488,7 +488,7 @@
                 if (!res.ok) throw new Error(await res.text() || res.statusText);
                 return await res.json();
             } catch (e) {
-                alert("Error: " + e.message);
+                alert("错误: " + e.message);
                 throw e;
             }
         }
@@ -503,7 +503,7 @@
                 ]);
 
                 const inputSel = $('inputSelect');
-                inputSel.innerHTML = '<option value="">Select Data Source...</option>';
+                inputSel.innerHTML = '<option value="">选择数据源...</option>';
                 inputs.forEach(i => {
                     const opt = document.createElement('option');
                     opt.value = i.id;
@@ -512,7 +512,7 @@
                 });
 
                 const tplSel = $('templateSelect');
-                tplSel.innerHTML = '<option value="">Select Template...</option>';
+                tplSel.innerHTML = '<option value="">选择模板...</option>';
                 tpls.forEach(t => {
                     const opt = document.createElement('option');
                     opt.value = t.template_id;
@@ -554,7 +554,7 @@
         function renderLogs(lines) {
             const container = $('logsContent');
             if (!lines.length) {
-                container.innerHTML = '<span style="opacity:0.5">No logs.</span>';
+                container.innerHTML = '<span style="opacity:0.5">暂无日志。</span>';
                 return;
             }
             container.innerHTML = lines.map((l, i) => 
@@ -569,7 +569,7 @@
             $('slideCount').textContent = slides.length;
             
             if (!slides.length) {
-                list.innerHTML = '<div class="empty-state" style="margin-top:40px;"><div style="font-size:12px;">No slides</div></div>';
+                list.innerHTML = '<div class="empty-state" style="margin-top:40px;"><div style="font-size:12px;">暂无幻灯片</div></div>';
                 return;
             }
 
@@ -586,7 +586,7 @@
                     <div class="slide-num">${idx + 1}</div>
                     <div style="flex:1; overflow:hidden;">
                         <div class="text-sm font-bold truncate">${s.slide_key}</div>
-                        <div class="text-xs truncate" style="color: var(--slate-400)">${s.layout || 'Layout'}</div>
+                        <div class="text-xs truncate" style="color: var(--slate-400)">${s.layout || '默认布局'}</div>
                     </div>
                 `;
                 list.appendChild(div);
@@ -617,19 +617,20 @@
 
                 const label = document.createElement('div');
                 label.className = 'slide-view-label';
-                label.textContent = `Slide ${idx+1}: ${s.slide_key}`;
+                label.textContent = `第 ${idx+1} 页: ${s.slide_key}`;
                 viewItem.appendChild(label);
 
                 if (imgUrl) {
                     const img = document.createElement('img');
-                    img.src = imgUrl;
+                    // Add timestamp to prevent browser caching
+                    img.src = `${imgUrl}?t=${Date.now()}`;
                     img.className = 'preview-card';
                     img.loading = 'lazy';
                     viewItem.appendChild(img);
                 } else {
                     const ph = document.createElement('div');
                     ph.className = 'placeholder-card';
-                    ph.textContent = 'Generating Preview...';
+                    ph.textContent = '正在生成预览...';
                     viewItem.appendChild(ph);
                 }
                 
@@ -664,7 +665,9 @@
             $('activeSlideTitle').textContent = key;
             const slide = state.slidespec.slides.find(s => s.slide_key === key);
             if (slide) {
-                $('slideJson').value = JSON.stringify(slide.data || {}, null, 2);
+                // V2 placeholders
+                const editorContent = slide.placeholders || {};
+                $('slideJson').value = JSON.stringify(editorContent, null, 2);
             }
 
             // 3. Scroll Right View (Only if clicked)
@@ -697,7 +700,7 @@
         $('generateBtn').onclick = async () => {
             const iId = $('inputSelect').value;
             const tId = $('templateSelect').value;
-            if (!iId || !tId) return alert("Please select input and template");
+            if (!iId || !tId) return alert("请选择数据源和模板");
 
             setLoading(true);
             try {
@@ -712,7 +715,7 @@
                 state.jobId = res.job_id;
                 state.slidespec = res.slidespec;
                 state.previews = []; // reset
-                $('jobIdDisplay').textContent = "Job: " + res.job_id;
+                $('jobIdDisplay').textContent = "任务ID: " + res.job_id;
 
                 if (res.slidespec.slides.length) {
                     state.activeSlideKey = res.slidespec.slides[0].slide_key;
@@ -760,7 +763,7 @@
                 const l = await api('/logs?limit=20');
                 renderLogs(l.lines || []);
                 
-            } catch(e) { alert("Failed: " + e.message); }
+            } catch(e) { alert("失败: " + e.message); }
             finally { setLoading(false); }
         };
 

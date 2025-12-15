@@ -41,6 +41,7 @@ if FRONTEND_DIR.exists():
 class GenerateRequest(BaseModel):
     input_id: str
     template_id: str
+    use_mock: bool = False
 
 
 class RewriteRequest(BaseModel):
@@ -79,9 +80,9 @@ def list_inputs():
 
 @app.post("/generate")
 def generate(req: GenerateRequest):
-    logger.info(f"=== Generate Request: input_id={req.input_id}, template_id={req.template_id} ===")
+    logger.info(f"=== Generate Request: input_id={req.input_id}, template_id={req.template_id}, use_mock={req.use_mock} ===")
     try:
-        result = service.generate(req.input_id, req.template_id)
+        result = service.generate(req.input_id, req.template_id, use_mock=req.use_mock)
         logger.info(f"✓ Generation successful: {result.get('job_id')}")
         logger.info(f"  - Report path: {result.get('report_path')}")
         logger.info(f"  - Warnings: {len(result.get('warnings', []))}")

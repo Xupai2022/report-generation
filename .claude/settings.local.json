@@ -1,8 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python -m pytest --co -q)",
-      "Bash(python mss_ai_ppt_sample_assets/backend/generate_v2_templates.py)"
+      "Bash(python -c \"\nimport json\n\nwith open(''mss_ai_ppt_sample_assets/backend/data/templates/mss_technical_v2_descriptor.json'', ''r'', encoding=''utf-8'') as f:\n    tech = json.load(f)\n\nslide1 = tech[''slides''][0]\nversion_tag_ph = next(ph for ph in slide1[''placeholders''] if ph[''token''] == ''VERSION_TAG'')\n\nprint(''VERSION_TAG placeholder definition:'')\nimport pprint\npprint.pprint(version_tag_ph)\n\")"
     ],
     "deny": [],
     "ask": []
