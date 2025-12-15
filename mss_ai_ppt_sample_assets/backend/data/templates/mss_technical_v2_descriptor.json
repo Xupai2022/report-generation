@@ -192,108 +192,6 @@
     },
     {
       "slide_no": 4,
-      "slide_key": "charts_demo",
-      "title": "数据可视化示例",
-      "placeholders": [
-        {
-          "token": "SLIDE_TITLE",
-          "type": "text",
-          "ai_generate": false,
-          "default": "数据可视化示例"
-        },
-        {
-          "token": "TREND_CHART_TITLE",
-          "type": "text",
-          "ai_generate": true,
-          "ai_instruction": "生成告警周度趋势图的标题，格式如：告警周度趋势分析"
-        },
-        {
-          "token": "ALERT_TREND_CHART",
-          "type": "bar_chart",
-          "ai_generate": false,
-          "chart_config": {
-            "data_source": "alerts.trend_weekly",
-            "x_field": "labels",
-            "y_field": "values",
-            "series_name": "告警数量",
-            "position": {
-              "left": 0.5,
-              "top": 1.5,
-              "width": 5.0,
-              "height": 3.5
-            }
-          }
-        },
-        {
-          "token": "SEVERITY_PIE_TITLE",
-          "type": "text",
-          "ai_generate": true,
-          "ai_instruction": "生成告警严重程度分布饼图的标题，格式如：告警严重程度分布"
-        },
-        {
-          "token": "SEVERITY_PIE_CHART",
-          "type": "pie_chart",
-          "ai_generate": false,
-          "chart_config": {
-            "data_source": "alerts.by_severity",
-            "category_map": {
-              "high": "高危",
-              "medium": "中危",
-              "low": "低危",
-              "info": "信息"
-            },
-            "position": {
-              "left": 6.0,
-              "top": 1.5,
-              "width": 4.0,
-              "height": 3.5
-            }
-          }
-        },
-        {
-          "token": "TOP_RULES_NATIVE_TABLE",
-          "type": "native_table",
-          "ai_generate": false,
-          "table_config": {
-            "data_source": "alerts.top_rules",
-            "columns": [
-              {
-                "header": "规则名称",
-                "field": "name",
-                "width": 3.0
-              },
-              {
-                "header": "触发次数",
-                "field": "count",
-                "width": 1.5
-              },
-              {
-                "header": "误报率",
-                "field": "false_positive_rate",
-                "width": 1.5,
-                "format": "percent"
-              }
-            ],
-            "max_rows": 5,
-            "position": {
-              "left": 0.5,
-              "top": 5.2,
-              "width": 9.5,
-              "height": 2.0
-            }
-          }
-        },
-        {
-          "token": "ANALYSIS_TEXT",
-          "type": "paragraph",
-          "ai_generate": true,
-          "ai_instruction": "基于上述图表和表格的数据，提供简要的综合分析。包含：1）周度趋势变化 2）严重程度分布特点 3）Top规则的有效性评估。3-4句话。",
-          "max_length": 250
-        }
-      ]
-    },
-    {
-      "slide_no": 5,
       "slide_key": "alert_deep_analysis",
       "title": "告警深度分析",
       "placeholders": [
@@ -359,7 +257,7 @@
       ]
     },
     {
-      "slide_no": 6,
+      "slide_no": 5,
       "slide_key": "incident_timeline",
       "title": "事件时间线与处置轨迹",
       "placeholders": [
@@ -412,7 +310,7 @@
       ]
     },
     {
-      "slide_no": 7,
+      "slide_no": 6,
       "slide_key": "incident_details",
       "title": "高危事件详情",
       "placeholders": [
@@ -460,7 +358,7 @@
       ]
     },
     {
-      "slide_no": 8,
+      "slide_no": 7,
       "slide_key": "vulnerability_details",
       "title": "漏洞态势详情",
       "placeholders": [
@@ -513,7 +411,7 @@
       ]
     },
     {
-      "slide_no": 9,
+      "slide_no": 8,
       "slide_key": "attack_surface",
       "title": "攻击面与暴露分析",
       "placeholders": [
@@ -579,7 +477,7 @@
       ]
     },
     {
-      "slide_no": 10,
+      "slide_no": 9,
       "slide_key": "cloud_security_details",
       "title": "云安全详细分析",
       "placeholders": [
@@ -632,7 +530,7 @@
       ]
     },
     {
-      "slide_no": 11,
+      "slide_no": 10,
       "slide_key": "technical_recommendations",
       "title": "技术整改建议",
       "placeholders": [
@@ -686,7 +584,7 @@
       ]
     },
     {
-      "slide_no": 12,
+      "slide_no": 11,
       "slide_key": "appendix_technical",
       "title": "附录",
       "placeholders": [
