@@ -466,7 +466,7 @@
           "token": "SLA_NOTES",
           "type": "text",
           "ai_generate": true,
-          "ai_instruction": "生成SLA说明。从mss_ops.sla_notes获取内容，如无数据则生成：'高危事件响应SLA: 15分钟内响应，4小时内闭环'",
+          "ai_instruction": "生成SLA说明。",
           "max_length": 150
         },
         {
