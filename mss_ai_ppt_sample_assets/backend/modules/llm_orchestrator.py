@@ -477,6 +477,293 @@ class LLMOrchestratorV2:
 
         return "\n".join(prompt_parts)
 
+    def _build_user_prompt_for_slides(
+        self,
+        tenant_input: TenantInput,
+        template: TemplateDescriptorV2,
+        slide_keys: List[str],
+        batch_index: int = 0,
+        total_batches: int = 1,
+    ) -> str:
+        """Build user prompt for a subset of slides (for batched generation).
+
+        Args:
+            tenant_input: Raw tenant input data
+            template: Template descriptor
+            slide_keys: List of slide_keys to include in this batch
+            batch_index: Current batch index (0-based)
+            total_batches: Total number of batches
+
+        Returns:
+            User prompt string for the specified slides
+        """
+        tenant = tenant_input.get("tenant", {})
+        period = tenant_input.get("period", {})
+
+        prompt_parts = [
+            "## 客户信息",
+            f"- 客户名称：{tenant.get('name', '')}",
+            f"- 行业：{tenant.get('industry', '')}",
+            f"- 地区：{tenant.get('region', '')}",
+            "",
+            "## 报告周期",
+            f"- 开始日期：{period.get('start', '')}",
+            f"- 结束日期：{period.get('end', '')}",
+            "",
+            "## 安全数据",
+            "```json",
+            json.dumps(tenant_input.raw, ensure_ascii=False, indent=2),
+            "```",
+            "",
+        ]
+
+        # Add batch info if there are multiple batches
+        if total_batches > 1:
+            prompt_parts.extend([
+                f"## 批次信息",
+                f"这是第 {batch_index + 1}/{total_batches} 批次，请只生成以下指定slides的内容。",
+                "",
+            ])
+
+        prompt_parts.extend([
+            "## 需要生成的内容",
+            "",
+        ])
+
+        # Get AI placeholders only for specified slides
+        ai_placeholders = template.get_ai_placeholders()
+        current_slide = None
+
+        for slide_key, token, placeholder in ai_placeholders:
+            # Skip slides not in this batch
+            if slide_key not in slide_keys:
+                continue
+
+            if slide_key != current_slide:
+                # Find slide title
+                for slide in template.slides:
+                    if slide.slide_key == slide_key:
+                        prompt_parts.append(f"### Slide: {slide.title} ({slide_key})")
+                        break
+                current_slide = slide_key
+
+            # Add placeholder instruction
+            constraints = []
+            if placeholder.max_length:
+                constraints.append(f"最多{placeholder.max_length}字")
+            if placeholder.max_items:
+                constraints.append(f"最多{placeholder.max_items}条")
+            if placeholder.max_chars_per_item:
+                constraints.append(f"每条最多{placeholder.max_chars_per_item}字")
+
+            constraint_str = f" ({', '.join(constraints)})" if constraints else ""
+
+            prompt_parts.append(f"\n**{token}**{constraint_str}")
+            prompt_parts.append(f"{placeholder.ai_instruction}")
+            prompt_parts.append("")
+
+        # Add output format reminder
+        prompt_parts.extend([
+            "",
+            "## 请按以下JSON格式返回：",
+            "```json",
+            "{",
+            '  "slides": [',
+        ])
+
+        # Generate expected structure for only the specified slides
+        slide_examples = []
+        for slide in template.slides:
+            if slide.slide_key not in slide_keys:
+                continue
+            ai_tokens = [ph.token for ph in slide.placeholders if ph.ai_generate]
+            if ai_tokens:
+                tokens_str = ", ".join(f'"{t}": "..."' for t in ai_tokens)
+                slide_examples.append(f'    {{"slide_key": "{slide.slide_key}", "placeholders": {{{tokens_str}}}}}')
+
+        prompt_parts.append(",\n".join(slide_examples))
+        prompt_parts.extend([
+            "  ]",
+            "}",
+            "```",
+        ])
+
+        return "\n".join(prompt_parts)
+
+    def _estimate_prompt_tokens(self, text: str) -> int:
+        """Estimate token count for a text string.
+
+        For Chinese text, roughly 1.5-2 characters per token.
+        For English/code, roughly 4 characters per token.
+        We use a conservative estimate of 2 characters per token for mixed content.
+        """
+        return len(text) // 2
+
+    def _estimate_slide_instruction_size(
+        self,
+        slide_key: str,
+        template: TemplateDescriptorV2,
+    ) -> int:
+        """Estimate the instruction size for a slide's AI placeholders."""
+        size = 0
+        for slide in template.slides:
+            if slide.slide_key == slide_key:
+                # Add slide header
+                size += len(f"### Slide: {slide.title} ({slide_key})\n")
+                for ph in slide.placeholders:
+                    if ph.ai_generate and ph.ai_instruction:
+                        size += len(f"\n**{ph.token}**\n")
+                        size += len(ph.ai_instruction or "")
+                        size += 50  # constraints and formatting overhead
+                break
+        return size
+
+    def _get_smart_slide_batches(
+        self,
+        tenant_input: TenantInput,
+        template: TemplateDescriptorV2,
+        max_tokens_per_batch: int = 6000,
+    ) -> List[List[str]]:
+        """Split slides into batches based on estimated token count.
+
+        This method intelligently groups slides to keep each batch under
+        the token limit, avoiding API timeouts.
+
+        Args:
+            tenant_input: Raw tenant input data (needed for base prompt size)
+            template: Template descriptor
+            max_tokens_per_batch: Maximum estimated tokens per batch
+
+        Returns:
+            List of batches, where each batch is a list of slide_keys
+        """
+        # Calculate base prompt size (customer info + input data)
+        # This is constant across all batches
+        tenant = tenant_input.get("tenant", {})
+        period = tenant_input.get("period", {})
+        base_prompt = "\n".join([
+            "## 客户信息",
+            f"- 客户名称：{tenant.get('name', '')}",
+            f"- 行业：{tenant.get('industry', '')}",
+            f"- 地区：{tenant.get('region', '')}",
+            "",
+            "## 报告周期",
+            f"- 开始日期：{period.get('start', '')}",
+            f"- 结束日期：{period.get('end', '')}",
+            "",
+            "## 安全数据",
+            "```json",
+            json.dumps(tenant_input.raw, ensure_ascii=False, indent=2),
+            "```",
+        ])
+        base_tokens = self._estimate_prompt_tokens(base_prompt)
+
+        # Reserve tokens for JSON output format instructions (~500 tokens)
+        format_overhead = 500
+
+        # Available tokens for slide instructions per batch
+        available_tokens = max_tokens_per_batch - base_tokens - format_overhead
+
+        logger.info(f"📊 Batch sizing: base={base_tokens} tokens, available={available_tokens} tokens/batch")
+
+        # Calculate instruction size for each slide with AI placeholders
+        slide_sizes: List[tuple] = []  # (slide_key, estimated_tokens)
+        for slide in template.slides:
+            ai_count = sum(1 for ph in slide.placeholders if ph.ai_generate)
+            if ai_count == 0:
+                continue
+            instruction_size = self._estimate_slide_instruction_size(slide.slide_key, template)
+            estimated_tokens = self._estimate_prompt_tokens(" " * instruction_size)
+            slide_sizes.append((slide.slide_key, estimated_tokens))
+
+        # If total is small enough, no batching needed
+        total_instruction_tokens = sum(t for _, t in slide_sizes)
+        if total_instruction_tokens <= available_tokens:
+            logger.info(f"📦 No batching needed: {total_instruction_tokens} tokens fits in {available_tokens}")
+            return [[s for s, _ in slide_sizes]]
+
+        # Greedy batching: add slides until we exceed the limit
+        batches: List[List[str]] = []
+        current_batch: List[str] = []
+        current_tokens = 0
+
+        for slide_key, tokens in slide_sizes:
+            # If adding this slide would exceed the limit, start a new batch
+            if current_tokens + tokens > available_tokens and current_batch:
+                batches.append(current_batch)
+                logger.info(f"  Batch {len(batches)}: {current_batch} (~{current_tokens} tokens)")
+                current_batch = []
+                current_tokens = 0
+
+            current_batch.append(slide_key)
+            current_tokens += tokens
+
+        # Don't forget the last batch
+        if current_batch:
+            batches.append(current_batch)
+            logger.info(f"  Batch {len(batches)}: {current_batch} (~{current_tokens} tokens)")
+
+        return batches
+
+    def _generate_ai_content_in_batches(
+        self,
+        tenant_input: TenantInput,
+        template: TemplateDescriptorV2,
+        max_tokens_per_batch: int = 6000,
+    ) -> Dict[str, Dict[str, Any]]:
+        """Generate AI content in batches to avoid timeout issues.
+
+        Args:
+            tenant_input: Raw tenant input data
+            template: Template descriptor
+            max_tokens_per_batch: Maximum estimated tokens per API call
+
+        Returns:
+            Dict[slide_key, Dict[token, value]] with all AI-generated content
+        """
+        batches = self._get_smart_slide_batches(tenant_input, template, max_tokens_per_batch)
+        total_batches = len(batches)
+
+        if total_batches <= 1:
+            # No need for batching, use original method
+            logger.info("📦 Single batch - using standard generation")
+            system_prompt = self._build_system_prompt(template)
+            user_prompt = self._build_user_prompt(tenant_input, template)
+            response = self._call_openai_with_retry(system_prompt, user_prompt)
+            return self._parse_llm_response(response, template)
+
+        logger.info(f"📦 Smart batching: splitting into {total_batches} batches")
+
+        all_ai_placeholders: Dict[str, Dict[str, Any]] = {}
+        system_prompt = self._build_system_prompt(template)
+
+        for i, batch_slide_keys in enumerate(batches):
+            logger.info(f"🔄 Processing batch {i + 1}/{total_batches}: slides {batch_slide_keys}")
+
+            user_prompt = self._build_user_prompt_for_slides(
+                tenant_input,
+                template,
+                batch_slide_keys,
+                batch_index=i,
+                total_batches=total_batches,
+            )
+
+            prompt_tokens = self._estimate_prompt_tokens(user_prompt)
+            logger.info(f"   Batch prompt size: ~{prompt_tokens} tokens")
+
+            response = self._call_openai_with_retry(system_prompt, user_prompt)
+            batch_placeholders = self._parse_llm_response(response, template)
+
+            # Merge batch results
+            for slide_key, tokens in batch_placeholders.items():
+                if slide_key not in all_ai_placeholders:
+                    all_ai_placeholders[slide_key] = {}
+                all_ai_placeholders[slide_key].update(tokens)
+
+            logger.info(f"✅ Batch {i + 1}/{total_batches} completed")
+
+        return all_ai_placeholders
+
     def _call_openai_with_retry(
         self,
         system_prompt: str,
@@ -691,11 +978,12 @@ class LLMOrchestratorV2:
         if config.settings.enable_llm and not use_mock:
             logger.info("🤖 Generating AI content...")
             try:
-                system_prompt = self._build_system_prompt(template)
-                user_prompt = self._build_user_prompt(tenant_input, template)
-
-                response = self._call_openai_with_retry(system_prompt, user_prompt)
-                ai_placeholders = self._parse_llm_response(response, template)
+                # Use smart batched generation to avoid timeout issues
+                # Batching is based on estimated token count, not hardcoded limits
+                ai_placeholders = self._generate_ai_content_in_batches(
+                    tenant_input,
+                    template,
+                )
 
                 # Merge AI content
                 for slide_key, tokens in ai_placeholders.items():
