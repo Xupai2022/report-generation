@@ -14,7 +14,7 @@ import json
 class PlaceholderDefinition(BaseModel):
     """Definition for a placeholder in V2 templates."""
     token: str  # Placeholder token name, e.g., "HEADLINE"
-    type: Literal["text", "paragraph", "bullet_list", "kpi", "kpi_group", "table", "chart_data", "incident_list", "incident_detail"]
+    type: Literal["text", "paragraph", "bullet_list", "kpi", "kpi_group", "table", "chart_data", "incident_list", "incident_detail", "bar_chart", "pie_chart", "native_table"]
     ai_generate: bool = False  # Whether content should be AI-generated
 
     # For ai_generate=False: direct data source
@@ -34,6 +34,30 @@ class PlaceholderDefinition(BaseModel):
 
     # Table-specific
     columns: Optional[List[str]] = None  # Column names for table type
+
+    # Chart-specific configuration (for bar_chart, pie_chart)
+    chart_config: Optional[Dict[str, Any]] = None  # Chart configuration
+    # Expected structure for chart_config:
+    # {
+    #   "data_source": "alerts.trend_weekly",  # Path to data in TenantInput
+    #   "x_field": "labels",  # Field name for X-axis (or categories)
+    #   "y_field": "values",  # Field name for Y-axis (or values)
+    #   "chart_title_ai": true,  # Whether chart title is AI-generated
+    #   "position": {"left": 1.0, "top": 2.0, "width": 8.0, "height": 4.0}  # Position in inches
+    # }
+    # For pie_chart: data_source should point to dict like {"high": 52, "medium": 473}
+
+    # Native table configuration (for native_table)
+    table_config: Optional[Dict[str, Any]] = None  # Table configuration
+    # Expected structure for table_config:
+    # {
+    #   "data_source": "alerts.top_rules",  # Path to list of dicts
+    #   "columns": [
+    #     {"header": "规则名称", "field": "name", "width": 3.0},
+    #     {"header": "触发次数", "field": "count", "width": 1.5}
+    #   ],
+    #   "position": {"left": 1.0, "top": 2.0, "width": 8.0, "height": 3.0}
+    # }
 
 
 class SlideDefinitionV2(BaseModel):

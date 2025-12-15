@@ -170,17 +170,146 @@ class LLMOrchestratorV2:
 
         return str(value)
 
+    def _extract_chart_data(
+        self,
+        tenant_input: TenantInput,
+        chart_config: Dict[str, Any],
+        chart_type: str
+    ) -> Dict[str, Any]:
+        """Extract and format chart data from tenant input.
+
+        Args:
+            tenant_input: Raw tenant input
+            chart_config: Chart configuration from placeholder definition
+            chart_type: 'bar_chart' or 'pie_chart'
+
+        Returns:
+            Formatted chart data ready for rendering
+        """
+        data_source = chart_config.get('data_source')
+        if not data_source:
+            logger.warning(f"Chart config missing data_source")
+            return {}
+
+        # Get data from tenant input
+        source_data = self._get_nested(tenant_input, data_source)
+        if not source_data:
+            logger.warning(f"No data found at {data_source}")
+            return {}
+
+        result = {
+            'position': chart_config.get('position')
+        }
+
+        if chart_type == 'bar_chart':
+            # Expect source_data to have 'labels' and 'values' or similar structure
+            x_field = chart_config.get('x_field', 'labels')
+            y_field = chart_config.get('y_field', 'values')
+
+            if isinstance(source_data, dict):
+                categories = source_data.get(x_field, [])
+                values = source_data.get(y_field, [])
+
+                result['categories'] = categories
+                result['series'] = [{'name': chart_config.get('series_name', '告警数'), 'values': values}]
+            else:
+                logger.warning(f"Bar chart data source {data_source} is not a dict")
+                return {}
+
+        elif chart_type == 'pie_chart':
+            # Expect source_data to be a dict like {'high': 52, 'medium': 473, 'low': 816}
+            if isinstance(source_data, dict):
+                # Convert dict to categories and values
+                categories = []
+                values = []
+
+                # Map severity levels to Chinese names
+                severity_map = chart_config.get('category_map', {
+                    'critical': '严重',
+                    'high': '高危',
+                    'medium': '中危',
+                    'low': '低危',
+                    'info': '信息'
+                })
+
+                for key, value in source_data.items():
+                    # Use mapped name if available, otherwise use key
+                    category_name = severity_map.get(key, key)
+                    categories.append(category_name)
+                    values.append(value)
+
+                result['categories'] = categories
+                result['values'] = values
+            else:
+                logger.warning(f"Pie chart data source {data_source} is not a dict")
+                return {}
+
+        return result
+
+    def _extract_table_data(
+        self,
+        tenant_input: TenantInput,
+        table_config: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Extract and format table data from tenant input.
+
+        Args:
+            tenant_input: Raw tenant input
+            table_config: Table configuration from placeholder definition
+
+        Returns:
+            Formatted table data ready for rendering
+        """
+        data_source = table_config.get('data_source')
+        columns_config = table_config.get('columns', [])
+
+        if not data_source or not columns_config:
+            logger.warning(f"Table config missing data_source or columns")
+            return {}
+
+        # Get data from tenant input
+        source_data = self._get_nested(tenant_input, data_source)
+        if not source_data or not isinstance(source_data, list):
+            logger.warning(f"No list data found at {data_source}")
+            return {}
+
+        # Extract headers
+        headers = [col.get('header', '') for col in columns_config]
+
+        # Extract rows
+        rows = []
+        max_rows = table_config.get('max_rows', 10)
+        for item in source_data[:max_rows]:
+            if isinstance(item, dict):
+                row = []
+                for col in columns_config:
+                    field_name = col.get('field', '')
+                    value = item.get(field_name, '')
+
+                    # Format value based on column config
+                    if col.get('format') == 'percent' and isinstance(value, (int, float)):
+                        value = f"{int(value * 100)}%"
+
+                    row.append(value)
+                rows.append(row)
+
+        return {
+            'headers': headers,
+            'rows': rows,
+            'position': table_config.get('position')
+        }
+
     def _extract_data_placeholders(
         self,
         tenant_input: TenantInput,
         template: TemplateDescriptorV2
-    ) -> Dict[str, Dict[str, str]]:
+    ) -> Dict[str, Dict[str, Any]]:
         """Extract all non-AI placeholders from input data.
 
         Returns:
             Dict[slide_key, Dict[token, value]]
         """
-        result: Dict[str, Dict[str, str]] = {}
+        result: Dict[str, Dict[str, Any]] = {}
 
         # Calculate derived values
         incidents = tenant_input.get("incidents", []) or []
@@ -199,7 +328,25 @@ class LLMOrchestratorV2:
             if slide_key not in result:
                 result[slide_key] = {}
 
-            if placeholder.default and not placeholder.source:
+            # Handle chart placeholders
+            if placeholder.type in ('bar_chart', 'pie_chart') and placeholder.chart_config:
+                chart_data = self._extract_chart_data(
+                    tenant_input,
+                    placeholder.chart_config,
+                    placeholder.type
+                )
+                result[slide_key][token] = chart_data
+
+            # Handle native table placeholders
+            elif placeholder.type == 'native_table' and placeholder.table_config:
+                table_data = self._extract_table_data(
+                    tenant_input,
+                    placeholder.table_config
+                )
+                result[slide_key][token] = table_data
+
+            # Handle regular text placeholders
+            elif placeholder.default and not placeholder.source:
                 result[slide_key][token] = placeholder.default
             elif placeholder.source:
                 # Check computed values first

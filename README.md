@@ -145,7 +145,13 @@ Content-Type: application/json
 GET http://localhost:8000/preview?job_id=tenant_acme_2025-11:mss_management_light_v1
 ```
 
-### 5. 重写单页内容
+### 5. 下载PPTX
+
+```bash
+GET http://localhost:8000/download?job_id=tenant_acme_2025-11:mss_management_light_v1
+```
+
+### 6. 重写单页内容
 
 ```bash
 POST http://localhost:8000/rewrite

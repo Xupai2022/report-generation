@@ -322,6 +322,21 @@
         button.btn-primary:hover { background: var(--brand-700); }
         button.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
+        button.btn-secondary {
+            background: #fff;
+            color: var(--slate-700);
+            border: 1px solid var(--slate-300);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex; align-items: center; gap: 8px;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        button.btn-secondary:hover { background: var(--slate-50); border-color: var(--slate-400); }
+        button.btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
         button.btn-sm { padding: 4px 12px; font-size: 12px; }
 
         .badge {
@@ -393,6 +408,7 @@
                 <input type="checkbox" id="useMock" checked>
                 快速生成 (Mock)
             </label>
+            <button id="downloadBtn" class="btn-secondary" disabled>Download PPT</button>
             <button id="generateBtn" class="btn-primary">
                 <span id="genIcon">
                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
@@ -686,6 +702,7 @@
             state.loading = flag;
             $('generateBtn').disabled = flag;
             $('rewriteBtn').disabled = flag;
+            $('downloadBtn').disabled = flag || !state.jobId;
             
             if (flag) {
                 $('genIcon').classList.add('hidden');
@@ -737,6 +754,11 @@
                 renderLogs(l.lines || []);
             } catch (e) { console.error(e); } 
             finally { setLoading(false); }
+        };
+
+        $('downloadBtn').onclick = () => {
+            if (!state.jobId) return;
+            window.location.href = `/download?job_id=${encodeURIComponent(state.jobId)}&regenerate_if_missing=true`;
         };
 
         $('rewriteBtn').onclick = async () => {

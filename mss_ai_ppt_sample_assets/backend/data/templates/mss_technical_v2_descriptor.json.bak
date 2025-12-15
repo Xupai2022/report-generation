@@ -1,0 +1,598 @@
+{
+  "template_id": "mss_technical_v2",
+  "name": "MSS月度安全报告（技术版）",
+  "version": "2.0.0",
+  "pptx_file": "mss_technical_v2.pptx",
+  "audience": "technical",
+  "language": "zh-CN",
+  "style": {
+    "theme": "dark",
+    "primaryColor": "#0F172A",
+    "accentColor": "#22C55E",
+    "backgroundColor": "#0B1220"
+  },
+  "slides": [
+    {
+      "slide_no": 1,
+      "slide_key": "cover",
+      "title": "封面",
+      "placeholders": [
+        {
+          "token": "REPORT_TITLE",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成报告标题，格式为：[客户名称] MSS月度安全报告（技术版）。从tenant.name获取客户名称。"
+        },
+        {
+          "token": "CUSTOMER_LABEL",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成客户标签，格式为：客户：[客户名称]。从tenant.name获取客户名称。"
+        },
+        {
+          "token": "PERIOD_LABEL",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成报告周期标签，格式为：报告周期：[开始日期] ~ [结束日期]。从period.start和period.end获取日期。"
+        },
+        {
+          "token": "VERSION_TAG",
+          "type": "text",
+          "ai_generate": false,
+          "default": "技术详细版"
+        },
+        {
+          "token": "CONFIDENTIALITY_LABEL",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成密级标签，格式为：密级：[密级]。从report_meta.secrecy_default获取密级，转为大写。如无数据则显示'密级：内部'。"
+        },
+        {
+          "token": "GENERATED_AT_LABEL",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成报告生成时间标签，格式为：生成时间：[时间]。从report_meta.generated_at获取，如无数据则显示当前日期。"
+        }
+      ]
+    },
+    {
+      "slide_no": 2,
+      "slide_key": "security_dashboard",
+      "title": "安全态势仪表盘",
+      "placeholders": [
+        {
+          "token": "SLIDE_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "安全态势仪表盘"
+        },
+        {
+          "token": "KPI_DASHBOARD",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成技术仪表盘KPI区域内容。必须准确引用以下数据并格式化展示：\n\n告警指标：\n- 告警总数: alerts.total\n- 高危: alerts.by_severity.high\n- 中危: alerts.by_severity.medium  \n- 低危: alerts.by_severity.low\n- 误报率: alerts.false_positive_rate（转为百分比）\n\n事件与响应指标：\n- 安全事件: incidents数组长度\n- 高危事件: severity为high的incidents数量\n- MTTD: mss_ops.mttd_minutes_avg（单位：分钟）\n- MTTR: mss_ops.mttr_hours_avg（单位：小时）\n\n漏洞与覆盖指标：\n- 严重漏洞: vulnerabilities.counts.critical\n- 高危漏洞: vulnerabilities.counts.high\n- EDR覆盖: mss_ops.coverage.edr_agents\n\n格式示例：\n告警总数: 1,247 | 高危: 89 | 中危: 342 | 低危: 816 | 误报率: 12%\n安全事件: 5 | 高危事件: 2 | MTTD: 8分钟 | MTTR: 2.3小时\n严重漏洞: 2 | 高危漏洞: 8 | EDR覆盖: 156台",
+          "max_length": 500
+        },
+        {
+          "token": "ASSESSMENT_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "技术评估"
+        },
+        {
+          "token": "TECHNICAL_ASSESSMENT",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "从技术视角评估本期整体安全态势。分析：1）告警和事件数据反映的威胁态势 2）检测和响应能力的有效性（基于MTTD/MTTR）3）存在的技术短板。用专业但简洁的语言，3-4句话概述。",
+          "max_length": 300
+        }
+      ]
+    },
+    {
+      "slide_no": 3,
+      "slide_key": "alert_deep_analysis",
+      "title": "告警深度分析",
+      "placeholders": [
+        {
+          "token": "SLIDE_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "告警深度分析"
+        },
+        {
+          "token": "SEVERITY_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "严重程度分布"
+        },
+        {
+          "token": "SEVERITY_BREAKDOWN",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "详细分析告警的严重程度分布。基于alerts.by_severity数据，包含：1）各级别告警的绝对数量和占比 2）高危告警的主要来源和特征 3）告警分布是否健康（高危占比过高/过低都需要关注）。",
+          "max_length": 250
+        },
+        {
+          "token": "TOP_RULES_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "Top告警规则"
+        },
+        {
+          "token": "TOP_RULES_TABLE",
+          "type": "table",
+          "ai_generate": true,
+          "ai_instruction": "基于alerts.top_rules数据，生成Top告警规则表格内容。格式为每行一条规则：\n规则ID | 规则名称 | 触发次数 | 误报率\n\n示例：\nRULE-001 | SSH暴力破解检测 | 234 | 8%\nRULE-002 | 可疑横向移动 | 156 | 15%\n\n按触发次数降序排列，最多5条规则。",
+          "max_length": 400
+        },
+        {
+          "token": "RULES_ANALYSIS_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "规则分析"
+        },
+        {
+          "token": "TOP_RULES_ANALYSIS",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "分析Top告警规则的触发情况。评估：1）高频规则是否有效，还是产生大量噪音 2）各规则的误报率是否在合理范围 3）哪些规则可能需要调优。给出专业的检测工程视角分析。",
+          "max_length": 300
+        },
+        {
+          "token": "FP_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "误报分析与调优建议"
+        },
+        {
+          "token": "FALSE_POSITIVE_INSIGHT",
+          "type": "bullet_list",
+          "ai_generate": true,
+          "ai_instruction": "基于误报率数据，提供规则调优建议。针对误报率较高的规则：1）分析可能的误报原因 2）给出具体的调优方向（白名单、阈值调整、上下文关联等）3）说明调优预期效果。",
+          "max_items": 4,
+          "max_chars_per_item": 100
+        }
+      ]
+    },
+    {
+      "slide_no": 4,
+      "slide_key": "incident_timeline",
+      "title": "事件时间线与处置轨迹",
+      "placeholders": [
+        {
+          "token": "SLIDE_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "事件时间线与处置轨迹"
+        },
+        {
+          "token": "TIMELINE_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "事件时间线"
+        },
+        {
+          "token": "TIMELINE_NARRATIVE",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "基于incidents数组数据，以时间线叙事方式描述本期重要事件的发现-响应-处置全过程。选取1-2个最具代表性的事件（优先高危），详细描述：1）检测时间点(detected_at)和触发告警 2）研判和定性过程 3）处置措施和时间节点 4）最终结果(status)。体现MSS团队的响应流程。",
+          "max_length": 400
+        },
+        {
+          "token": "RESPONSE_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "响应效率"
+        },
+        {
+          "token": "RESPONSE_METRICS",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "分析本期事件响应效率。基于mss_ops数据，包含：1）平均MTTD(mss_ops.mttd_minutes_avg)和MTTR(mss_ops.mttr_hours_avg)是否达标 2）各事件的响应时间分布 3）响应效率的瓶颈在哪里（检测慢还是处置慢）。用数据说话，给出客观评估。",
+          "max_length": 250
+        },
+        {
+          "token": "LESSONS_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "经验教训"
+        },
+        {
+          "token": "LESSONS_LEARNED",
+          "type": "bullet_list",
+          "ai_generate": true,
+          "ai_instruction": "从事件处置中总结经验教训。包括：1）检测能力的有效性和改进空间 2）处置流程的顺畅度 3）跨团队协作的问题 4）可以固化的最佳实践。每条教训要有对应的改进建议。",
+          "max_items": 4,
+          "max_chars_per_item": 100
+        }
+      ]
+    },
+    {
+      "slide_no": 5,
+      "slide_key": "incident_details",
+      "title": "高危事件详情",
+      "placeholders": [
+        {
+          "token": "SLIDE_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "高危事件详情分析"
+        },
+        {
+          "token": "INCIDENT1_TITLE",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "基于incidents[0]数据，生成第一个事件的标题。格式：【[severity]】[title]。例如：【高危】疑似勒索前置横向移动攻击。如无高危事件则用最严重的中危事件。",
+          "max_length": 50
+        },
+        {
+          "token": "INCIDENT_DETAIL_1",
+          "type": "incident_detail",
+          "ai_generate": true,
+          "ai_instruction": "基于incidents[0]数据，对第一个事件进行详细技术分析。包含：1）事件概述和严重程度判定依据 2）攻击向量和入侵路径分析(attack_vector) 3）影响范围评估（affected_assets）4）处置措施详情(actions_taken) 5）根因分析和复盘。",
+          "max_length": 500
+        },
+        {
+          "token": "INCIDENT2_TITLE",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "基于incidents[1]数据，生成第二个事件的标题。格式：【[severity]】[title]。如果只有一个事件，则显示'其他事件概览'。",
+          "max_length": 50
+        },
+        {
+          "token": "INCIDENT_DETAIL_2",
+          "type": "incident_detail",
+          "ai_generate": true,
+          "ai_instruction": "基于incidents[1]数据，对第二个事件进行技术分析。分析框架同上。如果只有一个事件，则概述其他中低危事件的整体情况。",
+          "max_length": 500
+        },
+        {
+          "token": "ATTACK_PATTERN_SUMMARY",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "总结本期事件中观察到的攻击模式。分析：1）攻击者的TTP（战术、技术、程序）2）主要针对的资产类型和服务 3）利用的漏洞或配置缺陷 4）与已知威胁组织的关联（如有）。",
+          "max_length": 300
+        }
+      ]
+    },
+    {
+      "slide_no": 6,
+      "slide_key": "vulnerability_details",
+      "title": "漏洞态势详情",
+      "placeholders": [
+        {
+          "token": "SLIDE_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "漏洞态势详情"
+        },
+        {
+          "token": "VULN_DIST_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "漏洞分布"
+        },
+        {
+          "token": "VULN_DISTRIBUTION",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "基于vulnerabilities数据，详细分析漏洞分布情况。从以下维度分析：1）按严重程度分布(counts.critical/high/medium/low) 2）按受影响资产组分布（如有数据）3）按漏洞类型分布（如RCE、信息泄露、权限提升等）。准确引用数据。",
+          "max_length": 300
+        },
+        {
+          "token": "CVE_ANALYSIS_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "CVE技术分析"
+        },
+        {
+          "token": "CVE_TECHNICAL_ANALYSIS",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "基于vulnerabilities.top_vulns数据，对Top CVE进行详细技术分析。针对每个关键CVE：1）漏洞原理和利用条件 2）影响的软件版本 3）在当前环境中的风险评估 4）具体的修复方案（补丁版本、配置缓解措施）。",
+          "max_length": 400
+        },
+        {
+          "token": "PATCH_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "补丁状态"
+        },
+        {
+          "token": "PATCH_STATUS",
+          "type": "bullet_list",
+          "ai_generate": true,
+          "ai_instruction": "基于vulnerabilities.top_vulns中的patch_status字段，总结补丁修复进度和状态追踪。包含：1）已修复(patched)漏洞的数量 2）修复中的漏洞预计完成时间 3）未修复(unpatched)漏洞的原因和临时缓解措施 4）需要优先关注的遗留风险。",
+          "max_items": 5,
+          "max_chars_per_item": 100
+        }
+      ]
+    },
+    {
+      "slide_no": 7,
+      "slide_key": "attack_surface",
+      "title": "攻击面与暴露分析",
+      "placeholders": [
+        {
+          "token": "SLIDE_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "攻击面与暴露分析"
+        },
+        {
+          "token": "EXPOSED_SERVICES_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "暴露服务"
+        },
+        {
+          "token": "EXPOSED_SERVICES_TABLE",
+          "type": "table",
+          "ai_generate": true,
+          "ai_instruction": "基于exposure.exposed_services数据，生成暴露服务表格。格式为每行一类服务：\n服务类型 | 暴露资产数\n\n示例：\nSSH (22) | 12\nHTTPS (443) | 45\nRDP (3389) | 3\n\n按风险程度排序，高风险服务（SSH、RDP、数据库端口）优先展示。",
+          "max_length": 300
+        },
+        {
+          "token": "EXPOSURE_ANALYSIS_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "暴露分析"
+        },
+        {
+          "token": "EXTERNAL_EXPOSURE",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "基于exposure数据，详细分析对外暴露服务的安全风险。针对每类暴露服务：1）暴露的必要性评估 2）当前防护措施是否充分 3）具体的安全风险。重点关注高风险服务如SSH、RDP、数据库端口的直接暴露。",
+          "max_length": 350
+        },
+        {
+          "token": "SURFACE_TREND_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "攻击面趋势"
+        },
+        {
+          "token": "ATTACK_SURFACE_TREND",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "分析攻击面的变化趋势。基于exposure数据，包含：1）对外IP数量(external_ips) 2）新增暴露服务的分析(new_exposed_since_last_period) 3）攻击面是否在收敛还是扩大 4）需要关注的攻击面盲区。",
+          "max_length": 250
+        },
+        {
+          "token": "REMEDIATION_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "收敛建议"
+        },
+        {
+          "token": "EXPOSURE_REMEDIATION",
+          "type": "bullet_list",
+          "ai_generate": true,
+          "ai_instruction": "提供具体的暴露面收敛技术方案。针对每个风险暴露点：1）建议的收敛方式（下线、迁移至VPN后、加固等）2）如需保留暴露，应采取的防护措施 3）实施优先级和预计工作量。",
+          "max_items": 5,
+          "max_chars_per_item": 100
+        }
+      ]
+    },
+    {
+      "slide_no": 8,
+      "slide_key": "cloud_security_details",
+      "title": "云安全详细分析",
+      "placeholders": [
+        {
+          "token": "SLIDE_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "云安全详细分析"
+        },
+        {
+          "token": "CLOUD_MISCONFIG_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "云配置问题"
+        },
+        {
+          "token": "CLOUD_MISCONFIG_DETAILS",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "基于cloud_risks数据，详细分析云配置问题。针对每类配置问题：1）问题描述(type)和数量(count) 2）安全风险等级和潜在影响 3）具体的修复步骤（包括云平台控制台操作或CLI命令）4）修复验证方法。",
+          "max_length": 400
+        },
+        {
+          "token": "IAM_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "IAM风险分析"
+        },
+        {
+          "token": "IAM_RISK_ANALYSIS",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "分析IAM权限风险。基于cloud_risks中IAM相关数据，包含：1）高权限账号的MFA启用状态 2）是否存在过度授权 3）服务账号和AccessKey的管理状况 4）权限最小化原则的执行情况。给出具体的IAM加固建议。",
+          "max_length": 300
+        },
+        {
+          "token": "COMPLIANCE_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "合规检查"
+        },
+        {
+          "token": "CLOUD_COMPLIANCE",
+          "type": "bullet_list",
+          "ai_generate": true,
+          "ai_instruction": "云安全合规检查结果和建议。参考CIS基准或等保要求，列出：1）已满足的关键安全控制 2）存在差距的安全控制 3）需要优先整改的合规项。",
+          "max_items": 5,
+          "max_chars_per_item": 100
+        }
+      ]
+    },
+    {
+      "slide_no": 9,
+      "slide_key": "technical_recommendations",
+      "title": "技术整改建议",
+      "placeholders": [
+        {
+          "token": "SLIDE_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "技术整改建议"
+        },
+        {
+          "token": "TECH_REC_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "整改方案"
+        },
+        {
+          "token": "TECHNICAL_RECOMMENDATIONS",
+          "type": "bullet_list",
+          "ai_generate": true,
+          "ai_instruction": "基于本期发现的问题，提供详细的技术整改方案。每条建议应包含：1）整改目标 2）具体实施步骤（可包含配置命令）3）预期效果 4）实施风险和注意事项。覆盖漏洞修复、配置加固、架构优化等方面。",
+          "max_items": 6,
+          "max_chars_per_item": 150
+        },
+        {
+          "token": "DETECTION_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "检测能力提升"
+        },
+        {
+          "token": "DETECTION_IMPROVEMENTS",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "检测能力提升建议。包含：1）需要新增的检测规则 2）现有规则的调优方向（基于alerts.top_rules的误报率）3）日志源覆盖的改进 4）检测盲区的补充方案。结合本期事件和告警数据给出针对性建议。",
+          "max_length": 350
+        },
+        {
+          "token": "HARDENING_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "安全加固清单"
+        },
+        {
+          "token": "HARDENING_CHECKLIST",
+          "type": "bullet_list",
+          "ai_generate": true,
+          "ai_instruction": "生成安全加固检查清单。针对本期发现的风险点，列出需要检查和加固的项目：1）操作系统基线 2）应用安全配置 3）网络访问控制 4）认证和授权。每项包含检查方法和加固标准。",
+          "max_items": 8,
+          "max_chars_per_item": 80
+        }
+      ]
+    },
+    {
+      "slide_no": 10,
+      "slide_key": "appendix_technical",
+      "title": "附录",
+      "placeholders": [
+        {
+          "token": "SLIDE_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "附录：数据与证据索引"
+        },
+        {
+          "token": "EVIDENCE_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "证据索引"
+        },
+        {
+          "token": "EVIDENCE_INDEX",
+          "type": "table",
+          "ai_generate": true,
+          "ai_instruction": "基于evidence.query_ids数据生成证据索引表。格式为键值对列表：\n证据类型 | 查询ID/引用\n\n示例：\n告警数据 | QID-2024-001\n事件日志 | QID-2024-002\n漏洞扫描 | SCAN-2024-11\n\n如无数据则显示'数据来源：MSS安全运营平台'",
+          "max_length": 200
+        },
+        {
+          "token": "FRESHNESS_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "数据时效"
+        },
+        {
+          "token": "DATA_FRESHNESS",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成数据时效说明。从evidence.data_freshness获取，如无数据则显示：'数据截止至报告生成时间'"
+        },
+        {
+          "token": "DATA_SCOPE_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "数据范围"
+        },
+        {
+          "token": "DATA_SCOPE_NOTES",
+          "type": "paragraph",
+          "ai_generate": true,
+          "ai_instruction": "生成数据范围说明。从alerts.notes获取内容，如无数据则生成：'本报告数据来源于MSS安全运营平台，包含告警、事件、漏洞、云安全等多维度数据。'"
+        },
+        {
+          "token": "VULN_NOTES_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "漏洞说明"
+        },
+        {
+          "token": "VULN_NOTES",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成漏洞数据说明。从vulnerabilities.notes获取，如无数据则显示：'漏洞数据来源于定期扫描结果'"
+        },
+        {
+          "token": "EVIDENCE_NOTES_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "证据说明"
+        },
+        {
+          "token": "EVIDENCE_NOTES",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成证据说明。从evidence.notes获取，如无数据则显示：'详细证据可通过MSS平台查询'"
+        },
+        {
+          "token": "ASSETS_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "资产组"
+        },
+        {
+          "token": "ASSET_GROUPS_LIST",
+          "type": "bullet_list",
+          "ai_generate": true,
+          "ai_instruction": "基于assets.asset_groups数据，生成资产组列表。每条格式：[资产组名称]: [资产数量]个资产。",
+          "max_items": 6
+        },
+        {
+          "token": "SERVICES_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "关键服务"
+        },
+        {
+          "token": "KEY_SERVICES_LIST",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "基于assets.key_services数据，生成关键服务列表。用逗号分隔各服务名称。"
+        },
+        {
+          "token": "TERMINOLOGY_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "术语表"
+        },
+        {
+          "token": "TERMINOLOGY_TECHNICAL",
+          "type": "bullet_list",
+          "ai_generate": true,
+          "ai_instruction": "生成技术术语表，解释报告中使用的专业术语和缩写。包括：MTTD（平均检测时间）、MTTR（平均响应时间）、TTP（战术技术程序）、IOC（失陷指标）、EDR（终端检测响应）、SIEM（安全信息事件管理）、WAF（Web应用防火墙）等。每条解释简洁准确。",
+          "max_items": 10,
+          "max_chars_per_item": 60
+        }
+      ]
+    }
+  ]
+}

@@ -1,9 +1,10 @@
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from pydantic import BaseModel
 import logging
+from datetime import datetime
 
 from mss_ai_ppt_sample_assets.backend.services.report_service import (
     ReportService,
@@ -59,7 +60,7 @@ class PreviewRequest(BaseModel):
 def root():
     return {
         "message": "MSS AI PPT backend is running.",
-        "endpoints": ["/health", "/templates", "/inputs", "/generate", "/docs"],
+        "endpoints": ["/health", "/templates", "/inputs", "/generate", "/preview", "/download", "/docs"],
     }
 
 
@@ -116,6 +117,24 @@ def preview(job_id: str, regenerate_if_missing: bool = True):
         return JSONResponse(result)
     except SlideSpecNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/download")
+def download(job_id: str, regenerate_if_missing: bool = True):
+    try:
+        report_path = service.get_report_path(job_id, regenerate_if_missing=regenerate_if_missing)
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        download_name = f"{report_path.stem}_{ts}{report_path.suffix}"
+        return FileResponse(
+            path=report_path,
+            media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            filename=download_name,
+        )
+    except SlideSpecNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

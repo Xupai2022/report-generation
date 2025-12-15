@@ -200,13 +200,7 @@ class ReportService:
         except ValueError as e:
             raise ValueError("job_id must be formatted as input_id:template_id") from e
 
-        report_path = config.REPORTS_DIR / f"{input_id}_{template_id}.pptx"
-        if not report_path.exists() and regenerate_if_missing:
-            slidespec = self._load_slidespec(input_id, template_id)
-            self.ppt_generator_v2.render(slidespec, report_path)
-
-        if not report_path.exists():
-            raise SlideSpecNotFoundError(f"PPT not found for {job_id}, generate first.")
+        report_path = self.get_report_path(job_id, regenerate_if_missing=regenerate_if_missing)
 
         # Work on a temp copy to avoid locks on the report file
         tmp_dir = config.PREVIEWS_DIR / "tmp"
@@ -239,3 +233,20 @@ class ReportService:
                 urls.append(f"{base_url_prefix}/{img_path.name}")
 
         return {"job_id": job_id, "images": urls}
+
+    def get_report_path(self, job_id: str, regenerate_if_missing: bool = True) -> Path:
+        """Return the generated PPTX path for a job, optionally regenerating it from the saved SlideSpec."""
+        try:
+            input_id, template_id = job_id.split(":", 1)
+        except ValueError as e:
+            raise ValueError("job_id must be formatted as input_id:template_id") from e
+
+        report_path = config.REPORTS_DIR / f"{input_id}_{template_id}.pptx"
+        if not report_path.exists() and regenerate_if_missing:
+            slidespec = self._load_slidespec(input_id, template_id)
+            self.ppt_generator_v2.render(slidespec, report_path)
+
+        if not report_path.exists():
+            raise SlideSpecNotFoundError(f"PPT not found for {job_id}, generate first.")
+
+        return report_path
