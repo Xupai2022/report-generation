@@ -51,6 +51,9 @@ class ReportService:
     def _slidespec_path(self, input_id: str, template_id: str) -> Path:
         return config.SLIDESPECS_DIR / f"{input_id}_{template_id}.json"
 
+    def _slideplan_path(self, input_id: str, template_id: str) -> Path:
+        return config.OUTLINE_DIR / f"{input_id}_{template_id}_slideplan.json"
+
     def list_inputs(self):
         return list(self.inputs_catalog.values())
 
@@ -105,6 +108,7 @@ class ReportService:
             tenant_input=tenant_input,
             template_id=template_id,
             use_mock=use_mock,
+            report_id=f"{input_id}_{template_id}",
         )
 
         # V2: Only validate key numbers
@@ -126,6 +130,7 @@ class ReportService:
 
         slidespec_path = self._slidespec_path(input_id, template_id)
         slidespec.save(slidespec_path)
+        slideplan_path = self._slideplan_path(input_id, template_id)
 
         self.audit_logger.log(
             event="generate_v2",
@@ -139,6 +144,7 @@ class ReportService:
             "warnings": warnings,
             "slidespec": slidespec.model_dump(),
             "slidespec_path": str(slidespec_path),
+            "slideplan_path": str(slideplan_path),
             "version": "v2",
         }
 

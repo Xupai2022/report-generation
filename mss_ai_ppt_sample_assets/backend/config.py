@@ -18,6 +18,7 @@ REPORTS_DIR = OUTPUTS_DIR / "reports"
 LOGS_DIR = OUTPUTS_DIR / "logs"
 PREVIEWS_DIR = OUTPUTS_DIR / "previews"
 SLIDESPECS_DIR = OUTPUTS_DIR / "slidespecs"
+OUTLINE_DIR = OUTPUTS_DIR / "outline"
 
 
 class Settings:

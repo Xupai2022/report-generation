@@ -1,0 +1,138 @@
+{
+  "template_id": "mss_technical_v2",
+  "slides": [
+    {
+      "slide_no": 1,
+      "slide_key": "cover",
+      "enabled": true,
+      "title": "封面",
+      "intent": "基于模板与事实数据生成本页内容",
+      "fact_refs": [
+        "tenant.name",
+        "period.start",
+        "period.end",
+        "report_meta.secrecy_default",
+        "report_meta.generated_at"
+      ]
+    },
+    {
+      "slide_no": 2,
+      "slide_key": "security_dashboard",
+      "enabled": true,
+      "title": "安全态势仪表盘",
+      "intent": "基于模板与事实数据生成本页内容",
+      "fact_refs": [
+        "alerts.total",
+        "alerts.by_severity.high",
+        "alerts.by_severity.medium",
+        "alerts.by_severity.low",
+        "alerts.false_positive_rate",
+        "mss_ops.mttd_minutes_avg",
+        "mss_ops.mttr_hours_avg",
+        "vulnerabilities.counts.critical",
+        "vulnerabilities.counts.high",
+        "mss_ops.coverage.edr_agents",
+        "alerts",
+        "mss_ops",
+        "vulnerabilities"
+      ]
+    },
+    {
+      "slide_no": 3,
+      "slide_key": "charts_demo",
+      "enabled": true,
+      "title": "数据可视化示例",
+      "intent": "基于模板与事实数据生成本页内容",
+      "fact_refs": [
+        "alerts.trend_weekly",
+        "alerts.by_severity",
+        "alerts.top_rules"
+      ]
+    },
+    {
+      "slide_no": 4,
+      "slide_key": "alert_deep_analysis",
+      "enabled": true,
+      "title": "告警深度分析",
+      "intent": "基于模板与事实数据生成本页内容",
+      "fact_refs": [
+        "alerts.by_severity",
+        "alerts.top_rules"
+      ]
+    },
+    {
+      "slide_no": 5,
+      "slide_key": "incident_timeline",
+      "enabled": true,
+      "title": "事件时间线与处置轨迹",
+      "intent": "基于模板与事实数据生成本页内容",
+      "fact_refs": [
+        "mss_ops.mttd_minutes_avg",
+        "mss_ops.mttr_hours_avg",
+        "mss_ops"
+      ]
+    },
+    {
+      "slide_no": 6,
+      "slide_key": "incident_details",
+      "enabled": true,
+      "title": "高危事件详情",
+      "intent": "基于模板与事实数据生成本页内容",
+      "fact_refs": []
+    },
+    {
+      "slide_no": 7,
+      "slide_key": "vulnerability_details",
+      "enabled": true,
+      "title": "漏洞态势详情",
+      "intent": "基于模板与事实数据生成本页内容",
+      "fact_refs": [
+        "vulnerabilities.top_vulns"
+      ]
+    },
+    {
+      "slide_no": 8,
+      "slide_key": "attack_surface",
+      "enabled": true,
+      "title": "攻击面与暴露分析",
+      "intent": "基于模板与事实数据生成本页内容",
+      "fact_refs": [
+        "exposure.exposed_services"
+      ]
+    },
+    {
+      "slide_no": 9,
+      "slide_key": "cloud_security_details",
+      "enabled": true,
+      "title": "云安全详细分析",
+      "intent": "基于模板与事实数据生成本页内容",
+      "fact_refs": []
+    },
+    {
+      "slide_no": 10,
+      "slide_key": "technical_recommendations",
+      "enabled": true,
+      "title": "技术整改建议",
+      "intent": "基于模板与事实数据生成本页内容",
+      "fact_refs": [
+        "alerts.top_rules"
+      ]
+    },
+    {
+      "slide_no": 11,
+      "slide_key": "appendix_technical",
+      "enabled": true,
+      "title": "附录",
+      "intent": "基于模板与事实数据生成本页内容",
+      "fact_refs": [
+        "evidence.query_ids",
+        "evidence.data_freshness",
+        "alerts.notes",
+        "vulnerabilities.notes",
+        "evidence.notes",
+        "assets.asset_groups",
+        "assets.key_services"
+      ]
+    }
+  ]
+}

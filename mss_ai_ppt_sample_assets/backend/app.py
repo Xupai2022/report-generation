@@ -125,7 +125,7 @@ def download(job_id: str, regenerate_if_missing: bool = True):
     try:
         report_path = service.get_report_path(job_id, regenerate_if_missing=regenerate_if_missing)
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        download_name = f"{report_path.stem}_{ts}{report_path.suffix}"
+        download_name = f"{ts}_{report_path.name}"
         return FileResponse(
             path=report_path,
             media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
