@@ -207,13 +207,32 @@ class LLMOrchestratorV2:
             y_field = chart_config.get('y_field', 'values')
 
             if isinstance(source_data, dict):
+                # Direct dict format: {"labels": [...], "values": [...]}
                 categories = source_data.get(x_field, [])
                 values = source_data.get(y_field, [])
 
                 result['categories'] = categories
                 result['series'] = [{'name': chart_config.get('series_name', '告警数'), 'values': values}]
+            elif isinstance(source_data, list):
+                # List of objects format: [{"category": ..., "count": ...}, ...]
+                categories = []
+                values = []
+                for item in source_data:
+                    if isinstance(item, dict):
+                        cat_value = item.get(x_field)
+                        val_value = item.get(y_field)
+                        if cat_value is not None:
+                            categories.append(cat_value)
+                            values.append(val_value if val_value is not None else 0)
+
+                if categories:
+                    result['categories'] = categories
+                    result['series'] = [{'name': chart_config.get('series_name', '告警数'), 'values': values}]
+                else:
+                    logger.warning(f"Bar chart data source {data_source} list has no valid items with fields {x_field}/{y_field}")
+                    return {}
             else:
-                logger.warning(f"Bar chart data source {data_source} is not a dict")
+                logger.warning(f"Bar chart data source {data_source} is neither dict nor list")
                 return {}
 
         elif chart_type == 'pie_chart':
