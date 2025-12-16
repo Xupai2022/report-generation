@@ -128,7 +128,9 @@ class PPTPreviewGenerator:
             if not result:
                 raise PreviewGenerationError("No images generated from PDF")
 
-            return sorted(result)
+            # Sort by numeric slide number to ensure correct order
+            # (slide1.png, slide2.png, ..., slide10.png instead of dictionary order)
+            return sorted(result, key=lambda p: int(p.stem.replace('slide', '')))
 
         except Exception as exc:
             raise PreviewGenerationError(
