@@ -4,7 +4,8 @@
       "Bash(python -c:*)",
       "Bash(python test_charts.py:*)",
       "Bash(cat:*)",
-      "Bash(python -m py_compile:*)"
+      "Bash(python -m py_compile:*)",
+      "Bash(python:*)"
     ],
     "deny": [],
     "ask": []

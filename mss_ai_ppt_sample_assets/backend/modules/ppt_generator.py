@@ -12,50 +12,56 @@ logger = logging.getLogger(__name__)
 
 # Professional color palettes for charts and tables
 class ChartColors:
-    """Professional color schemes for charts and tables."""
+    """Professional color schemes for charts and tables.
 
-    # Primary palette (blue-based, professional)
+    Color palette based on professional security report style:
+    - Primary: #0A4275 (deep professional blue)
+    - Accent: #3182CE (lighter blue)
+    - Text: #333333 (dark gray)
+    """
+
+    # Primary palette (professional blue-based)
     PRIMARY = [
-        (30, 64, 175),    # Deep Blue
-        (59, 130, 246),   # Bright Blue
-        (147, 197, 253),  # Light Blue
-        (96, 165, 250),   # Medium Blue
+        (10, 66, 117),    # #0A4275 - Deep Professional Blue
+        (49, 130, 206),   # #3182CE - Accent Blue
+        (99, 179, 237),   # #63B3ED - Light Blue
+        (144, 205, 244),  # #90CDF4 - Pale Blue
     ]
 
     # Severity palette (for security data)
     SEVERITY = {
-        'critical': (220, 38, 38),   # Red
-        'high': (234, 88, 12),       # Orange
-        'medium': (234, 179, 8),     # Yellow
-        'low': (34, 197, 94),        # Green
-        'info': (148, 163, 184),     # Gray
+        'critical': (220, 38, 38),   # #DC2626 - Red
+        'high': (234, 88, 12),       # #EA580C - Orange
+        'medium': (234, 179, 8),     # #EAB308 - Yellow
+        'low': (34, 197, 94),        # #22C55E - Green
+        'info': (148, 163, 184),     # #94A3B8 - Gray
     }
 
     # Multi-series palette (vibrant, distinguishable)
     MULTI_SERIES = [
-        (30, 64, 175),    # Deep Blue
-        (34, 197, 94),    # Green
-        (234, 179, 8),    # Yellow/Amber
-        (168, 85, 247),   # Purple
-        (236, 72, 153),   # Pink
-        (20, 184, 166),   # Teal
+        (10, 66, 117),    # #0A4275 - Deep Blue
+        (34, 197, 94),    # #22C55E - Green
+        (234, 179, 8),    # #EAB308 - Yellow/Amber
+        (168, 85, 247),   # #A855F7 - Purple
+        (236, 72, 153),   # #EC4899 - Pink
+        (20, 184, 166),   # #14B8A6 - Teal
     ]
 
-    # Table styles
-    TABLE_HEADER_BG = (30, 64, 175)       # Deep Blue
-    TABLE_HEADER_TEXT = (255, 255, 255)   # White
-    TABLE_ROW_ALT = (241, 245, 249)       # Light Gray (alternating)
-    TABLE_ROW_NORMAL = (255, 255, 255)    # White
-    TABLE_BORDER = (203, 213, 225)        # Slate Gray
+    # Table styles - Professional blue header
+    TABLE_HEADER_BG = (10, 66, 117)        # #0A4275 - Deep Blue
+    TABLE_HEADER_TEXT = (255, 255, 255)    # White
+    TABLE_ROW_ALT = (237, 242, 247)        # #EDF2F7 - Light Gray (alternating)
+    TABLE_ROW_NORMAL = (255, 255, 255)     # White
+    TABLE_BORDER = (226, 232, 240)         # #E2E8F0 - Section border
 
     # Theme-aware text colors
-    TEXT_LIGHT_THEME = (30, 41, 59)       # Slate-800 for light backgrounds
-    TEXT_DARK_THEME = (255, 255, 255)     # White for dark backgrounds
+    TEXT_LIGHT_THEME = (51, 51, 51)        # #333333 for light backgrounds
+    TEXT_DARK_THEME = (255, 255, 255)      # White for dark backgrounds
 
     # Dark theme table styles
-    TABLE_HEADER_BG_DARK = (34, 197, 94)  # Green accent for dark theme
-    TABLE_ROW_ALT_DARK = (30, 41, 59)     # Slate-800 (alternating)
-    TABLE_ROW_NORMAL_DARK = (15, 23, 42)  # Slate-900
+    TABLE_HEADER_BG_DARK = (34, 197, 94)   # Green accent for dark theme
+    TABLE_ROW_ALT_DARK = (30, 41, 59)      # Slate-800 (alternating)
+    TABLE_ROW_NORMAL_DARK = (15, 23, 42)   # Slate-900
 
 
 class PPTGeneratorV2:

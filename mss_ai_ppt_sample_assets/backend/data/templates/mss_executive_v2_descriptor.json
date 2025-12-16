@@ -1,15 +1,17 @@
 {
   "template_id": "mss_executive_v2",
   "name": "MSS月度安全报告（管理层版）",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "pptx_file": "mss_executive_v2.pptx",
   "audience": "management",
   "language": "zh-CN",
   "style": {
     "theme": "light",
-    "primaryColor": "#1E40AF",
-    "accentColor": "#3B82F6",
-    "backgroundColor": "#F8FAFC"
+    "primaryColor": "#0A4275",
+    "accentColor": "#3182CE",
+    "backgroundColor": "#FFFFFF",
+    "textColor": "#333333",
+    "mutedColor": "#666666"
   },
   "slides": [
     {
