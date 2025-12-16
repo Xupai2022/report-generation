@@ -100,6 +100,9 @@ class ReportService:
     ) -> Dict[str, Any]:
         """Generate report using V2 AI-driven flow."""
 
+        # Clear template cache to ensure latest descriptor is loaded
+        self.template_repo.clear_cache()
+
         # V2: Direct to LLM with raw data
         slidespec: SlideSpecV2 = self.llm_orchestrator_v2.generate_slidespec_v2(
             tenant_input=tenant_input,

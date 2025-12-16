@@ -4,165 +4,172 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-MSS AI PPT is a report generation platform that creates PowerPoint presentations from structured input data. The system supports multiple templates (management/technical), uses token-based placeholder replacement, and provides a web UI for slide editing and preview.
+MSS AI PPT is a report generation platform that creates PowerPoint presentations from structured security data. The system uses V2 AI-driven templates where:
+- Raw `TenantInput` data goes directly to OpenAI LLM
+- AI generates content based on `{{TOKEN}}` placeholder instructions in template descriptors
+- Generated content is validated against key numerical fields
 
-**Architecture**: Monorepo with React frontend + FastAPI backend
+**Architecture**: FastAPI backend with static HTML frontend (no build step required)
 
 ## Development Commands
 
 ### Backend (FastAPI)
 
 ```bash
-# Run backend server from project root
-cd mss_ai_ppt_sample_assets/backend
-python -m uvicorn mss_ai_ppt_sample_assets.backend.app:app --reload --port 8000
-
-# Alternative: run directly
+# Run backend server
 cd mss_ai_ppt_sample_assets/backend
 python app.py
+# Server runs at http://localhost:8000
+
+# Or with uvicorn for hot-reload
+python -m uvicorn mss_ai_ppt_sample_assets.backend.app:app --reload --port 8000
 ```
 
-### Frontend (React + Vite)
+### Dependencies
 
 ```bash
-# Install dependencies
-cd frontend
-npm install
-
-# Development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Lint
-npm run lint
+cd mss_ai_ppt_sample_assets/backend
+pip install -r requirements.txt
 ```
+
+**External requirement**: LibreOffice must be installed for preview generation (PPTX → PDF → PNG pipeline).
 
 ## Code Architecture
 
 ### Backend Pipeline (mss_ai_ppt_sample_assets/backend/)
 
-The backend follows a modular pipeline architecture:
+The V2 pipeline uses AI-driven content generation:
 
-1. **ReportService** ([services/report_service.py](mss_ai_ppt_sample_assets/backend/services/report_service.py)) - Orchestrates the entire report generation flow
-   - Entry point for all operations (generate, rewrite, preview)
-   - Coordinates between modules: data prep → LLM → validation → PPT generation → preview
+1. **ReportService** ([services/report_service.py](mss_ai_ppt_sample_assets/backend/services/report_service.py))
+   - Entry point: `generate()`, `rewrite()`, `preview()`
+   - Only supports V2 templates (raises error for V1)
+   - Coordinates: LLM generation → validation → PPT rendering → preview
 
-2. **Core Pipeline Modules** (modules/):
-   - **data_prep.py** - Transforms raw TenantInput into template-specific facts
-   - **llm_orchestrator.py** - Generates SlideSpec (uses mock by default; real LLM optional)
-   - **validator.py** - Schema validation and fact-checking against prepared data
-   - **ppt_generator.py** - Token replacement in PPTX templates using python-pptx
-   - **preview_generator.py** - Converts PPTX → PDF → PNG images for web preview
-   - **template_loader.py** - Manages template catalog (PPTX + descriptor JSON pairs)
-   - **audit_logger.py** - Appends structured logs to outputs/logs/audit.jsonl
+2. **Core Modules** (modules/):
+   - **llm_orchestrator.py** - `LLMOrchestratorV2` generates SlideSpecV2 via OpenAI
+     - Extracts data placeholders (non-AI) from TenantInput using dotted paths
+     - Generates AI placeholders with smart batching to avoid timeouts
+     - Supports chart and table data extraction
+   - **ppt_generator.py** - `PPTGeneratorV2` renders SlideSpecV2 to PPTX
+     - Replaces `{{TOKEN}}` placeholders in template
+     - Renders native charts (bar/pie) and tables via python-pptx
+   - **preview_generator.py** - Converts PPTX → PDF (LibreOffice) → PNG (PyMuPDF)
+   - **template_loader.py** - Loads template catalog and descriptors
+   - **validator.py** - `ValidatorV2` validates key numbers match input data
+   - **audit_logger.py** - Writes structured events to `outputs/logs/audit.jsonl`
 
 3. **Data Models** (models/):
-   - **inputs.py** - TenantInput schema (alerts, incidents, vulnerabilities, etc.)
-   - **slidespec.py** - SlideSpec schema (intermediate representation before rendering)
-   - **templates.py** - TemplateDescriptor schema (defines slides and render_map)
-   - **audit.py** - AuditEvent schema for logging
+   - **inputs.py** - `TenantInput` wraps raw JSON with `.get()` accessor
+   - **slidespec.py** - `SlideSpecV2` with `slide_no`, `slide_key`, `placeholders` dict
+   - **templates.py** - `TemplateDescriptorV2` with `PlaceholderDefinition` for each token
+   - **audit.py** - `AuditEvent` schema
 
 4. **Configuration** ([config.py](mss_ai_ppt_sample_assets/backend/config.py)):
-   - Directory paths (DATA_DIR, OUTPUTS_DIR, TEMPLATES_DIR, etc.)
-   - Settings class for environment variables (OPENAI_API_KEY, ENABLE_LLM, etc.)
-
-### Frontend Architecture (frontend/src/)
-
-Single-page React app with Zustand state management:
-
-- **App.tsx** - Main container: fetches templates/inputs, orchestrates generate/rewrite flows
-- **store/useSlides.ts** - Zustand store holding slidespec, jobId, previews, loading/error state
-- **api/client.ts** - Typed API client wrapper around fetch (listTemplates, generate, rewrite, preview, getLogs)
-- **Components**:
-  - **Toolbar** - Input/template dropdowns + Generate button
-  - **SlideList** - Left sidebar showing slide thumbnails
-  - **SlidePreview** - Center panel showing PNG preview
-  - **SlideEditor** - Right sidebar JSON editor for rewriting slide content
+   - Loads `.env` from project root
+   - `Settings` class with `enable_llm`, `openai_api_key`, `openai_model`, etc.
 
 ### Key Data Flow
 
 ```
-User selects input + template
-  → POST /generate → ReportService.generate()
-    → DataPrep.prepare_facts_for_template()
-    → LLMOrchestrator.generate_slidespec() [uses mock by default]
-    → Validator.validate_schema() + fact_check()
-    → PPTGenerator.render() → writes PPTX to outputs/reports/
-    → Saves SlideSpec to outputs/slidespecs/
-  → POST /preview → PPTPreviewGenerator.to_images()
-    → Converts PPTX → PDF → PNG images via LibreOffice/Poppler
-  → Frontend displays slide previews + JSON editor
-  → User edits JSON → POST /rewrite → LLMOrchestrator.rewrite_slide()
-    → Merges new_content into existing slide data
-    → Re-renders PPTX and regenerates previews
+POST /generate (input_id, template_id)
+  → ReportService.generate()
+    → LLMOrchestratorV2.generate_slidespec_v2()
+      → Extract data placeholders (source paths, charts, tables)
+      → Generate AI placeholders via OpenAI (with smart batching)
+    → ValidatorV2.validate_key_numbers()
+    → PPTGeneratorV2.render() → outputs/reports/{input_id}_{template_id}.pptx
+    → Save SlideSpecV2 → outputs/slidespecs/{input_id}_{template_id}.json
+
+GET /preview?job_id={input_id}:{template_id}
+  → PPTPreviewGenerator.to_images()
+    → LibreOffice: PPTX → PDF
+    → PyMuPDF: PDF → PNG images
+  → Returns URLs: /static/previews/{job_id}/slide*.png
 ```
 
-### Template System
+### Template System (V2)
 
-Each template consists of two files in `data/templates/`:
-- **PPTX file** - PowerPoint with `{TOKEN}` placeholders in text
-- **descriptor JSON** - Defines slides array with slide_no, slide_key, render_map
-  - render_map: maps TOKEN → dotted path into SlideSpec data (e.g., "TITLE" → "summary.title")
+Templates consist of two files in `mss_ai_ppt_sample_assets/backend/data/templates/`:
+- **PPTX file** - PowerPoint with `{{TOKEN}}` placeholders in text
+- **descriptor JSON** - Defines slides with placeholder definitions
+
+**PlaceholderDefinition** key fields:
+- `token`: Placeholder name (e.g., "HEADLINE")
+- `type`: "text", "paragraph", "bullet_list", "bar_chart", "pie_chart", "native_table"
+- `ai_generate`: true = AI generates content, false = extract from data
+- `source`: Dotted path for data extraction (e.g., "alerts.total")
+- `ai_instruction`: Prompt for AI generation
+- `chart_config` / `table_config`: Configuration for charts/tables
 
 Current templates:
-- `mss_management_light_v1` - 5 slides (cover, executive_summary, alerts_overview, major_incidents, recommendations)
-- `mss_technical_dark_v1` - 6 slides (cover, alerts_detail, incident_timeline, vulnerability_exposure, cloud_attack_surface, appendix_evidence)
+- `mss_executive_v2` - 8 slides (management audience)
+- `mss_technical_v2` - 10 slides (technical audience)
 
 ### Environment Variables
 
 ```bash
-# Backend (.env or shell)
+# .env file in project root
 OPENAI_API_KEY=sk-...          # Required if ENABLE_LLM=true
 OPENAI_BASE_URL=https://...    # Optional: custom endpoint
 OPENAI_MODEL=gpt-4o-mini       # Default model
 ENABLE_LLM=true                # Enable real LLM (default: false, uses mock)
-DEFAULT_LOCALE=zh-CN           # Default locale for content
+DEFAULT_LOCALE=zh-CN           # Default locale
 ```
 
 ### Important File Locations
 
-- **Input data catalog**: `data/inputs/catalog.json` - defines available input datasets
-- **Mock outputs**: `data/mock_outputs/` - pre-generated SlideSpecs for testing without LLM
-- **Generated reports**: `outputs/reports/{input_id}_{template_id}.pptx`
-- **Saved SlideSpecs**: `outputs/slidespecs/{input_id}_{template_id}.json`
-- **Preview images**: `outputs/previews/{sanitized_job_id}/slide-*.png`
-- **Audit logs**: `outputs/logs/audit.jsonl`
-
-### Preview Generation Fallback Strategy
-
-Preview generation attempts multiple methods (see [preview_generator.py](mss_ai_ppt_sample_assets/backend/modules/preview_generator.py)):
-1. PPTX → PDF (LibreOffice headless)
-2. PDF → PNG (Poppler pdf2image or PyMuPDF fitz)
-3. If PNG conversion fails, returns PDF URL for browser fallback
+```
+mss_ai_ppt_sample_assets/backend/
+├── data/
+│   ├── inputs/           # Input JSON files + catalog.json
+│   ├── templates/        # PPTX templates + descriptor JSON + catalog.json
+│   └── mock_outputs/     # Pre-generated SlideSpecs for testing
+├── outputs/
+│   ├── reports/          # Generated PPTX: {input_id}_{template_id}.pptx
+│   ├── slidespecs/       # Saved JSON: {input_id}_{template_id}.json
+│   ├── previews/         # PNG images: {job_id}/slide*.png
+│   └── logs/             # audit.jsonl
+└── frontend/             # Static HTML UI (served at /ui)
+```
 
 ## Common Patterns
 
-### Adding a New Template
+### Adding a New V2 Template
 
-1. Create PPTX with `{TOKEN}` placeholders in `data/templates/`
-2. Create descriptor JSON with slides array and render_map
+1. Create PPTX with `{{TOKEN}}` placeholders in `data/templates/`
+2. Create descriptor JSON defining each placeholder:
+   ```json
+   {
+     "template_id": "my_template_v2",
+     "slides": [{
+       "slide_no": 1,
+       "slide_key": "cover",
+       "placeholders": [
+         {"token": "TITLE", "type": "text", "ai_generate": true, "ai_instruction": "..."},
+         {"token": "DATE", "type": "text", "ai_generate": false, "source": "period.start"}
+       ]
+     }]
+   }
+   ```
 3. Add entry to `data/templates/catalog.json`
-4. Template will auto-load via TemplateRepository
 
 ### Adding a New Input Dataset
 
-1. Create JSON file in `data/inputs/` matching TenantInput schema
-2. Add entry to `data/inputs/catalog.json` with id, file, tenant_name, period
-3. Dataset will appear in frontend dropdown
+1. Create JSON file in `data/inputs/` with security data (alerts, incidents, vulnerabilities, etc.)
+2. Add entry to `data/inputs/catalog.json`:
+   ```json
+   {"id": "tenant_acme_2025-12", "file": "tenant_acme_2025-12.json", ...}
+   ```
 
-### Modifying Slide Content Logic
+### Modifying AI Generation
 
-- **Deterministic mapping**: Edit [data_prep.py](mss_ai_ppt_sample_assets/backend/modules/data_prep.py) `prepare_facts_for_template()`
-- **LLM-based generation**: Edit [llm_orchestrator.py](mss_ai_ppt_sample_assets/backend/modules/llm_orchestrator.py) (currently uses mock/deterministic fallback)
-- **Token rendering**: Logic is in [ppt_generator.py](mss_ai_ppt_sample_assets/backend/modules/ppt_generator.py) `render()` and `_replace_tokens_in_shape()`
+- **System/user prompts**: `LLMOrchestratorV2._build_system_prompt()` and `_build_user_prompt()` in [llm_orchestrator.py](mss_ai_ppt_sample_assets/backend/modules/llm_orchestrator.py)
+- **Data extraction**: `_extract_data_placeholders()`, `_extract_chart_data()`, `_extract_table_data()`
+- **Batching logic**: `_get_smart_slide_batches()` splits slides to avoid API timeouts
+- **Fallback content**: `_fill_ai_placeholders_with_fallback()` when LLM is unavailable
 
-### Frontend State Management
+### Token Rendering
 
-All slide-related state is centralized in `useSlides` store (Zustand):
-- `slidespec`, `jobId`, `previews` - core data
-- `loading`, `error` - UI state
-- `setSlidespec()`, `setPreviews()` - updaters
-
-API calls are made from [App.tsx](frontend/src/App.tsx), results update the store, components re-render automatically.
+- Text tokens: `PPTGeneratorV2._replace_tokens_in_shape()` replaces `{{TOKEN}}` in text frames
+- Charts: `_render_bar_chart()`, `_render_pie_chart()` add native PowerPoint charts
+- Tables: `_render_native_table()` adds PowerPoint tables with headers and data rows

@@ -1,7 +1,7 @@
 {
   "template_id": "mss_executive_v2",
   "name": "MSS月度安全报告（管理层版）",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "pptx_file": "mss_executive_v2.pptx",
   "audience": "management",
   "language": "zh-CN",
@@ -112,27 +112,59 @@
           "token": "TREND_SECTION_TITLE",
           "type": "text",
           "ai_generate": false,
-          "default": "趋势概览"
+          "default": "周度趋势"
         },
         {
           "token": "TREND_ANALYSIS",
-          "type": "paragraph",
-          "ai_generate": true,
-          "ai_instruction": "基于alerts.trend_weekly周度告警趋势数据，分析告警量的变化规律和可能原因。要点：1）识别趋势方向（上升/下降/平稳）2）分析波动原因（如节假日、攻击活动、系统变更等）3）预测下期趋势。用2-3句话概述，数据要准确引用。",
-          "max_length": 200
+          "type": "text",
+          "ai_generate": false,
+          "default": ""
+        },
+        {
+          "token": "ALERT_TREND_CHART",
+          "type": "bar_chart",
+          "ai_generate": false,
+          "chart_config": {
+            "data_source": "alerts.trend_weekly",
+            "x_field": "labels",
+            "y_field": "values",
+            "series_name": "告警数量",
+            "position": {
+              "left": 1.0,
+              "top": 1.3,
+              "width": 5.4,
+              "height": 2.0
+            }
+          }
         },
         {
           "token": "TOP_CATEGORIES_TITLE",
           "type": "text",
           "ai_generate": false,
-          "default": "Top告警类别"
+          "default": "告警类别分布"
         },
         {
           "token": "TOP_CATEGORIES_LIST",
-          "type": "bullet_list",
-          "ai_generate": true,
-          "ai_instruction": "基于alerts.top_categories数据，生成Top告警类别列表。每条格式：[类别名称]: [数量] (环比[变化百分比]%)。按数量降序排列，最多5条。",
-          "max_items": 5
+          "type": "text",
+          "ai_generate": false,
+          "default": ""
+        },
+        {
+          "token": "TOP_CATEGORIES_CHART",
+          "type": "bar_chart",
+          "ai_generate": false,
+          "chart_config": {
+            "data_source": "alerts.top_categories",
+            "x_field": "category",
+            "y_field": "count",
+            "series_name": "告警数量",
+            "position": {
+              "left": 7.10,
+              "top": 1.55,
+              "width": 5.65,
+              "height": 1.65
+            }
+          }
         },
         {
           "token": "CATEGORIES_INSIGHT_TITLE",
@@ -144,8 +176,8 @@
           "token": "TOP_CATEGORIES_INSIGHT",
           "type": "paragraph",
           "ai_generate": true,
-          "ai_instruction": "分析Top告警类别的分布特点和业务影响。要点：1）哪些类别占比最高，为什么 2）环比变化最大的类别及其原因 3）对业务的潜在影响。特别关注Brute Force、Phishing、Cloud Misconfig等高风险类别的变化。",
-          "max_length": 250
+          "ai_instruction": "分析Top告警类别的分布特点和业务影响。要点：1）哪些类别占比最高，为什么 2）环比变化最大的类别及其原因 3）对业务的潜在影响。特别关注Brute Force、Phishing、Cloud Misconfig等高风险类别的变化。用2-3句话概述。",
+          "max_length": 200
         },
         {
           "token": "MOM_TITLE",
@@ -158,7 +190,7 @@
           "type": "paragraph",
           "ai_generate": true,
           "ai_instruction": "与上月同期对比，解读环比变化的含义。重点关注：1）告警总量的环比变化是否正常 2）各类别环比变化中是否有异常信号 3）变化背后可能的安全风险或改进效果。",
-          "max_length": 200
+          "max_length": 180
         }
       ]
     },
@@ -184,20 +216,41 @@
           "type": "paragraph",
           "ai_generate": true,
           "ai_instruction": "用2-3句话概述本期安全事件情况。包含：1）事件总数（incidents数组长度）和严重程度分布 2）处置效率评估（对比SLA或行业基准）3）整体事件态势判断。要准确引用事件数量。",
-          "max_length": 200
+          "max_length": 150
         },
         {
           "token": "INCIDENT_DETAILS_TITLE",
           "type": "text",
           "ai_generate": false,
-          "default": "事件详情"
+          "default": "事件列表"
         },
         {
           "token": "INCIDENT_DETAILS",
-          "type": "incident_list",
-          "ai_generate": true,
-          "ai_instruction": "基于incidents数组，为每个高危和中危事件生成简洁描述。每个事件包含：1）事件标题(title) 2）严重程度(severity) 3）影响范围（affected_assets）4）处置结果(status)和耗时(mttr_minutes)。按严重程度排序，高危优先。格式示例：'【高危】疑似勒索前置横向移动 | 影响: cdn-edge | MTTR: 94分钟 | 已关闭'",
-          "max_items": 5
+          "type": "text",
+          "ai_generate": false,
+          "default": ""
+        },
+        {
+          "token": "INCIDENTS_TABLE",
+          "type": "native_table",
+          "ai_generate": false,
+          "table_config": {
+            "data_source": "incidents",
+            "columns": [
+              {"header": "事件ID", "field": "incident_id", "width": 1.8},
+              {"header": "事件标题", "field": "title", "width": 3.5},
+              {"header": "级别", "field": "severity", "width": 0.8},
+              {"header": "MTTR(分钟)", "field": "mttr_minutes", "width": 1.2},
+              {"header": "状态", "field": "status", "width": 1.0}
+            ],
+            "max_rows": 5,
+            "position": {
+              "left": 0.85,
+              "top": 2.95,
+              "width": 11.90,
+              "height": 2.65
+            }
+          }
         },
         {
           "token": "INCIDENT_INSIGHT_TITLE",
@@ -209,8 +262,8 @@
           "token": "INCIDENT_INSIGHT",
           "type": "paragraph",
           "ai_generate": true,
-          "ai_instruction": "从本期事件中提炼安全趋势和攻击者行为模式。要点：1）攻击者主要针对哪些资产或服务 2）常见的攻击手法和入侵路径 3）需要加强防护的薄弱环节。提供有洞察力的分析，而不仅仅是事件罗列。",
-          "max_length": 250
+          "ai_instruction": "从本期事件中提炼安全趋势和攻击者行为模式。要点：1）攻击者主要针对哪些资产或服务 2）常见的攻击手法和入侵路径 3）需要加强防护的薄弱环节。提供有洞察力的分析。",
+          "max_length": 180
         }
       ]
     },
@@ -248,8 +301,8 @@
           "token": "VULN_OVERVIEW",
           "type": "paragraph",
           "ai_generate": true,
-          "ai_instruction": "总结本期漏洞态势。包含：1）各等级漏洞数量和分布（引用vulnerabilities.counts） 2）修复进度评估 3）整体风险水平判断。",
-          "max_length": 200
+          "ai_instruction": "总结本期漏洞态势。包含：1）各等级漏洞数量和分布 2）修复进度评估 3）整体风险水平判断。用2句话概述。",
+          "max_length": 150
         },
         {
           "token": "EXPOSURE_STATS_TITLE",
@@ -272,10 +325,31 @@
         },
         {
           "token": "TOP_CVE_LIST",
-          "type": "bullet_list",
-          "ai_generate": true,
-          "ai_instruction": "基于vulnerabilities.top_vulns数据，生成Top CVE列表。每条格式：[CVE编号] - [漏洞名称] ([严重程度]) | 影响资产: [数量] | 状态: [修复状态]。最多5条。",
-          "max_items": 5
+          "type": "text",
+          "ai_generate": false,
+          "default": ""
+        },
+        {
+          "token": "TOP_VULNS_TABLE",
+          "type": "native_table",
+          "ai_generate": false,
+          "table_config": {
+            "data_source": "vulnerabilities.top_vulns",
+            "columns": [
+              {"header": "CVE编号", "field": "cve", "width": 2.0},
+              {"header": "漏洞名称", "field": "name", "width": 3.5},
+              {"header": "严重程度", "field": "severity", "width": 1.2},
+              {"header": "影响资产", "field": "affected_assets", "width": 1.0},
+              {"header": "修复状态", "field": "patch_status", "width": 1.3}
+            ],
+            "max_rows": 3,
+            "position": {
+              "left": 0.85,
+              "top": 4.25,
+              "width": 11.90,
+              "height": 1.05
+            }
+          }
         },
         {
           "token": "CVE_ANALYSIS_TITLE",
@@ -287,15 +361,15 @@
           "token": "TOP_CVE_ANALYSIS",
           "type": "paragraph",
           "ai_generate": true,
-          "ai_instruction": "对Top CVE进行风险分析和修复优先级建议。针对每个关键CVE：1）评估其在当前环境中的实际风险 2）给出修复优先级建议 3）如有未修复的高危漏洞，强调其紧迫性。",
-          "max_length": 300
+          "ai_instruction": "对Top CVE进行风险分析和修复优先级建议。针对关键CVE给出修复优先级建议，如有未修复的高危漏洞强调其紧迫性。用2句话概述。",
+          "max_length": 150
         },
         {
           "token": "EXPOSURE_SUMMARY",
           "type": "paragraph",
           "ai_generate": true,
-          "ai_instruction": "基于exposure数据，分析对外暴露服务的风险状况。包含：1）暴露服务类型和数量（exposure.exposed_services）2）高风险暴露点 3）与上期对比的变化（new_exposed_since_last_period）4）收敛建议。",
-          "max_length": 200
+          "ai_instruction": "基于exposure数据，分析对外暴露服务的风险状况。简述高风险暴露点和收敛建议。",
+          "max_length": 100
         }
       ]
     },
@@ -331,10 +405,29 @@
         },
         {
           "token": "CLOUD_RISK_LIST",
-          "type": "bullet_list",
-          "ai_generate": true,
-          "ai_instruction": "基于cloud_risks数据，生成云风险列表。每条格式：[风险类型]: [数量]个 (趋势: [上升/下降/持平])。按风险数量降序排列。",
-          "max_items": 6
+          "type": "text",
+          "ai_generate": false,
+          "default": ""
+        },
+        {
+          "token": "CLOUD_RISKS_TABLE",
+          "type": "native_table",
+          "ai_generate": false,
+          "table_config": {
+            "data_source": "cloud_risks",
+            "columns": [
+              {"header": "风险类型", "field": "type", "width": 3.0},
+              {"header": "数量", "field": "count", "width": 0.8},
+              {"header": "趋势", "field": "trend", "width": 0.8}
+            ],
+            "max_rows": 4,
+            "position": {
+              "left": 4.65,
+              "top": 1.55,
+              "width": 3.90,
+              "height": 2.95
+            }
+          }
         },
         {
           "token": "CLOUD_ANALYSIS_TITLE",
@@ -346,7 +439,7 @@
           "token": "CLOUD_RISK_SUMMARY",
           "type": "paragraph",
           "ai_generate": true,
-          "ai_instruction": "总结云侧安全风险状况。分析：1）主要的云配置问题及其风险等级 2）IAM权限风险（如未启用MFA的高权限账号）3）数据泄露风险（如公开的存储桶）。结合cloud_risks数据，给出整体风险评估。",
+          "ai_instruction": "总结云侧安全风险状况。分析：1）主要的云配置问题及其风险等级 2）IAM权限风险 3）数据泄露风险。结合cloud_risks数据，给出整体风险评估。",
           "max_length": 250
         },
         {
@@ -466,7 +559,7 @@
           "token": "SLA_NOTES",
           "type": "text",
           "ai_generate": true,
-          "ai_instruction": "生成SLA说明。",
+          "ai_instruction": "生成SLA说明。从mss_ops.sla_notes获取，如无数据则显示'重大事件7x24响应；普通告警工作日响应。'",
           "max_length": 150
         },
         {

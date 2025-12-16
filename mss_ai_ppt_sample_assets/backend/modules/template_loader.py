@@ -27,6 +27,10 @@ class TemplateRepository:
         self._catalog = self._load_catalog()
         self._descriptor_cache: Dict[str, TemplateDescriptorV2] = {}
 
+    def clear_cache(self) -> None:
+        """Clear the descriptor cache to reload templates from disk."""
+        self._descriptor_cache.clear()
+
     def _load_catalog(self) -> List[Dict]:
         catalog_path = self.base_dir / "catalog.json"
         with catalog_path.open("r", encoding="utf-8") as f:

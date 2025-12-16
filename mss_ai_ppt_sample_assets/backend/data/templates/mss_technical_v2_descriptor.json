@@ -1,7 +1,7 @@
 {
   "template_id": "mss_technical_v2",
   "name": "MSS月度安全报告（技术版）",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "pptx_file": "mss_technical_v2.pptx",
   "audience": "technical",
   "language": "zh-CN",
@@ -69,9 +69,8 @@
         {
           "token": "KPI_DASHBOARD",
           "type": "text",
-          "ai_generate": true,
-          "ai_instruction": "生成技术仪表盘KPI区域内容。必须准确引用以下数据并格式化展示：\n\n告警指标：\n- 告警总数: alerts.total\n- 高危: alerts.by_severity.high\n- 中危: alerts.by_severity.medium  \n- 低危: alerts.by_severity.low\n- 误报率: alerts.false_positive_rate（转为百分比）\n\n事件与响应指标：\n- 安全事件: incidents数组长度\n- 高危事件: severity为high的incidents数量\n- MTTD: mss_ops.mttd_minutes_avg（单位：分钟）\n- MTTR: mss_ops.mttr_hours_avg（单位：小时）\n\n漏洞与覆盖指标：\n- 严重漏洞: vulnerabilities.counts.critical\n- 高危漏洞: vulnerabilities.counts.high\n- EDR覆盖: mss_ops.coverage.edr_agents\n\n格式示例：\n告警总数: 1,247 | 高危: 89 | 中危: 342 | 低危: 816 | 误报率: 12%\n安全事件: 5 | 高危事件: 2 | MTTD: 8分钟 | MTTR: 2.3小时\n严重漏洞: 2 | 高危漏洞: 8 | EDR覆盖: 156台",
-          "max_length": 500
+          "ai_generate": false,
+          "default": ""
         },
         {
           "token": "ASSESSMENT_TITLE",
@@ -99,10 +98,10 @@
               "info": "信息"
             },
             "position": {
-              "left": 8.5,
-              "top": 1.3,
-              "width": 4.5,
-              "height": 3.3
+              "left": 0.85,
+              "top": 1.18,
+              "width": 5.65,
+              "height": 3.40
             }
           }
         },
@@ -116,10 +115,10 @@
             "y_field": "values",
             "series_name": "告警数量",
             "position": {
-              "left": 8.5,
-              "top": 4.8,
-              "width": 4.5,
-              "height": 2.3
+              "left": 6.80,
+              "top": 1.18,
+              "width": 5.95,
+              "height": 3.40
             }
           }
         }
@@ -145,9 +144,25 @@
         {
           "token": "SEVERITY_BREAKDOWN",
           "type": "paragraph",
-          "ai_generate": true,
-          "ai_instruction": "详细分析告警的严重程度分布。基于alerts.by_severity数据，包含：1）各级别告警的绝对数量和占比 2）高危告警的主要来源和特征 3）告警分布是否健康（高危占比过高/过低都需要关注）。",
-          "max_length": 250
+          "ai_generate": false,
+          "default": ""
+        },
+        {
+          "token": "TOP_CATEGORIES_CHART",
+          "type": "bar_chart",
+          "ai_generate": false,
+          "chart_config": {
+            "data_source": "alerts.top_categories",
+            "x_field": "category",
+            "y_field": "count",
+            "series_name": "告警数量",
+            "position": {
+              "left": 0.85,
+              "top": 1.55,
+              "width": 11.90,
+              "height": 1.10
+            }
+          }
         },
         {
           "token": "TOP_RULES_TITLE",
@@ -163,34 +178,17 @@
           "table_config": {
             "data_source": "alerts.top_rules",
             "columns": [
-              {
-                "header": "规则ID",
-                "field": "rule_id",
-                "width": 2.0
-              },
-              {
-                "header": "规则名称",
-                "field": "name",
-                "width": 2.5
-              },
-              {
-                "header": "触发次数",
-                "field": "count",
-                "width": 1.0
-              },
-              {
-                "header": "误报率",
-                "field": "false_positive_rate",
-                "width": 1.0,
-                "format": "percent"
-              }
+              {"header": "规则ID", "field": "rule_id", "width": 2.0},
+              {"header": "规则名称", "field": "name", "width": 2.5},
+              {"header": "触发次数", "field": "count", "width": 1.0},
+              {"header": "误报率", "field": "false_positive_rate", "width": 1.0, "format": "percent"}
             ],
             "max_rows": 5,
             "position": {
-              "left": 0.8,
-              "top": 3.0,
-              "width": 5.7,
-              "height": 1.6
+              "left": 0.85,
+              "top": 3.05,
+              "width": 5.65,
+              "height": 1.60
             }
           }
         },
@@ -205,7 +203,7 @@
           "type": "paragraph",
           "ai_generate": true,
           "ai_instruction": "分析Top告警规则的触发情况。评估：1）高频规则是否有效，还是产生大量噪音 2）各规则的误报率是否在合理范围 3）哪些规则可能需要调优。给出专业的检测工程视角分析。",
-          "max_length": 300
+          "max_length": 250
         },
         {
           "token": "FP_TITLE",
@@ -235,6 +233,30 @@
           "default": "事件时间线与处置轨迹"
         },
         {
+          "token": "INCIDENTS_TABLE",
+          "type": "native_table",
+          "ai_generate": false,
+          "table_config": {
+            "data_source": "incidents",
+            "columns": [
+              {"header": "事件ID", "field": "incident_id", "width": 1.8},
+              {"header": "事件标题", "field": "title", "width": 3.0},
+              {"header": "级别", "field": "severity", "width": 0.8},
+              {"header": "检测时间", "field": "detected_at", "width": 1.8},
+              {"header": "MTTD(分钟)", "field": "mttd_minutes", "width": 1.0},
+              {"header": "MTTR(分钟)", "field": "mttr_minutes", "width": 1.0},
+              {"header": "状态", "field": "status", "width": 0.9}
+            ],
+            "max_rows": 5,
+            "position": {
+              "left": 0.85,
+              "top": 1.55,
+              "width": 11.90,
+              "height": 2.35
+            }
+          }
+        },
+        {
           "token": "TIMELINE_TITLE",
           "type": "text",
           "ai_generate": false,
@@ -243,9 +265,8 @@
         {
           "token": "TIMELINE_NARRATIVE",
           "type": "paragraph",
-          "ai_generate": true,
-          "ai_instruction": "基于incidents数组数据，以时间线叙事方式描述本期重要事件的发现-响应-处置全过程。选取1-2个最具代表性的事件（优先高危），详细描述：1）检测时间点(detected_at)和触发告警 2）研判和定性过程 3）处置措施和时间节点 4）最终结果(status)。体现MSS团队的响应流程。",
-          "max_length": 400
+          "ai_generate": false,
+          "default": ""
         },
         {
           "token": "RESPONSE_TITLE",
@@ -258,7 +279,7 @@
           "type": "paragraph",
           "ai_generate": true,
           "ai_instruction": "分析本期事件响应效率。基于mss_ops数据，包含：1）平均MTTD(mss_ops.mttd_minutes_avg)和MTTR(mss_ops.mttr_hours_avg)是否达标 2）各事件的响应时间分布 3）响应效率的瓶颈在哪里（检测慢还是处置慢）。用数据说话，给出客观评估。",
-          "max_length": 250
+          "max_length": 200
         },
         {
           "token": "LESSONS_TITLE",
@@ -336,6 +357,26 @@
           "default": "漏洞态势详情"
         },
         {
+          "token": "VULN_PIE_CHART",
+          "type": "pie_chart",
+          "ai_generate": false,
+          "chart_config": {
+            "data_source": "vulnerabilities.counts",
+            "category_map": {
+              "critical": "严重",
+              "high": "高危",
+              "medium": "中危",
+              "low": "低危"
+            },
+            "position": {
+              "left": 0.85,
+              "top": 1.55,
+              "width": 5.00,
+              "height": 1.55
+            }
+          }
+        },
+        {
           "token": "VULN_DIST_TITLE",
           "type": "text",
           "ai_generate": false,
@@ -344,9 +385,36 @@
         {
           "token": "VULN_DISTRIBUTION",
           "type": "paragraph",
-          "ai_generate": true,
-          "ai_instruction": "基于vulnerabilities数据，详细分析漏洞分布情况。从以下维度分析：1）按严重程度分布(counts.critical/high/medium/low) 2）按受影响资产组分布（如有数据）3）按漏洞类型分布（如RCE、信息泄露、权限提升等）。准确引用数据。",
-          "max_length": 300
+          "ai_generate": false,
+          "default": ""
+        },
+        {
+          "token": "CVE_TABLE_TITLE",
+          "type": "text",
+          "ai_generate": false,
+          "default": "重点CVE列表"
+        },
+        {
+          "token": "TOP_CVE_TABLE",
+          "type": "native_table",
+          "ai_generate": false,
+          "table_config": {
+            "data_source": "vulnerabilities.top_vulns",
+            "columns": [
+              {"header": "CVE编号", "field": "cve", "width": 2.0},
+              {"header": "漏洞名称", "field": "name", "width": 3.0},
+              {"header": "严重程度", "field": "severity", "width": 1.0},
+              {"header": "影响资产", "field": "affected_assets", "width": 1.0},
+              {"header": "修复状态", "field": "patch_status", "width": 1.2}
+            ],
+            "max_rows": 5,
+            "position": {
+              "left": 6.10,
+              "top": 1.55,
+              "width": 6.65,
+              "height": 1.55
+            }
+          }
         },
         {
           "token": "CVE_ANALYSIS_TITLE",
@@ -359,7 +427,7 @@
           "type": "paragraph",
           "ai_generate": true,
           "ai_instruction": "基于vulnerabilities.top_vulns数据，对Top CVE进行详细技术分析。针对每个关键CVE：1）漏洞原理和利用条件 2）影响的软件版本 3）在当前环境中的风险评估 4）具体的修复方案（补丁版本、配置缓解措施）。",
-          "max_length": 400
+          "max_length": 350
         },
         {
           "token": "PATCH_TITLE",
@@ -396,10 +464,22 @@
         },
         {
           "token": "EXPOSED_SERVICES_TABLE",
-          "type": "table",
-          "ai_generate": true,
-          "ai_instruction": "基于exposure.exposed_services数据，生成暴露服务表格。格式为每行一类服务：\n服务类型 | 暴露资产数\n\n示例：\nSSH (22) | 12\nHTTPS (443) | 45\nRDP (3389) | 3\n\n按风险程度排序，高风险服务（SSH、RDP、数据库端口）优先展示。",
-          "max_length": 300
+          "type": "native_table",
+          "ai_generate": false,
+          "table_config": {
+            "data_source": "exposure.exposed_services",
+            "columns": [
+              {"header": "服务类型", "field": "service", "width": 3.0},
+              {"header": "暴露资产数", "field": "assets", "width": 1.5}
+            ],
+            "max_rows": 6,
+            "position": {
+              "left": 0.85,
+              "top": 1.55,
+              "width": 5.65,
+              "height": 1.50
+            }
+          }
         },
         {
           "token": "EXPOSURE_ANALYSIS_TITLE",
@@ -412,7 +492,7 @@
           "type": "paragraph",
           "ai_generate": true,
           "ai_instruction": "基于exposure数据，详细分析对外暴露服务的安全风险。针对每类暴露服务：1）暴露的必要性评估 2）当前防护措施是否充分 3）具体的安全风险。重点关注高风险服务如SSH、RDP、数据库端口的直接暴露。",
-          "max_length": 350
+          "max_length": 300
         },
         {
           "token": "SURFACE_TREND_TITLE",
@@ -425,7 +505,7 @@
           "type": "paragraph",
           "ai_generate": true,
           "ai_instruction": "分析攻击面的变化趋势。基于exposure数据，包含：1）对外IP数量(external_ips) 2）新增暴露服务的分析(new_exposed_since_last_period) 3）攻击面是否在收敛还是扩大 4）需要关注的攻击面盲区。",
-          "max_length": 250
+          "max_length": 200
         },
         {
           "token": "REMEDIATION_TITLE",
@@ -455,6 +535,26 @@
           "default": "云安全详细分析"
         },
         {
+          "token": "CLOUD_RISKS_TABLE",
+          "type": "native_table",
+          "ai_generate": false,
+          "table_config": {
+            "data_source": "cloud_risks",
+            "columns": [
+              {"header": "风险类型", "field": "type", "width": 4.0},
+              {"header": "数量", "field": "count", "width": 1.0},
+              {"header": "趋势", "field": "trend", "width": 1.0}
+            ],
+            "max_rows": 6,
+            "position": {
+              "left": 0.85,
+              "top": 1.55,
+              "width": 11.90,
+              "height": 2.05
+            }
+          }
+        },
+        {
           "token": "CLOUD_MISCONFIG_TITLE",
           "type": "text",
           "ai_generate": false,
@@ -463,9 +563,8 @@
         {
           "token": "CLOUD_MISCONFIG_DETAILS",
           "type": "paragraph",
-          "ai_generate": true,
-          "ai_instruction": "基于cloud_risks数据，详细分析云配置问题。针对每类配置问题：1）问题描述(type)和数量(count) 2）安全风险等级和潜在影响 3）具体的修复步骤（包括云平台控制台操作或CLI命令）4）修复验证方法。",
-          "max_length": 400
+          "ai_generate": false,
+          "default": ""
         },
         {
           "token": "IAM_TITLE",
@@ -478,7 +577,7 @@
           "type": "paragraph",
           "ai_generate": true,
           "ai_instruction": "分析IAM权限风险。基于cloud_risks中IAM相关数据，包含：1）高权限账号的MFA启用状态 2）是否存在过度授权 3）服务账号和AccessKey的管理状况 4）权限最小化原则的执行情况。给出具体的IAM加固建议。",
-          "max_length": 300
+          "max_length": 250
         },
         {
           "token": "COMPLIANCE_TITLE",
@@ -532,7 +631,7 @@
           "type": "paragraph",
           "ai_generate": true,
           "ai_instruction": "检测能力提升建议。包含：1）需要新增的检测规则 2）现有规则的调优方向（基于alerts.top_rules的误报率）3）日志源覆盖的改进 4）检测盲区的补充方案。结合本期事件和告警数据给出针对性建议。",
-          "max_length": 350
+          "max_length": 300
         },
         {
           "token": "HARDENING_TITLE",
@@ -560,6 +659,26 @@
           "type": "text",
           "ai_generate": false,
           "default": "附录：数据与证据索引"
+        },
+        {
+          "token": "ASSETS_TABLE",
+          "type": "native_table",
+          "ai_generate": false,
+          "table_config": {
+            "data_source": "assets.asset_groups",
+            "columns": [
+              {"header": "资产组ID", "field": "id", "width": 2.0},
+              {"header": "资产组名称", "field": "name", "width": 3.0},
+              {"header": "资产数量", "field": "assets", "width": 1.5}
+            ],
+            "max_rows": 6,
+            "position": {
+              "left": 0.85,
+              "top": 5.15,
+              "width": 5.65,
+              "height": 0.2
+            }
+          }
         },
         {
           "token": "EVIDENCE_TITLE",
@@ -606,9 +725,9 @@
         },
         {
           "token": "VULN_NOTES",
-          "type": "text",
+          "type": "paragraph",
           "ai_generate": true,
-          "ai_instruction": "生成漏洞数据说明。从vulnerabilities.notes获取，如无数据则显示：'漏洞数据来源于定期扫描结果'"
+          "ai_instruction": "生成漏洞数据说明。简要说明漏洞数据来源和扫描范围，如无特定数据则显示：'漏洞数据来源于定期安全扫描，覆盖主机、应用和网络设备。'"
         },
         {
           "token": "EVIDENCE_NOTES_TITLE",
@@ -618,22 +737,15 @@
         },
         {
           "token": "EVIDENCE_NOTES",
-          "type": "text",
+          "type": "paragraph",
           "ai_generate": true,
-          "ai_instruction": "生成证据说明。从evidence.notes获取，如无数据则显示：'详细证据可通过MSS平台查询'"
+          "ai_instruction": "生成证据保存说明。简要说明证据保存周期和查询方式，如无特定数据则显示：'原始日志和证据数据保存于安全运营平台，可通过查询ID追溯。'"
         },
         {
           "token": "ASSETS_TITLE",
           "type": "text",
           "ai_generate": false,
-          "default": "资产组"
-        },
-        {
-          "token": "ASSET_GROUPS_LIST",
-          "type": "bullet_list",
-          "ai_generate": true,
-          "ai_instruction": "基于assets.asset_groups数据，生成资产组列表。每条格式：[资产组名称]: [资产数量]个资产。",
-          "max_items": 6
+          "default": "资产范围"
         },
         {
           "token": "SERVICES_TITLE",

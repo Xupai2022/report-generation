@@ -3,7 +3,8 @@
     "allow": [
       "Bash(python -c:*)",
       "Bash(python test_charts.py:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(python -m py_compile:*)"
     ],
     "deny": [],
     "ask": []
