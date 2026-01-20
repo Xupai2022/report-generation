@@ -38,12 +38,6 @@
           "ai_instruction": "生成报告周期标签，格式为：报告周期：[开始日期] ~ [结束日期]。从period.start和period.end获取日期。"
         },
         {
-          "token": "CONFIDENTIALITY_LABEL",
-          "type": "text",
-          "ai_generate": true,
-          "ai_instruction": "生成密级标签，格式为：密级：[密级]。从report_meta.secrecy_default获取密级，转为大写。如无数据则显示'密级：内部'。"
-        },
-        {
           "token": "GENERATED_AT_LABEL",
           "type": "text",
           "ai_generate": true,

@@ -443,7 +443,18 @@ class LLMOrchestratorV2:
         ]
 
         # Add AI placeholder instructions
-        ai_placeholders = template.get_ai_placeholders()
+        ai_placeholders = template.get_ai_placeholders()  
+        '''
+        遍历模板，返回所有需要AI生成的占位符。 假设模板有2个slide（封面和概览），返回的列表是：
+        ai_placeholders = [
+        ("cover", "REPORT_TITLE", PlaceholderDefinition对象1),
+        ("cover", "CUSTOMER_LABEL", PlaceholderDefinition对象2),
+        ("cover", "PERIOD_LABEL", PlaceholderDefinition对象3),
+        ("summary", "HEADLINE", PlaceholderDefinition对象4),
+        ("summary", "KEY_POINTS", PlaceholderDefinition对象5),
+        ]
+        每个 PlaceholderDefinition 对象包含：token、ai_instruction、max_length等
+        '''
         current_slide = None
 
         for slide_key, token, placeholder in ai_placeholders:
@@ -483,8 +494,10 @@ class LLMOrchestratorV2:
         slide_examples = []
         for slide in template.slides:
             ai_tokens = [ph.token for ph in slide.placeholders if ph.ai_generate]
+            '''ai_tokens: ["REPORT_TITLE", "CUSTOMER_LABEL", "PERIOD_LABEL"]'''
             if ai_tokens:
                 tokens_str = ", ".join(f'"{t}": "..."' for t in ai_tokens)
+                '''tokens_str: '"REPORT_TITLE": "...", "CUSTOMER_LABEL": "...", "PERIOD_LABEL": "..."'  '''
                 slide_examples.append(f'    {{"slide_key": "{slide.slide_key}", "placeholders": {{{tokens_str}}}}}')
 
         prompt_parts.append(",\n".join(slide_examples))
