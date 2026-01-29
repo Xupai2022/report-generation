@@ -11,8 +11,13 @@ from mss_ai_ppt_sample_assets.backend.models.slidespec import SlideSpecV2
 from mss_ai_ppt_sample_assets.backend.modules import (
     AuditLogger,
     TemplateRepository,
+    SessionManager,
+    FileLock,
 )
-from mss_ai_ppt_sample_assets.backend.modules.llm_orchestrator import LLMOrchestratorV2
+from mss_ai_ppt_sample_assets.backend.modules.llm_orchestrator import (
+    LLMOrchestratorV2,
+    LLMGenerationError,
+)
 from mss_ai_ppt_sample_assets.backend.modules.ppt_generator import PPTGeneratorV2
 from mss_ai_ppt_sample_assets.backend.modules.validator import ValidatorV2
 from mss_ai_ppt_sample_assets.backend.modules.preview_generator import (
@@ -37,6 +42,7 @@ class ReportService:
         self.audit_logger = AuditLogger()
         self.preview_generator = PPTPreviewGenerator()
         self.inputs_catalog = self._load_inputs_catalog()
+        self.session_manager = SessionManager(config.SESSIONS_DIR)
 
         # V2 (AI-driven) generators
         self.ppt_generator_v2 = PPTGeneratorV2(self.template_repo)
@@ -78,7 +84,7 @@ class ReportService:
         return TenantInput.load_from_file(path)
 
     def generate(
-        self, input_id: str, template_id: str, use_mock: bool = False
+        self, input_id: str, template_id: str, use_mock: bool = False, session_id: str = None
     ) -> Dict[str, Any]:
         """Generate report using V2 template.
 
@@ -86,22 +92,51 @@ class ReportService:
         - Raw TenantInput goes directly to LLM
         - AI generates content based on placeholder descriptions
         - Only key numbers are validated
+
+        Args:
+            input_id: Input data identifier
+            template_id: Template identifier
+            use_mock: Whether to use mock LLM generation
+            session_id: Optional session ID for concurrent request isolation.
+                       If None, a new session ID will be generated.
+
+        Returns:
+            Dict with job_id, report_path, warnings, slidespec, etc.
         """
+        # Generate session ID if not provided
+        if session_id is None:
+            session_id = self.session_manager.generate_session_id()
+
         tenant_input = self.load_input(input_id)
 
         # Ensure we only handle V2
         if not self.template_repo.is_v2(template_id):
              raise ValueError(f"Template {template_id} is not a V2 template. Only V2 templates are supported.")
 
-        return self._generate_v2(input_id, template_id, tenant_input, use_mock=use_mock)
+        return self._generate_v2(input_id, template_id, tenant_input, session_id=session_id, use_mock=use_mock)
 
     def _generate_v2(
-        self, input_id: str, template_id: str, tenant_input: TenantInput, use_mock: bool = False
+        self, input_id: str, template_id: str, tenant_input: TenantInput, session_id: str, use_mock: bool = False
     ) -> Dict[str, Any]:
-        """Generate report using V2 AI-driven flow."""
+        """Generate report using V2 AI-driven flow.
+
+        Args:
+            input_id: Input data identifier
+            template_id: Template identifier
+            tenant_input: Parsed tenant input data
+            session_id: Unique session ID for file isolation
+            use_mock: Whether to use mock LLM generation
+
+        Returns:
+            Dict with job_id, report_path, warnings, etc.
+        """
 
         # Clear template cache to ensure latest descriptor is loaded
         self.template_repo.clear_cache()
+
+        # Note: Progress updates are sent from within the orchestrator
+        # This is a synchronous function, so we don't send WebSocket updates here
+        # The async /generate endpoint will handle WebSocket notifications
 
         # V2: Direct to LLM with raw data
         slidespec: SlideSpecV2 = self.llm_orchestrator_v2.generate_slidespec_v2(
@@ -119,25 +154,31 @@ class ReportService:
             self.audit_logger.log(
                 event="validation_warning_v2",
                 details={"warnings": warnings},
-                job_id=f"{input_id}:{template_id}",
+                job_id=f"{session_id}:{template_id}",
                 severity="warning",
             )
 
-        # Render and save
-        report_path = config.REPORTS_DIR / f"{input_id}_{template_id}.pptx"
-        self.ppt_generator_v2.render(slidespec, report_path)
+        # Use session-isolated paths
+        report_path = self.session_manager.get_report_path(session_id, template_id)
+        slidespec_path = self.session_manager.get_slidespec_path(session_id, template_id)
 
-        slidespec_path = self._slidespec_path(input_id, template_id)
-        slidespec.save(slidespec_path)
+        # Render with file lock to prevent concurrent write conflicts
+        with FileLock(report_path, timeout=60.0):
+            self.ppt_generator_v2.render(slidespec, report_path)
+
+        # Save slidespec with file lock
+        with FileLock(slidespec_path, timeout=60.0):
+            slidespec.save(slidespec_path)
 
         self.audit_logger.log(
             event="generate_v2",
             details={"template_id": template_id, "slides_count": len(slidespec.slides)},
-            job_id=f"{input_id}:{template_id}",
+            job_id=f"{session_id}:{template_id}",
         )
 
         return {
-            "job_id": f"{input_id}:{template_id}",
+            "job_id": f"{session_id}:{template_id}",
+            "session_id": session_id,
             "report_path": str(report_path),
             "warnings": warnings,
             "slidespec": slidespec.model_dump(),
@@ -145,42 +186,74 @@ class ReportService:
             "version": "v2",
         }
 
-    def _load_slidespec(self, input_id: str, template_id: str) -> SlideSpecV2:
-        """Load slidespec, ensuring it is V2 format."""
-        path = self._slidespec_path(input_id, template_id)
-        if not path.exists():
-            raise SlideSpecNotFoundError(f"Slidespec for {input_id}/{template_id} not found, please generate first.")
+    def _load_slidespec(self, session_id: str, template_id: str) -> SlideSpecV2:
+        """Load slidespec from session directory, ensuring it is V2 format.
 
-        with path.open("r", encoding="utf-8") as f:
-            data = json.load(f)
+        Args:
+            session_id: Unique session identifier
+            template_id: Template identifier
+
+        Returns:
+            Loaded SlideSpecV2 object
+
+        Raises:
+            SlideSpecNotFoundError: If slidespec file doesn't exist
+        """
+        path = self.session_manager.get_slidespec_path(session_id, template_id)
+        if not path.exists():
+            raise SlideSpecNotFoundError(
+                f"Slidespec for session {session_id} / template {template_id} not found. "
+                "Please generate first."
+            )
+
+        with FileLock(path, timeout=30.0):
+            with path.open("r", encoding="utf-8") as f:
+                data = json.load(f)
 
         return SlideSpecV2.model_validate(data)
 
     def rewrite(
         self, job_id: str, slide_key: str, new_content: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Rewrite a slide with new content."""
+        """Rewrite a slide with new content.
+
+        Args:
+            job_id: Job ID in format "{session_id}:{template_id}"
+            slide_key: Slide key to update
+            new_content: New placeholder content to merge
+
+        Returns:
+            Dict with job_id, slide_key, report_path, etc.
+        """
         try:
-            input_id, template_id = job_id.split(":", 1)
+            session_id, template_id = job_id.split(":", 1)
         except ValueError as e:
-            raise ValueError("job_id must be formatted as input_id:template_id") from e
+            raise ValueError("job_id must be formatted as session_id:template_id") from e
 
         if not self.template_repo.is_v2(template_id):
             raise ValueError(f"Template {template_id} is not V2. Rewrite only supported for V2.")
 
         # For V2, just update the placeholder directly
-        slidespec = self._load_slidespec(input_id, template_id)
-        
+        slidespec = self._load_slidespec(session_id, template_id)
+
         slide = slidespec.get_slide(slide_key)
         if slide:
             slide.placeholders.update(new_content)
 
-        report_path = config.REPORTS_DIR / f"{input_id}_{template_id}.pptx"
-        slidespec.save(self._slidespec_path(input_id, template_id))
-        self.ppt_generator_v2.render(slidespec, report_path)
+        # Use session-isolated paths
+        report_path = self.session_manager.get_report_path(session_id, template_id)
+        slidespec_path = self.session_manager.get_slidespec_path(session_id, template_id)
+
+        # Save with file locks
+        with FileLock(slidespec_path, timeout=60.0):
+            slidespec.save(slidespec_path)
+
+        with FileLock(report_path, timeout=60.0):
+            self.ppt_generator_v2.render(slidespec, report_path)
 
         return {
             "job_id": job_id,
+            "session_id": session_id,
             "slide_key": slide_key,
             "report_path": str(report_path),
             "warnings": [],
@@ -198,10 +271,19 @@ class ReportService:
         return "\n".join(lines[-limit:])
 
     def preview(self, job_id: str, regenerate_if_missing: bool = True) -> Dict[str, Any]:
+        """Generate preview images for a report.
+
+        Args:
+            job_id: Job ID in format "{session_id}:{template_id}"
+            regenerate_if_missing: Whether to regenerate report if missing
+
+        Returns:
+            Dict with job_id and list of image URLs
+        """
         try:
-            input_id, template_id = job_id.split(":", 1)
+            session_id, template_id = job_id.split(":", 1)
         except ValueError as e:
-            raise ValueError("job_id must be formatted as input_id:template_id") from e
+            raise ValueError("job_id must be formatted as session_id:template_id") from e
 
         report_path = self.get_report_path(job_id, regenerate_if_missing=regenerate_if_missing)
 
@@ -210,12 +292,16 @@ class ReportService:
         tmp_dir.mkdir(parents=True, exist_ok=True)
         job_dir = sanitize_job_id(job_id)
         tmp_copy = tmp_dir / f"{job_dir}.pptx"
-        shutil.copyfile(report_path, tmp_copy)
+
+        # Use file lock when copying to prevent race conditions
+        with FileLock(report_path, timeout=30.0):
+            shutil.copyfile(report_path, tmp_copy)
+
         base_url_prefix = f"/static/previews/{job_dir}"
 
         slides_count = None
         try:
-            slidespec = self._load_slidespec(input_id, template_id)
+            slidespec = self._load_slidespec(session_id, template_id)
             slides_count = len(slidespec.slides)
         except Exception:
             slides_count = None
@@ -238,18 +324,42 @@ class ReportService:
         return {"job_id": job_id, "images": urls}
 
     def get_report_path(self, job_id: str, regenerate_if_missing: bool = True) -> Path:
-        """Return the generated PPTX path for a job, optionally regenerating it from the saved SlideSpec."""
-        try:
-            input_id, template_id = job_id.split(":", 1)
-        except ValueError as e:
-            raise ValueError("job_id must be formatted as input_id:template_id") from e
+        """Return the generated PPTX path for a job, optionally regenerating it from the saved SlideSpec.
 
-        report_path = config.REPORTS_DIR / f"{input_id}_{template_id}.pptx"
+        Args:
+            job_id: Job ID in format "{session_id}:{template_id}"
+            regenerate_if_missing: Whether to regenerate report if missing
+
+        Returns:
+            Path to the report file
+
+        Raises:
+            SlideSpecNotFoundError: If report doesn't exist and can't be regenerated
+        """
+        try:
+            session_id, template_id = job_id.split(":", 1)
+        except ValueError as e:
+            raise ValueError("job_id must be formatted as session_id:template_id") from e
+
+        report_path = self.session_manager.get_report_path(session_id, template_id)
+
         if not report_path.exists() and regenerate_if_missing:
-            slidespec = self._load_slidespec(input_id, template_id)
-            self.ppt_generator_v2.render(slidespec, report_path)
+            slidespec = self._load_slidespec(session_id, template_id)
+            with FileLock(report_path, timeout=60.0):
+                self.ppt_generator_v2.render(slidespec, report_path)
 
         if not report_path.exists():
             raise SlideSpecNotFoundError(f"PPT not found for {job_id}, generate first.")
 
         return report_path
+
+    def cleanup_old_sessions(self, max_age_hours: int = 24) -> int:
+        """Clean up old session directories.
+
+        Args:
+            max_age_hours: Maximum age in hours before cleanup
+
+        Returns:
+            Number of sessions cleaned up
+        """
+        return self.session_manager.cleanup_old_sessions(max_age_hours)

@@ -1,0 +1,288 @@
+{
+  "template_id": "mss_executive_v2",
+  "slides": [
+    {
+      "slide_no": 1,
+      "slide_key": "cover",
+      "placeholders": {}
+    },
+    {
+      "slide_no": 2,
+      "slide_key": "executive_summary",
+      "placeholders": {
+        "SLIDE_TITLE": "安全态势总览",
+        "KEY_INSIGHTS_TITLE": "关键发现",
+        "HEADLINE": "高危事件环比增加33%，需重点关注横向移动和云配置风险",
+        "KPI_SECTION": "告警总数: 12,414 | 高危告警: 62 | 安全事件: 5 | 高危事件: 2\n平均响应时间: 2.8小时 | 误报率: 16%",
+        "SUMMARY_PARAGRAPH": "本期整体安全状况需关注：高危事件较上期增加33%，检测到勒索软件横向移动行为。云配置错误告警环比激增25%，暴露服务数量持续存在。MSS团队平均响应时间优于SLA标准，建议加强暴露面管理和云安全基线校准。",
+        "KEY_INSIGHTS": [
+          "暴力破解告警环比上升11%，主要针对SSH服务，建议加强访问控制",
+          "云配置错误告警激增25%，7个安全组存在0.0.0/0暴露风险，需优先整改",
+          "钓鱼邮件告警下降14%，但横向移动事件增加，暴露服务防护需强化"
+        ]
+      }
+    },
+    {
+      "slide_no": 3,
+      "slide_key": "alert_trends",
+      "placeholders": {
+        "SLIDE_TITLE": "告警趋势分析",
+        "TREND_SECTION_TITLE": "周度趋势",
+        "TREND_ANALYSIS": "",
+        "SECURITY_INCIDENT_RESPONSE_EFFECTIVENESS": {
+          "position": {
+            "left": 0.94,
+            "top": 1.3,
+            "width": 4.5,
+            "height": 3
+          },
+          "categories": [
+            "识别",
+            "响应",
+            "处置",
+            "闭环"
+          ],
+          "series": [
+            {
+              "name": "平均处置时间（分钟）",
+              "values": [
+                6.42,
+                27.4,
+                572.02,
+                625.38
+              ]
+            }
+          ]
+        },
+        "TOP_CATEGORIES_TITLE": "告警类别分布",
+        "TOP_CATEGORIES_LIST": "",
+        "TOP_CATEGORIES_CHART": {
+          "position": {
+            "left": 7.1,
+            "top": 1.55,
+            "width": 5.65,
+            "height": 3.3
+          },
+          "categories": [
+            "Phishing",
+            "Brute Force",
+            "Cloud Misconfig",
+            "Malware",
+            "Data Exfil"
+          ],
+          "series": [
+            {
+              "name": "告警数量",
+              "values": [
+                1977,
+                2546,
+                1574,
+                828,
+                97
+              ]
+            }
+          ]
+        },
+        "CATEGORIES_INSIGHT_TITLE": "类别分析",
+        "MOM_TITLE": "环比分析",
+        "TOP_CATEGORIES_INSIGHT": "暴力破解（2546次）占比最高，主要来自SSH服务爆破；云配置错误环比增长25%，暴露了7个安全组开放风险。这两类告警直接影响系统可用性和数据安全，需优先处置。",
+        "MOM_COMPARISON": "告警总量环比下降18%，但暴力破解和云配置错误显著上升。云配置错误增长25%反映配置管理存在薄弱环节，建议核查安全组策略和存储权限设置。"
+      }
+    },
+    {
+      "slide_no": 4,
+      "slide_key": "major_incidents",
+      "placeholders": {
+        "SLIDE_TITLE": "重点安全事件",
+        "INCIDENT_OVERVIEW_TITLE": "事件概览",
+        "INCIDENT_DETAILS_TITLE": "事件列表",
+        "INCIDENT_DETAILS": "",
+        "INCIDENTS_TABLE": {
+          "headers": [
+            "事件ID",
+            "事件标题",
+            "级别",
+            "MTTR(分钟)",
+            "状态"
+          ],
+          "rows": [
+            [
+              "INC-20251101-001",
+              "云侧AccessKey泄露风险处置",
+              "medium",
+              90,
+              "closed"
+            ],
+            [
+              "INC-20251101-002",
+              "生产环境对外暴露服务被扫描利用",
+              "medium",
+              179,
+              "closed"
+            ],
+            [
+              "INC-20251101-003",
+              "生产环境对外暴露服务被扫描利用",
+              "medium",
+              190,
+              "monitoring"
+            ],
+            [
+              "INC-20251101-004",
+              "疑似勒索前置横向移动",
+              "high",
+              94,
+              "closed"
+            ],
+            [
+              "INC-20251101-005",
+              "可疑账号异常登录与提权",
+              "high",
+              274,
+              "closed"
+            ]
+          ],
+          "position": {
+            "left": 0.85,
+            "top": 2.95,
+            "width": 11.9,
+            "height": 2.65
+          }
+        },
+        "INCIDENT_INSIGHT_TITLE": "事件洞察",
+        "INCIDENT_SUMMARY": "本月共发生5起安全事件，其中2起高危事件涉及勒索软件横向移动。平均响应时间2.8小时优于SLA要求，但暴露服务被扫描利用事件占比达60%，需加强暴露面管控。",
+        "INCIDENT_INSIGHT": "攻击者主要针对暴露的SSH（17台）和RDP（1台）服务，利用暴力破解和配置漏洞进行横向移动。3起事件涉及生产环境服务暴露，建议立即封禁非必要端口，启用MFA并定期扫描暴露资产。"
+      }
+    },
+    {
+      "slide_no": 5,
+      "slide_key": "vulnerability_exposure",
+      "placeholders": {
+        "SLIDE_TITLE": "漏洞与暴露面分析",
+        "VULN_STATS_TITLE": "漏洞统计",
+        "VULN_OVERVIEW_TITLE": "漏洞概况",
+        "EXPOSURE_STATS_TITLE": "暴露面统计",
+        "TOP_CVE_TITLE": "重点漏洞",
+        "TOP_CVE_LIST": "",
+        "TOP_VULNS_TABLE": {
+          "headers": [
+            "CVE编号",
+            "漏洞名称",
+            "严重程度",
+            "影响资产",
+            "修复状态"
+          ],
+          "rows": [
+            [
+              "CVE-2024-3094",
+              "XZ Utils 后门风险",
+              "critical",
+              2,
+              "patched"
+            ],
+            [
+              "CVE-2023-46604",
+              "ActiveMQ RCE",
+              "high",
+              2,
+              "in_progress"
+            ],
+            [
+              "CVE-2024-6387",
+              "OpenSSH regreSSHion",
+              "high",
+              1,
+              "patched"
+            ]
+          ],
+          "position": {
+            "left": 0.85,
+            "top": 4.25,
+            "width": 11.9,
+            "height": 1.05
+          }
+        },
+        "CVE_ANALYSIS_TITLE": "漏洞分析",
+        "VULN_STATS": "严重: 4 | 高危: 15 | 中危: 20 | 低危: 92",
+        "VULN_OVERVIEW": "本期漏洞总数121个，高危及以上漏洞19个，其中2个严重漏洞已修复。未修复的ActiveMQ RCE漏洞存在远程代码执行风险，需重点关注。整体漏洞修复进度一般，建议优先处理高危漏洞。",
+        "EXPOSURE_STATS": "对外IP: 12 | 新增暴露: 3",
+        "TOP_CVE_ANALYSIS": "CVE-2023-46604（ActiveMQ RCE）目前未完成修复，存在高风险远程攻击面。建议72小时内完成补丁部署并验证修复效果。已修复的XZ Utils后门漏洞和OpenSSH漏洞需确保所有受影响资产完成更新。",
+        "EXPOSURE_SUMMARY": "当前暴露SSH/RDP等高危端口的资产共22台，新增暴露服务需立即收口。建议通过安全组策略限制外部访问，优先保留最小必要服务暴露。"
+      }
+    },
+    {
+      "slide_no": 6,
+      "slide_key": "cloud_security",
+      "placeholders": {
+        "SLIDE_TITLE": "云安全态势",
+        "CLOUD_ACCOUNTS_TITLE": "云账号",
+        "CLOUD_RISK_TITLE": "云风险列表",
+        "CLOUD_RISK_LIST": "",
+        "CLOUD_RISKS_TABLE": {
+          "headers": [
+            "风险类型",
+            "数量",
+            "趋势"
+          ],
+          "rows": [
+            [
+              "0.安全组0.0.0/0暴露",
+              7,
+              "up"
+            ],
+            [
+              "对象存储公开访问",
+              2,
+              "flat"
+            ],
+            [
+              "未启用MFA的高权限账号",
+              1,
+              "down"
+            ]
+          ],
+          "position": {
+            "left": 4.65,
+            "top": 1.55,
+            "width": 3.9,
+            "height": 2.95
+          }
+        },
+        "CLOUD_ANALYSIS_TITLE": "风险分析",
+        "CLOUD_REC_TITLE": "云安全建议",
+        "CLOUD_ACCOUNTS_COUNT": "7个",
+        "CLOUD_RISK_SUMMARY": "当前存在7处安全组0.0.0/0开放规则（风险上升），2个对象存储存在公开访问，1个高权限账号未启用MFA。安全组配置问题显著增加攻击面，建议优先处理。IAM权限风险整体可控，但需加强多因素认证覆盖。",
+        "CLOUD_RECOMMENDATIONS": "1. 【紧急】收敛安全组0.0.0/0规则，仅开放必要端口给指定IP段\n2. 【高优】审计所有对象存储权限，禁用非预期公开访问\n3. 【重要】强制所有高权限账号启用MFA并完成验证\n4. 【常规】建立云资产暴露面基线监控机制"
+      }
+    },
+    {
+      "slide_no": 7,
+      "slide_key": "recommendations",
+      "placeholders": {
+        "SLIDE_TITLE": "整改建议与行动计划",
+        "P0_TITLE": "P0 紧急（7天内）",
+        "P1_TITLE": "P1 重要（30天内）",
+        "STRATEGIC_TITLE": "战略建议",
+        "P0_ACTIONS": "1. 【72小时内】修复ActiveMQ RCE漏洞（CVE-2023-46604），责任方：王工 IT团队\n2. 【48小时内】封禁所有非必要暴露的SSH/RDP服务，责任方：李经理 安全团队\n3. 【24小时内】更新WAF规则防御暴力破解攻击，责任方：安全运营组\n4. 【立即】隔离受影响的cdn-edge资产并完成深度排查，责任方：应急响应小组",
+        "P1_ACTIONS": "1. 完成中危漏洞修复基线扫描，建立修复优先级矩阵\n2. 实施最小权限原则的安全组策略模板\n3. 部署容器镜像安全扫描自动化流程\n4. 提升终端EDR覆盖率至95%以上\n5. 建立漏洞修复SLA考核机制",
+        "STRATEGIC_RECOMMENDATIONS": "1. 建议投资建设云原生安全平台，实现自动化的配置合规检查与风险收敛\n2. 需建立威胁情报驱动的检测规则优化机制，针对告警量波动趋势提升信号质量\n3. 推行零信任架构改造，重点解决长期存在的对外服务暴露面过大的系统性风险"
+      }
+    },
+    {
+      "slide_no": 8,
+      "slide_key": "appendix",
+      "placeholders": {
+        "SLIDE_TITLE": "附录与说明",
+        "DATA_SCOPE_TITLE": "数据范围",
+        "ASSET_COVERAGE_TITLE": "资产覆盖",
+        "SLA_TITLE": "SLA说明",
+        "TERMINOLOGY_TITLE": "术语说明",
+        "CONTACT_INFO": "如有问题，请联系MSS运营团队",
+        "DATA_SCOPE": "说明：告警口径为去重后的规则触发次数；WAF与EDR重复告警已在聚合时合并。",
+        "ASSET_COVERAGE": "监控资产组: 2个 | 云账号: 7个 | 日志源: 38个",
+        "SLA_NOTES": "重大事件7x24响应；普通告警工作日响应。",
+        "TERMINOLOGY": "MTTR（平均修复时间）：从威胁发现到完成处置的平均耗时\nMTTD（平均检测时间）：从攻击发生到系统发现的平均耗时\n误报率：错误触发的安全告警占比\nCVE：通用漏洞披露编号，用于唯一标识已知安全漏洞"
+      }
+    }
+  ]
+}

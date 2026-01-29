@@ -1,0 +1,577 @@
+{
+  "template_id": "mss_technical_v2",
+  "slides": [
+    {
+      "slide_no": 1,
+      "slide_key": "cover",
+      "placeholders": {
+        "VERSION_TAG": "技术详细版",
+        "abc": {
+          "position": {
+            "left": 1.0,
+            "top": 2.0,
+            "width": 8.0,
+            "height": 4.0
+          },
+          "categories": [
+            "W1",
+            "W2",
+            "W3",
+            "W4"
+          ],
+          "series": [
+            {
+              "name": "告警数量",
+              "values": [
+                1099,
+                1005,
+                1002,
+                2988
+              ]
+            }
+          ]
+        },
+        "P12_pie": {
+          "position": {
+            "left": 0.85,
+            "top": 1.18,
+            "width": 6.5,
+            "height": 4.5
+          },
+          "categories": [
+            "挖矿",
+            "僵尸网络",
+            "木马",
+            "账号爆破",
+            "代理工具"
+          ],
+          "values": [
+            100,
+            100,
+            200,
+            200,
+            400
+          ]
+        },
+        "REPORT_TITLE": "ACME 电子商务 MSS月度安全报告（技术版）",
+        "CUSTOMER_LABEL": "客户：ACME 电子商务",
+        "PERIOD_LABEL": "报告周期：2025-11-01 ~ 2025-11-30",
+        "CONFIDENTIALITY_LABEL": "密级：INTERNAL",
+        "GENERATED_AT_LABEL": "生成时间：2025-12-10"
+      }
+    },
+    {
+      "slide_no": 2,
+      "slide_key": "security_dashboard",
+      "placeholders": {
+        "SLIDE_TITLE": "安全态势仪表盘",
+        "KPI_DASHBOARD": "",
+        "ASSESSMENT_TITLE": "技术评估",
+        "ASSET_DISTRIBUTION_CHART": {
+          "position": {
+            "left": 0.85,
+            "top": 1.18,
+            "width": 6.5,
+            "height": 4.5
+          },
+          "categories": [
+            "服务器",
+            "终端",
+            "网络设备",
+            "安全设备",
+            "物联网设备"
+          ],
+          "values": [
+            120,
+            100,
+            200,
+            200,
+            400
+          ]
+        },
+        "P14_pie": {
+          "position": {
+            "left": 0.85,
+            "top": 1.18,
+            "width": 6.5,
+            "height": 4.5
+          },
+          "categories": [
+            "高危",
+            "中危",
+            "低危"
+          ],
+          "values": [
+            62,
+            837,
+            9914
+          ]
+        },
+        "TECHNICAL_ASSESSMENT": "本月安全态势呈现典型电商行业特征：1）威胁类型以账号爆破（200次）和代理工具（400次）为主，低危告警占比80.2%但存在62起高危事件；2）检测响应效率整体达标（MTTD 31分钟，MTTR 2.8小时），但INC-20251101-005事件处置耗时4小时54分钟，暴露应急流程优化空间；3）技术短板集中在SSH/RDP暴露服务（18资产）和云安全组0.0.0/0开放（+7趋势），需强化最小化暴露面策略。"
+      }
+    },
+    {
+      "slide_no": 3,
+      "slide_key": "alert_deep_analysis",
+      "placeholders": {
+        "SLIDE_TITLE": "告警深度分析",
+        "SEVERITY_TITLE": "严重程度分布",
+        "SEVERITY_BREAKDOWN": "",
+        "TOP_CATEGORIES_CHART": {
+          "position": {
+            "left": 0.85,
+            "top": 1.55,
+            "width": 11.9,
+            "height": 1.1
+          },
+          "categories": [
+            "Phishing",
+            "Brute Force",
+            "Cloud Misconfig",
+            "Malware",
+            "Data Exfil"
+          ],
+          "series": [
+            {
+              "name": "告警数量",
+              "values": [
+                1977,
+                2546,
+                1574,
+                828,
+                97
+              ]
+            }
+          ]
+        },
+        "TOP_RULES_TITLE": "Top告警规则",
+        "TOP_RULES_TABLE": {
+          "headers": [
+            "规则ID",
+            "规则名称",
+            "触发次数",
+            "误报率"
+          ],
+          "rows": [
+            [
+              "R-SSH-BRUTE-01",
+              "SSH 暴力破解",
+              857,
+              "13%"
+            ],
+            [
+              "R-O365-PHISH-02",
+              "O365 钓鱼邮件",
+              785,
+              "23%"
+            ],
+            [
+              "R-CLOUD-S3-OPEN",
+              "对象存储公开访问",
+              475,
+              "8%"
+            ]
+          ],
+          "position": {
+            "left": 0.85,
+            "top": 3.05,
+            "width": 5.65,
+            "height": 1.6
+          }
+        },
+        "RULES_ANALYSIS_TITLE": "规则分析",
+        "P15_line": {
+          "position": null,
+          "months": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec"
+          ],
+          "external_attacks": [
+            12.0,
+            13.7897,
+            14.2,
+            12.7558,
+            0.1867,
+            0.0178,
+            0.0165,
+            0.0182,
+            0.0195,
+            0.0201,
+            0.0188,
+            0.0175
+          ],
+          "malicious_outbound": [
+            45.6756,
+            50.7297,
+            76.7648,
+            67.9771,
+            0.0073,
+            0.0068,
+            0.0082,
+            0.0079,
+            0.0088,
+            0.0095,
+            0.0091,
+            0.0086
+          ]
+        },
+        "FP_TITLE": "误报分析与调优建议",
+        "TOP_RULES_ANALYSIS": "Top3规则覆盖核心风险场景但存在优化空间：SSH暴力破解（857次）符合电商环境特征，但误报率13%偏高；O365钓鱼邮件（785次）可能受用户量规模影响；对象存储公开访问（475次）与云账户数（7个）匹配，但需关注误报中的非生产环境资产。建议对R-CLOUD-S3-OPEN规则增加资产标签过滤，R-O365-PHISH-02需优化邮件内容特征库。",
+        "FALSE_POSITIVE_INSIGHT": "[R-O365-PHISH-02] 误报率23%：可能因营销邮件误触发，建议增加发件人白名单和链接安全检测；\n[R-SSH-BRUTE-01] 误报率13%：需核查运维白名单机制；\n[全局误报] 建议对低危告警引入上下文关联分析（如登录地点+设备指纹）；\n[误报治理] 建议建立规则调优SLA（如误报率>15%必须优先迭代）。"
+      }
+    },
+    {
+      "slide_no": 4,
+      "slide_key": "incident_timeline",
+      "placeholders": {
+        "SLIDE_TITLE": "事件时间线与处置轨迹",
+        "INCIDENTS_TABLE": {
+          "headers": [
+            "事件ID",
+            "事件标题",
+            "级别",
+            "检测时间",
+            "MTTD(分钟)",
+            "MTTR(分钟)",
+            "状态"
+          ],
+          "rows": [
+            [
+              "INC-20251101-001",
+              "云侧AccessKey泄露风险处置",
+              "medium",
+              "2025-11-01T03:49:00Z",
+              9,
+              90,
+              "closed"
+            ],
+            [
+              "INC-20251101-002",
+              "生产环境对外暴露服务被扫描利用",
+              "medium",
+              "2025-11-01T08:47:00Z",
+              38,
+              179,
+              "closed"
+            ],
+            [
+              "INC-20251101-003",
+              "生产环境对外暴露服务被扫描利用",
+              "medium",
+              "2025-11-01T07:45:00Z",
+              50,
+              190,
+              "monitoring"
+            ],
+            [
+              "INC-20251101-004",
+              "疑似勒索前置横向移动",
+              "high",
+              "2025-11-01T02:35:00Z",
+              29,
+              94,
+              "closed"
+            ],
+            [
+              "INC-20251101-005",
+              "可疑账号异常登录与提权",
+              "high",
+              "2025-11-01T01:40:00Z",
+              30,
+              274,
+              "closed"
+            ]
+          ],
+          "position": {
+            "left": 0.85,
+            "top": 1.55,
+            "width": 11.9,
+            "height": 2.35
+          }
+        },
+        "TIMELINE_TITLE": "事件时间线",
+        "TIMELINE_NARRATIVE": "",
+        "RESPONSE_TITLE": "响应效率",
+        "LESSONS_TITLE": "经验教训",
+        "P16_combo": {
+          "position": {
+            "left": 0.85,
+            "top": 4.0,
+            "width": 11.9,
+            "height": 2.5
+          },
+          "categories": [
+            "中秋（24/9/15-9/17）",
+            "国庆（24/10/1-10/7）",
+            "元旦（25/1/1）",
+            "周四",
+            "周五",
+            "周六",
+            "周日"
+          ],
+          "attack_counts": [
+            654,
+            145,
+            167,
+            189,
+            201,
+            178,
+            156
+          ],
+          "defense_rates": [
+            1.0,
+            0.98,
+            0.99,
+            1.0,
+            0.97,
+            0.99,
+            1.0
+          ]
+        },
+        "RESPONSE_METRICS": "响应效率呈现两极分化：MTTD 31分钟（符合SLA要求），但MTTR标准差达187分钟。高危事件平均响应2.2小时（达标），普通事件响应时间波动大（38-274分钟）。瓶颈分析显示：检测阶段耗时<10分钟的事件（如INC-20251101-004），处置阶段耗时超90分钟，暴露补丁验证流程效率问题。",
+        "LESSONS_LEARNED": "1）需建立自动化处置剧本缩短补丁加固时间（如预置容器镜像）；\n2）跨团队协作需优化：生产环境变更需提前同步安全部（如WAF规则更新）；\n3）建议对高危资产实施主动扫描（如每小时检测0.0.0/0配置）；\n4）固化'暴露服务分钟数'指标（当前SSH服务平均暴露432分钟）。"
+      }
+    },
+    {
+      "slide_no": 5,
+      "slide_key": "incident_details",
+      "placeholders": {
+        "SLIDE_TITLE": "高危事件详情分析",
+        "INCIDENT1_TITLE": "【中危】云侧AccessKey泄露风险处置",
+        "INCIDENT_DETAIL_1": "事件概述：检测到云平台AccessKey异常访问行为，攻击者通过泄露的凭证尝试访问生产环境资源。判定依据：事件发生于凌晨3:49，检测到非工作时间异常访问，且涉及生产主机prod-web-02。攻击向量：疑似通过第三方系统泄露AccessKey，攻击者利用该凭证访问云资源。影响范围：仅影响prod-web-02主机。处置措施：立即隔离主机、封禁可疑IP、回收AccessKey并强制轮换凭证。根因分析：AccessKey未启用临时凭证机制，且未设置细粒度访问控制策略。",
+        "INCIDENT2_TITLE": "【中危】生产环境对外暴露服务被扫描利用",
+        "INCIDENT_DETAIL_2": "事件概述：检测到多台生产环境主机（db-core-01,bastion-01,prod-web-01）被外部扫描工具探测暴露服务端口。判定依据：攻击者利用自动化工具扫描开放端口并尝试利用已知漏洞。攻击向量：通过互联网暴露的数据库和跳板机端口进行横向扫描。影响范围：涉及3台关键生产资产。处置措施：隔离主机、封禁IP、重置凭据、启用MFA并应用安全补丁。根因分析：暴露服务未实施最小化访问控制策略，且缺乏实时入侵检测机制。",
+        "ATTACK_PATTERN_SUMMARY": "攻击模式呈现自动化工具特征：1）TTP表现为扫描暴露服务（SSH/RDP/数据库）、暴力破解和凭证泄露利用 2）主要针对生产环境的云主机和数据库服务 3）利用未修复的中间件漏洞（如ActiveMQ RCE）和弱访问控制 4）攻击时间集中在非工作时段（凌晨1-3点），与Lazarus组织的部分行为模式相似。"
+      }
+    },
+    {
+      "slide_no": 6,
+      "slide_key": "vulnerability_details",
+      "placeholders": {
+        "SLIDE_TITLE": "漏洞态势详情",
+        "VULN_PIE_CHART": {
+          "position": {
+            "left": 0.85,
+            "top": 1.55,
+            "width": 5.0,
+            "height": 1.55
+          },
+          "categories": [
+            "严重",
+            "高危",
+            "中危",
+            "低危"
+          ],
+          "values": [
+            4,
+            15,
+            20,
+            92
+          ]
+        },
+        "VULN_DIST_TITLE": "漏洞分布",
+        "VULN_DISTRIBUTION": "",
+        "CVE_TABLE_TITLE": "重点CVE列表",
+        "TOP_CVE_TABLE": {
+          "headers": [
+            "CVE编号",
+            "漏洞名称",
+            "严重程度",
+            "影响资产",
+            "修复状态"
+          ],
+          "rows": [
+            [
+              "CVE-2024-3094",
+              "XZ Utils 后门风险",
+              "critical",
+              2,
+              "patched"
+            ],
+            [
+              "CVE-2023-46604",
+              "ActiveMQ RCE",
+              "high",
+              2,
+              "in_progress"
+            ],
+            [
+              "CVE-2024-6387",
+              "OpenSSH regreSSHion",
+              "high",
+              1,
+              "patched"
+            ]
+          ],
+          "position": {
+            "left": 6.1,
+            "top": 1.55,
+            "width": 6.65,
+            "height": 1.55
+          }
+        },
+        "CVE_ANALYSIS_TITLE": "CVE技术分析",
+        "PATCH_TITLE": "补丁状态",
+        "CVE_TECHNICAL_ANALYSIS": "1) CVE-2024-3094（XZ Utils后门风险）：攻击者可构造恶意xz文件触发后门，影响Linux系统。当前环境2台云主机受影响，需升级至xz-5.4.4或以上版本。2) CVE-2023-46604（ActiveMQ RCE）：未授权访问可执行任意代码，2台ActiveMQ服务器受影响，需升级至5.17.0+并禁用Web控制台。3) CVE-2024-6387（OpenSSH regreSSHion）：允许SSH密钥注入攻击，1台Kubernetes节点受影响，已通过版本升级修复。",
+        "PATCH_STATUS": "1. 已修复：CVE-2024-3094、CVE-2024-6387（完成时间：11月10日）\n2. 修复中：CVE-2023-46604（预计12月15日完成）\n3. 临时缓解：限制ActiveMQ端口访问，禁用公网暴露\n4. 高风险漏洞：ActiveMQ RCE漏洞需优先关注"
+      }
+    },
+    {
+      "slide_no": 7,
+      "slide_key": "attack_surface",
+      "placeholders": {
+        "SLIDE_TITLE": "攻击面与暴露分析",
+        "EXPOSED_SERVICES_TITLE": "暴露服务",
+        "EXPOSED_SERVICES_TABLE": {
+          "headers": [
+            "服务类型",
+            "暴露资产数"
+          ],
+          "rows": [
+            [
+              "SSH(22)",
+              17
+            ],
+            [
+              "RDP(3389)",
+              1
+            ],
+            [
+              "Kibana(5601)",
+              1
+            ],
+            [
+              "Grafana(3000)",
+              3
+            ]
+          ],
+          "position": {
+            "left": 0.85,
+            "top": 1.55,
+            "width": 5.65,
+            "height": 1.5
+          }
+        },
+        "EXPOSURE_ANALYSIS_TITLE": "暴露分析",
+        "SURFACE_TREND_TITLE": "攻击面趋势",
+        "REMEDIATION_TITLE": "收敛建议",
+        "EXTERNAL_EXPOSURE": "当前暴露风险：1) SSH(22)端口开放在17台主机，建议禁用密码登录并限制源IP 2) RDP(3389)和Kibana(5601)等高危端口直接暴露，缺乏WAF防护 3) Grafana(3000)服务暴露3台，需关闭不必要的外部访问 4) 12个公网IP中3个为新增暴露，建议立即核查其必要性",
+        "ATTACK_SURFACE_TREND": "本期公网IP数量稳定（12个），但新增3个暴露服务，攻击面呈扩大趋势。重点风险：Kubernetes节点和数据库服务的暴露量增加，需加强网络分段和访问控制策略",
+        "EXPOSURE_REMEDIATION": "1. SSH端口：实施基于证书的认证并限制白名单\n2. RDP服务：迁移至内网并启用VPN访问\n3. Kibana：关闭公网访问，仅允许通过跳板机\n4. Grafana：启用IP白名单和双因素认证\n5. 新增暴露服务：立即下线非必要的公网访问配置"
+      }
+    },
+    {
+      "slide_no": 8,
+      "slide_key": "cloud_security_details",
+      "placeholders": {
+        "SLIDE_TITLE": "云安全详细分析",
+        "CLOUD_RISKS_TABLE": {
+          "headers": [
+            "风险类型",
+            "数量",
+            "趋势"
+          ],
+          "rows": [
+            [
+              "0.安全组0.0.0/0暴露",
+              7,
+              "up"
+            ],
+            [
+              "对象存储公开访问",
+              2,
+              "flat"
+            ],
+            [
+              "未启用MFA的高权限账号",
+              1,
+              "down"
+            ]
+          ],
+          "position": {
+            "left": 0.85,
+            "top": 1.55,
+            "width": 11.9,
+            "height": 2.05
+          }
+        },
+        "CLOUD_MISCONFIG_TITLE": "云配置问题",
+        "CLOUD_MISCONFIG_DETAILS": "",
+        "IAM_TITLE": "IAM风险分析",
+        "COMPLIANCE_TITLE": "合规检查",
+        "IAM_RISK_ANALYSIS": "发现1个高权限账号未启用MFA，存在凭证泄露风险。建议：1) 强制所有IAM用户启用硬件Token MFA 2) 审核所有AccessKey的生命周期管理 3) 实施基于角色的最小权限策略（RBAC），禁止跨账户共享凭证 4) 对生产环境账号实施多因素认证+IP白名单绑定",
+        "CLOUD_COMPLIANCE": "1. 已满足：CIS-1.1（确保MFA启用）、CIS-2.3（安全组默认拒绝）\n2. 未达标：CIS-2.1（0.0.0/0暴露的7个安全组）\n3. 优先整改：等保2.0要求数据库端口必须通过加密通道访问\n4. 待完善：CIS-3.2（日志审计存储180天）\n5. 建议：部署云原生防火墙实施微隔离策略"
+      }
+    },
+    {
+      "slide_no": 9,
+      "slide_key": "technical_recommendations",
+      "placeholders": {
+        "SLIDE_TITLE": "技术整改建议",
+        "TECH_REC_TITLE": "整改方案",
+        "DETECTION_TITLE": "检测能力提升",
+        "HARDENING_TITLE": "安全加固清单",
+        "TECHNICAL_RECOMMENDATIONS": "1. 修复高危漏洞\n整改目标：消除CVE-2023-46604 ActiveMQ RCE风险\n实施步骤：\n- 登录受影响的2台ActiveMQ服务器\n- 执行官方补丁安装命令：`yum update activemq`\n- 验证补丁版本：`activemq --version`\n预期效果：消除远程代码执行漏洞\n实施风险：补丁可能与自定义插件冲突，需测试环境验证\n\n2. 限制云服务暴露面\n整改目标：关闭非必要对外暴露端口\n实施步骤：\n- 使用AWS CLI修改安全组：\n  `aws ec2 revoke-security-group-ingress --group-id sg-xxxx --protocol tcp --port 5601 --cidr 0.0.0.0/0`\n- 重复操作关闭3000/3389端口\n预期效果：减少攻击面83%\n实施风险：需确认业务是否依赖公网访问\n\n3. 强化SSH访问控制\n整改目标：防止暴力破解攻击\n实施步骤：\n- 修改sshd_config：\n  `MaxAuthTries 3`\n  `LoginGraceTime 60`\n  `AllowUsers devops admin`\n- 重启服务：`systemctl restart sshd`\n预期效果：降低857次/日暴力破解风险\n实施风险：需提前测试SSH连接\n\n4. 修复对象存储权限配置\n整改目标：消除S3桶公开访问风险\n实施步骤：\n- 修改存储桶策略：\n  `aws s3api put-bucket-policy --bucket acme-data --policy file://private.json`\n- 验证策略：`aws s3api get-bucket-acl --bucket acme-data`\n预期效果：阻断475次/月公开访问风险\n实施风险：需确认共享文件访问需求\n\n5. 实施MFA强制策略\n整改目标：降低账号泄露风险\n实施步骤：\n- 配置AWS IAM策略：\n  `{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Deny\",\"Action\":\"*\",\"Resource\":\"*\",\"Condition\":{\"Bool\":{\"aws:MultiFactorAuthPresent\":\"false\"}}}]}`\n- 为1个高权限账号绑定虚拟MFA\n预期效果：提升账号安全性90%\n实施风险：需培训用户使用MFA\n\n6. 优化容器镜像基线\n整改目标：消除镜像层漏洞\n实施步骤：\n- 更新Dockerfile基础镜像：\n  `FROM alpine:3.18`\n- 添加Trivy扫描CI/CD流程：\n  `trivy image --exit-code 1 --severity HIGH,CRITICAL my-image:latest`\n预期效果：提升镜像安全合规性\n实施风险：可能延长构建时间",
+        "DETECTION_IMPROVEMENTS": "1. 新增检测规则：\n- 针对Kubernetes节点异常SSH跳转行为，创建检测规则：\n  `检测kube-system命名空间内SSH连接发起行为`\n- 新增容器逃逸检测规则：\n  `监控容器内提权尝试和宿主机文件访问`\n\n2. 规则调优方向：\n- 优化R-SSH-BRUTE-01规则：\n  - 将失败登录阈值从10次/5分钟调整为5次/2分钟\n  - 增加IP信誉库实时验证\n- 优化R-O365-PHISH-02规则：\n  - 添加邮件发件人域名SPF/DKIM验证逻辑\n  - 增加链接域名黑名单匹配\n\n3. 日志源覆盖改进：\n- 部署Nginx access/error日志采集\n- 启用Redis慢日志审计功能\n- 配置MySQL general_log=ON并设置审计保留周期\n\n4. 检测盲区补充：\n- 部署CDN日志分析模块，监控异常流量模式\n- 在Kubernetes集群部署nsa审计，监控容器逃逸行为\n- 建立Office 365 API调用审计流水线",
+        "HARDENING_CHECKLIST": "1. 操作系统基线：检查/etc/ssh/sshd_config是否配置MaxAuthTries和LoginGraceTime\n2. 应用安全配置：验证Nginx是否禁用server_tokens和autoindex\n3. 网络访问控制：审计安全组是否限制0.0.0.0/0到必需端口\n4. 认证和授权：检查S3存储桶策略是否禁用公开写入权限\n5. 容器安全：验证Docker默认安全选项是否启用\n6. 日志审计：确认MySQL general_log是否开启并配置保留周期\n7. 服务最小化：关闭非必要的5601/3000端口\n8. 密钥管理：检查SSH密钥是否设置4096位强度并禁用密码登录"
+      }
+    },
+    {
+      "slide_no": 10,
+      "slide_key": "appendix_technical",
+      "placeholders": {
+        "SLIDE_TITLE": "附录：数据与证据索引",
+        "ASSETS_TABLE": {
+          "headers": [
+            "资产组ID",
+            "资产组名称",
+            "资产数量"
+          ],
+          "rows": [
+            [
+              "ag-core-prod",
+              "核心生产资产组",
+              250
+            ],
+            [
+              "ag-office",
+              "办公终端资产组",
+              495
+            ]
+          ],
+          "position": {
+            "left": 0.85,
+            "top": 5.15,
+            "width": 5.65,
+            "height": 0.2
+          }
+        },
+        "EVIDENCE_TITLE": "证据索引",
+        "FRESHNESS_TITLE": "数据时效",
+        "DATA_SCOPE_TITLE": "数据范围",
+        "VULN_NOTES_TITLE": "漏洞说明",
+        "EVIDENCE_NOTES_TITLE": "证据说明",
+        "ASSETS_TITLE": "资产范围",
+        "SERVICES_TITLE": "关键服务",
+        "TERMINOLOGY_TITLE": "术语表",
+        "EVIDENCE_INDEX": "告警数据 | qry_alerts_total_v7\n告警趋势 | qry_alerts_trend_weekly_v4\n告警分类 | qry_top_categories_v5\n检测规则 | qry_top_rules_v3\n事件记录 | qry_incidents_v3\n漏洞数据 | qry_vuln_summary_v2\n暴露面数据 | qry_exposure_v2",
+        "DATA_FRESHNESS": "数据更新周期：T+1日",
+        "DATA_SCOPE_NOTES": "本报告数据来源于MSS安全运营平台，包含告警、事件、漏洞、云安全等多维度数据。",
+        "VULN_NOTES": "漏洞数据来源于定期安全扫描，覆盖主机、应用和网络设备。",
+        "EVIDENCE_NOTES": "原始日志和证据数据保存于安全运营平台，可通过查询ID追溯。",
+        "KEY_SERVICES_LIST": "Kubernetes,MySQL,Redis,Nginx,Office 365",
+        "TERMINOLOGY_TECHNICAL": "MTTD：平均检测时间（Minutes to Detect）\nMTTR：平均响应时间（Minutes to Respond）\nTTP：战术技术程序（Tactics, Techniques, Procedures）\nIOC：失陷指标（Indicators of Compromise）\nEDR：终端检测响应（Endpoint Detection and Response）\nSIEM：安全信息事件管理（Security Information and Event Management）\nWAF：Web应用防火墙（Web Application Firewall）\nMFA：多因素认证（Multi-Factor Authentication）\nCVE：通用漏洞披露（Common Vulnerabilities and Exposures）\nRCE：远程代码执行（Remote Code Execution）"
+      }
+    }
+  ]
+}

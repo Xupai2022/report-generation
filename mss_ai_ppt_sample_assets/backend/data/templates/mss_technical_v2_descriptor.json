@@ -52,6 +52,37 @@
           "type": "text",
           "ai_generate": true,
           "ai_instruction": "生成报告生成时间标签，格式为：生成时间：[时间]。从report_meta.generated_at获取，如无数据则显示当前日期。"
+        },
+        {
+          "token": "abc",
+          "type": "P11_bar",
+          "ai_generate": false,
+          "chart_config": {
+            "data_source": "alerts.trend_weekly",
+            "x_field": "labels",
+            "y_field": "values",
+            "series_name": "告警数量",
+            "position": {
+              "left": 1.0,
+              "top": 2.0,
+              "width": 8.0,
+              "height": 4.0
+            }
+          }
+        },
+        {
+          "token": "P12_pie",
+          "type": "P12_pie",
+          "ai_generate": false,
+          "chart_config": {
+            "data_source": "threat_distribution",
+            "position": {
+              "left": 0.85,
+              "top": 1.18,
+              "width": 6.5,
+              "height": 4.5
+            }
+          }
         }
       ]
     },
@@ -86,39 +117,30 @@
           "max_length": 300
         },
         {
-          "token": "SEVERITY_PIE_CHART",
-          "type": "pie_chart",
+          "token": "ASSET_DISTRIBUTION_CHART",
+          "type": "P13_pie",
           "ai_generate": false,
           "chart_config": {
-            "data_source": "alerts.by_severity",
-            "category_map": {
-              "high": "高危",
-              "medium": "中危",
-              "low": "低危",
-              "info": "信息"
-            },
+            "data_source": "asset_distribution",
             "position": {
               "left": 0.85,
               "top": 1.18,
-              "width": 5.65,
-              "height": 3.40
+              "width": 6.5,
+              "height": 4.5
             }
           }
         },
         {
-          "token": "ALERT_TREND_CHART",
-          "type": "bar_chart",
+          "token": "P14_pie",
+          "type": "P14_pie",
           "ai_generate": false,
           "chart_config": {
-            "data_source": "alerts.trend_weekly",
-            "x_field": "labels",
-            "y_field": "values",
-            "series_name": "告警数量",
+            "data_source": "severity_distribution",
             "position": {
-              "left": 6.80,
+              "left": 0.85,
               "top": 1.18,
-              "width": 5.95,
-              "height": 3.40
+              "width": 6.5,
+              "height": 4.5
             }
           }
         }
@@ -149,7 +171,7 @@
         },
         {
           "token": "TOP_CATEGORIES_CHART",
-          "type": "bar_chart",
+          "type": "P11_bar",
           "ai_generate": false,
           "chart_config": {
             "data_source": "alerts.top_categories",
@@ -204,6 +226,14 @@
           "ai_generate": true,
           "ai_instruction": "分析Top告警规则的触发情况。评估：1）高频规则是否有效，还是产生大量噪音 2）各规则的误报率是否在合理范围 3）哪些规则可能需要调优。给出专业的检测工程视角分析。",
           "max_length": 250
+        },
+        {
+          "token": "P15_line",
+          "type": "P15_line",
+          "ai_generate": false,
+          "chart_config": {
+            "data_source": "monthly_threats"
+          }
         },
         {
           "token": "FP_TITLE",
@@ -294,6 +324,20 @@
           "ai_instruction": "从事件处置中总结经验教训。包括：1）检测能力的有效性和改进空间 2）处置流程的顺畅度 3）跨团队协作的问题 4）可以固化的最佳实践。每条教训要有对应的改进建议。",
           "max_items": 4,
           "max_chars_per_item": 100
+        },
+        {
+          "token": "P16_combo",
+          "type": "P16_combo",
+          "ai_generate": false,
+          "chart_config": {
+            "data_source": "attack_defense_stats",
+            "position": {
+              "left": 0.85,
+              "top": 4.0,
+              "width": 11.90,
+              "height": 2.5
+            }
+          }
         }
       ]
     },
@@ -358,7 +402,7 @@
         },
         {
           "token": "VULN_PIE_CHART",
-          "type": "pie_chart",
+          "type": "P13_pie",
           "ai_generate": false,
           "chart_config": {
             "data_source": "vulnerabilities.counts",

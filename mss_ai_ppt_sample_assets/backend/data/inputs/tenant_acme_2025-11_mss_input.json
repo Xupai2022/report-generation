@@ -52,6 +52,23 @@
       "Office 365"
     ]
   },
+  "asset_distribution": {
+    "categories": ["服务器", "终端", "网络设备", "安全设备", "物联网设备"],
+    "values": [120, 100, 200, 200, 400]
+  },
+  "threat_distribution": {
+    "categories": ["挖矿", "僵尸网络", "木马", "账号爆破", "代理工具"],
+    "values": [100, 100, 200, 200, 400]
+  },
+  "severity_distribution": {
+    "categories": ["高危", "中危", "低危"],
+    "values": [62, 837, 9914]
+  },
+  "monthly_threats": {
+    "months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    "external_attacks": [120000, 137897, 142000, 127558, 1867, 178, 165, 182, 195, 201, 188, 175],
+    "malicious_outbound": [456756, 507297, 767648, 679771, 73, 68, 82, 79, 88, 95, 91, 86]
+  },
   "alerts": {
     "total": 12414,
     "by_severity": {
@@ -116,9 +133,9 @@
         "W4"
       ],
       "values": [
-        3099,
-        3325,
-        3002,
+        1099,
+        1005,
+        1002,
         2988
       ],
       "unit": "count"
@@ -287,6 +304,10 @@
     },
     "sla_notes": "重大事件7x24响应；普通告警工作日响应。"
   },
+  "incident_response_time": {
+    "stages": ["识别", "响应", "处置", "闭环"],
+    "avg_minutes": [6.42, 27.40, 572.02, 625.38]
+  },
   "evidence": {
     "query_ids": {
       "alerts_total": "qry_alerts_total_v7",
@@ -316,5 +337,10 @@
       "count": 1,
       "trend": "down"
     }
-  ]
+  ],
+  "attack_defense_stats": {
+    "categories": ["中秋（24/9/15-9/17）", "国庆（24/10/1-10/7）", "元旦（25/1/1）", "周四", "周五", "周六", "周日"],
+    "attack_counts": [654, 145, 167, 189, 201, 178, 156],
+    "defense_rates": [100, 98, 99, 100, 97, 99, 100]
+  }
 }

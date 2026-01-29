@@ -14,7 +14,18 @@ import json
 class PlaceholderDefinition(BaseModel):
     """Definition for a placeholder in V2 templates."""
     token: str  # Placeholder token name, e.g., "HEADLINE"
-    type: Literal["text", "paragraph", "bullet_list", "kpi", "kpi_group", "table", "chart_data", "incident_list", "incident_detail", "bar_chart", "pie_chart", "native_table"]
+    type: Literal[
+        "text", "paragraph", "bullet_list", "kpi", "kpi_group", "table",
+        "chart_data", "incident_list", "incident_detail",
+        "native_table",
+        # Specific chart types
+        "P11_bar",  # Response time bar chart (处置时间柱状图)
+        "P12_pie",  # Threat type distribution donut chart (威胁类型分布饼图)
+        "P13_pie",  # Asset distribution donut chart (资产类型分布饼图)
+        "P14_pie",  # Severity distribution donut chart (告警严重程度分布饼图)
+        "P15_line",  # Monthly threats trend line chart (月度威胁趋势折线图)
+        "P16_combo",  # Combo chart with bar (daily attacks) and line (defense rate)
+    ]
     ai_generate: bool = False  # Whether content should be AI-generated
 
     # For ai_generate=False: direct data source

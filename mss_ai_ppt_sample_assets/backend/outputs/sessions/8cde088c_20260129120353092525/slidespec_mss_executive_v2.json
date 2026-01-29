@@ -1,0 +1,294 @@
+{
+  "template_id": "mss_executive_v2",
+  "slides": [
+    {
+      "slide_no": 1,
+      "slide_key": "cover",
+      "placeholders": {
+        "REPORT_TITLE": "ACME 电子商务 MSS月度安全报告",
+        "CUSTOMER_LABEL": "客户：ACME 电子商务",
+        "PERIOD_LABEL": "报告周期：2025-11-01 ~ 2025-11-30",
+        "GENERATED_AT_LABEL": "生成时间：2025年12月10日"
+      }
+    },
+    {
+      "slide_no": 2,
+      "slide_key": "executive_summary",
+      "placeholders": {
+        "SLIDE_TITLE": "安全态势总览",
+        "KEY_INSIGHTS_TITLE": "关键发现",
+        "HEADLINE": "高危告警激增16%，云配置风险显著上升需立即关注",
+        "KPI_SECTION": "告警总数: 12,414 | 高危告警: 62 | 安全事件: 5 | 高危事件: 2\n平均响应时间: 2.8小时 | 误报率: 16%",
+        "SUMMARY_PARAGRAPH": "本月安全态势呈现高危告警显著增长，云配置错误风险激增25%。MSS团队平均2.8小时响应事件，但误报率偏高影响处置效率。建议优先排查云环境配置漏洞，并优化告警过滤机制。",
+        "KEY_INSIGHTS": [
+          "暴力破解攻击环比+11%，主要针对SSH服务，建议部署多因素认证",
+          "云配置错误告警激增25%，涉及对象存储和安全组，需加强云安全治理",
+          "钓鱼攻击量下降14%但质量提升，建议升级邮件安全培训方案",
+          "91%终端已部署EDR，但仍有9%设备存在监控盲区需补全"
+        ]
+      }
+    },
+    {
+      "slide_no": 3,
+      "slide_key": "alert_trends",
+      "placeholders": {
+        "SLIDE_TITLE": "告警趋势分析",
+        "TREND_SECTION_TITLE": "周度趋势",
+        "TREND_ANALYSIS": "",
+        "SECURITY_INCIDENT_RESPONSE_EFFECTIVENESS": {
+          "position": {
+            "left": 0.94,
+            "top": 1.3,
+            "width": 4.5,
+            "height": 3
+          },
+          "categories": [
+            "识别",
+            "响应",
+            "处置",
+            "闭环"
+          ],
+          "series": [
+            {
+              "name": "平均处置时间（分钟）",
+              "values": [
+                6.42,
+                27.4,
+                572.02,
+                625.38
+              ]
+            }
+          ]
+        },
+        "TOP_CATEGORIES_TITLE": "告警类别分布",
+        "TOP_CATEGORIES_LIST": "",
+        "TOP_CATEGORIES_CHART": {
+          "position": {
+            "left": 7.1,
+            "top": 1.55,
+            "width": 5.65,
+            "height": 3.3
+          },
+          "categories": [
+            "Phishing",
+            "Brute Force",
+            "Cloud Misconfig",
+            "Malware",
+            "Data Exfil"
+          ],
+          "series": [
+            {
+              "name": "告警数量",
+              "values": [
+                1977,
+                2546,
+                1574,
+                828,
+                97
+              ]
+            }
+          ]
+        },
+        "CATEGORIES_INSIGHT_TITLE": "类别分析",
+        "MOM_TITLE": "环比分析",
+        "TOP_CATEGORIES_INSIGHT": "暴力破解（2546次）和云配置错误（1574次）构成主要威胁，分别环比增长11%和25%。异常登录行为检测量下降14%，但攻击复杂度显著提升，需警惕伪装攻击。",
+        "MOM_COMPARISON": "告警总量环比下降8%，但高危告警占比提升32%。云配置错误激增25%反映基础设施暴露面扩大，与近期云服务扩展节奏吻合，需加强云资源自动化合规检查。"
+      }
+    },
+    {
+      "slide_no": 4,
+      "slide_key": "major_incidents",
+      "placeholders": {
+        "SLIDE_TITLE": "重点安全事件",
+        "INCIDENT_OVERVIEW_TITLE": "事件概览",
+        "INCIDENT_DETAILS_TITLE": "事件列表",
+        "INCIDENT_DETAILS": "",
+        "INCIDENTS_TABLE": {
+          "headers": [
+            "事件ID",
+            "事件标题",
+            "级别",
+            "MTTR(分钟)",
+            "状态"
+          ],
+          "rows": [
+            [
+              "INC-20251101-001",
+              "云侧AccessKey泄露风险处置",
+              "medium",
+              90,
+              "closed"
+            ],
+            [
+              "INC-20251101-002",
+              "生产环境对外暴露服务被扫描利用",
+              "medium",
+              179,
+              "closed"
+            ],
+            [
+              "INC-20251101-003",
+              "生产环境对外暴露服务被扫描利用",
+              "medium",
+              190,
+              "monitoring"
+            ],
+            [
+              "INC-20251101-004",
+              "疑似勒索前置横向移动",
+              "high",
+              94,
+              "closed"
+            ],
+            [
+              "INC-20251101-005",
+              "可疑账号异常登录与提权",
+              "high",
+              274,
+              "closed"
+            ]
+          ],
+          "position": {
+            "left": 0.85,
+            "top": 2.95,
+            "width": 11.9,
+            "height": 2.65
+          }
+        },
+        "INCIDENT_INSIGHT_TITLE": "事件洞察",
+        "INCIDENT_SUMMARY": "本月共处置5起安全事件（2起高危），平均响应2.8小时。3起事件涉及暴露服务被扫描利用，处置效率符合SLA要求，但暴露面管理仍需加强。",
+        "INCIDENT_INSIGHT": "攻击者主要针对暴露的SSH/RDP服务及云存储实施扫描利用，60%事件涉及未合规配置的云资源。建议实施最小权限原则，强化对外服务的访问控制策略，定期开展暴露面审计。"
+      }
+    },
+    {
+      "slide_no": 5,
+      "slide_key": "vulnerability_exposure",
+      "placeholders": {
+        "SLIDE_TITLE": "漏洞与暴露面分析",
+        "VULN_STATS_TITLE": "漏洞统计",
+        "VULN_OVERVIEW_TITLE": "漏洞概况",
+        "EXPOSURE_STATS_TITLE": "暴露面统计",
+        "TOP_CVE_TITLE": "重点漏洞",
+        "TOP_CVE_LIST": "",
+        "TOP_VULNS_TABLE": {
+          "headers": [
+            "CVE编号",
+            "漏洞名称",
+            "严重程度",
+            "影响资产",
+            "修复状态"
+          ],
+          "rows": [
+            [
+              "CVE-2024-3094",
+              "XZ Utils 后门风险",
+              "critical",
+              2,
+              "patched"
+            ],
+            [
+              "CVE-2023-46604",
+              "ActiveMQ RCE",
+              "high",
+              2,
+              "in_progress"
+            ],
+            [
+              "CVE-2024-6387",
+              "OpenSSH regreSSHion",
+              "high",
+              1,
+              "patched"
+            ]
+          ],
+          "position": {
+            "left": 0.85,
+            "top": 4.25,
+            "width": 11.9,
+            "height": 1.05
+          }
+        },
+        "CVE_ANALYSIS_TITLE": "漏洞分析",
+        "VULN_STATS": "严重: 4 | 高危: 15 | 中危: 20 | 低危: 92",
+        "VULN_OVERVIEW": "本期发现漏洞总计131个，高危及以上漏洞19个（占比14.5%）。关键漏洞修复率66.7%（2/3），但ActiveMQ RCE漏洞尚未完成修复。整体漏洞风险处于可控范围，但需重点关注未修复的高危漏洞。",
+        "EXPOSURE_STATS": "对外IP: 12 | 新增暴露: 3",
+        "TOP_CVE_ANALYSIS": "XZ Utils后门风险（Critical）已修复，OpenSSH regreSSHion（High）已修复，但ActiveMQ RCE（High）仍处于修复中。建议优先处理未修复的ActiveMQ漏洞（P0），其可能被利用实现远程代码执行，需在72小时内完成补丁验证。",
+        "EXPOSURE_SUMMARY": "当前12个对外IP暴露中，SSH服务开放量最大（17资产），建议实施最小化端口暴露策略，关闭非必要的Kibana/Grafana明文访问，并定期审计暴露面变化。"
+      }
+    },
+    {
+      "slide_no": 6,
+      "slide_key": "cloud_security",
+      "placeholders": {
+        "SLIDE_TITLE": "云安全态势",
+        "CLOUD_ACCOUNTS_TITLE": "云账号",
+        "CLOUD_RISK_TITLE": "云风险列表",
+        "CLOUD_RISK_LIST": "",
+        "CLOUD_RISKS_TABLE": {
+          "headers": [
+            "风险类型",
+            "数量",
+            "趋势"
+          ],
+          "rows": [
+            [
+              "0.安全组0.0.0/0暴露",
+              7,
+              "up"
+            ],
+            [
+              "对象存储公开访问",
+              2,
+              "flat"
+            ],
+            [
+              "未启用MFA的高权限账号",
+              1,
+              "down"
+            ]
+          ],
+          "position": {
+            "left": 4.65,
+            "top": 1.55,
+            "width": 3.9,
+            "height": 2.95
+          }
+        },
+        "CLOUD_ANALYSIS_TITLE": "风险分析",
+        "CLOUD_REC_TITLE": "云安全建议",
+        "CLOUD_ACCOUNTS_COUNT": "7个",
+        "CLOUD_RISK_SUMMARY": "当前云环境存在7个安全组0.0.0/0暴露（风险上升），2个对象存储公开访问（稳定），1个未启用MFA的高权限账号（风险下降）。主要风险集中在网络层暴露和访问控制配置问题，数据泄露风险处于低水平。整体云安全风险呈上升趋势，需重点关注安全组收敛和权限最小化。",
+        "CLOUD_RECOMMENDATIONS": "[紧急] 收敛安全组0.0.0/0规则，仅开放必要端口给指定IP段\n[高优] 审计对象存储权限配置，禁用非授权公开访问\n[立即] 为所有高权限账号启用多因素认证（MFA）\n[持续] 建立云配置基线自动校验机制"
+      }
+    },
+    {
+      "slide_no": 7,
+      "slide_key": "recommendations",
+      "placeholders": {
+        "SLIDE_TITLE": "整改建议与行动计划",
+        "P0_TITLE": "P0 紧急（7天内）",
+        "P1_TITLE": "P1 重要（30天内）",
+        "STRATEGIC_TITLE": "战略建议",
+        "P0_ACTIONS": "[P0] 优先修复ActiveMQ RCE漏洞（CVE-2023-46604），责任方：运维团队，完成标准：补丁验证并关闭受影响服务端口\n[P0] 关闭非必要的Kibana(5601)和Grafana(3000)暴露，责任方：DevOps团队，完成标准：更新防火墙规则\n[P0] 复查所有RDP服务暴露，责任方：系统团队，完成标准：限制访问源IP并启用网络层认证\n[P0] 强制所有云账号启用MFA，责任方：安全团队，完成标准：100%高权限账号启用MFA\n[P0] 建立漏洞修复SLA流程，责任方：安全部门，完成标准：72小时内完成高危漏洞闭环",
+        "P1_ACTIONS": "[P1] 完成所有中危漏洞基线修复，责任方：运维团队，完成标准：30天内修复率≥90%\n[P1] 实施云安全组自动合规检查，责任方：DevOps团队，完成标准：建立每日扫描和告警机制\n[P1] 部署终端检测日志聚合系统，责任方：安全部门，完成标准：实现95%终端日志集中化管理\n[P1] 开展钓鱼邮件模拟演练，责任方：HR安全团队，完成标准：覆盖全员并建立行为基线\n[P1] 制定暴露面管理KPI指标，责任方：安全委员会，完成标准：季度暴露资产减少20%",
+        "STRATEGIC_RECOMMENDATIONS": "建议建立威胁情报驱动的主动防御体系，针对持续增长的外部攻击（月均188次）和告警趋势（W4环比增长289%），需加强攻击面管理能力。重点推进云安全治理自动化（当前7个云账号配置审计覆盖率待提升），并建设基于资产重要性的差异化防护策略。建议参考ISO 27001框架完善安全管理制度，特别是在第三方服务访问控制和数据分类分级方面存在行业最佳实践差距。"
+      }
+    },
+    {
+      "slide_no": 8,
+      "slide_key": "appendix",
+      "placeholders": {
+        "SLIDE_TITLE": "附录与说明",
+        "DATA_SCOPE_TITLE": "数据范围",
+        "ASSET_COVERAGE_TITLE": "资产覆盖",
+        "SLA_TITLE": "SLA说明",
+        "TERMINOLOGY_TITLE": "术语说明",
+        "CONTACT_INFO": "如有问题，请联系MSS运营团队",
+        "DATA_SCOPE": "说明：告警口径为去重后的规则触发次数；WAF与EDR重复告警已在聚合时合并。",
+        "ASSET_COVERAGE": "监控资产组: 2个 | 云账号: 7个 | 日志源: 38个",
+        "SLA_NOTES": "重大事件7x24响应；普通告警工作日响应。",
+        "TERMINOLOGY": "- MTTR（平均修复时间）：指从安全事件被检测到到完成修复的平均时间\n- MTTD（平均检测时间）：指从攻击发生到被安全系统检测到的平均时间\n- 误报率：指安全系统触发的告警中，实际为误报的比例\n- CVE（通用漏洞披露）：是公开披露的软件漏洞的唯一标识符，用于跟踪和管理安全漏洞"
+      }
+    }
+  ]
+}

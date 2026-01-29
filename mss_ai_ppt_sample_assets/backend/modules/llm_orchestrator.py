@@ -201,7 +201,7 @@ class LLMOrchestratorV2:
             'position': chart_config.get('position')
         }
 
-        if chart_type == 'bar_chart':
+        if chart_type == 'bar_chart' or chart_type == 'P11_bar':
             # Expect source_data to have 'labels' and 'values' or similar structure
             x_field = chart_config.get('x_field', 'labels')
             y_field = chart_config.get('y_field', 'values')
@@ -235,32 +235,88 @@ class LLMOrchestratorV2:
                 logger.warning(f"Bar chart data source {data_source} is neither dict nor list")
                 return {}
 
-        elif chart_type == 'pie_chart':
+        elif chart_type == 'pie_chart' or chart_type == 'P12_pie' or chart_type == 'P13_pie' or chart_type == 'P14_pie':
             # Expect source_data to be a dict like {'high': 52, 'medium': 473, 'low': 816}
+            # or a dict with 'categories' and 'values' arrays for P12_pie/P13_pie/P14_pie
             if isinstance(source_data, dict):
-                # Convert dict to categories and values
-                categories = []
-                values = []
+                # Check if it's the P12_pie/P13_pie/P14_pie format with categories and values arrays
+                if 'categories' in source_data and 'values' in source_data:
+                    result['categories'] = source_data['categories']
+                    result['values'] = source_data['values']
+                else:
+                    # Convert dict to categories and values (legacy pie_chart format)
+                    categories = []
+                    values = []
 
-                # Map severity levels to Chinese names
-                severity_map = chart_config.get('category_map', {
-                    'critical': '严重',
-                    'high': '高危',
-                    'medium': '中危',
-                    'low': '低危',
-                    'info': '信息'
-                })
+                    # Map severity levels to Chinese names
+                    severity_map = chart_config.get('category_map', {
+                        'critical': '严重',
+                        'high': '高危',
+                        'medium': '中危',
+                        'low': '低危',
+                        'info': '信息'
+                    })
 
-                for key, value in source_data.items():
-                    # Use mapped name if available, otherwise use key
-                    category_name = severity_map.get(key, key)
-                    categories.append(category_name)
-                    values.append(value)
+                    for key, value in source_data.items():
+                        # Use mapped name if available, otherwise use key
+                        category_name = severity_map.get(key, key)
+                        categories.append(category_name)
+                        values.append(value)
 
-                result['categories'] = categories
-                result['values'] = values
+                    result['categories'] = categories
+                    result['values'] = values
             else:
                 logger.warning(f"Pie chart data source {data_source} is not a dict")
+                return {}
+
+        elif chart_type == 'P15_line':
+            # Expect source_data to be a dict with 'months', 'external_attacks', 'malicious_outbound'
+            if isinstance(source_data, dict):
+                months = source_data.get('months', [])
+                external_attacks = source_data.get('external_attacks', [])
+                malicious_outbound = source_data.get('malicious_outbound', [])
+
+                # 转换为"万"单位（除以10000），保留原始值以便格式化
+                def to_wan(value):
+                    """Convert value to 万 unit (divide by 10000)"""
+                    if isinstance(value, (int, float)):
+                        return value / 10000
+                    return value
+
+                result['months'] = months
+                result['external_attacks'] = [to_wan(v) for v in external_attacks]
+                result['malicious_outbound'] = [to_wan(v) for v in malicious_outbound]
+            else:
+                logger.warning(f"Line chart data source {data_source} is not a dict")
+                return {}
+
+        elif chart_type == 'P16_combo':
+            # Expect source_data to be a dict with 'categories', 'attack_counts', 'defense_rates'
+            # attack_counts: daily attack numbers like [123, 145, ...]
+            # defense_rates: percentages like [1.0, 0.98, ...] (1.0 = 100%)
+            if isinstance(source_data, dict):
+                categories = source_data.get('categories', [])
+                attack_counts = source_data.get('attack_counts', [])
+                defense_rates = source_data.get('defense_rates', [])
+
+                # Ensure defense_rates are in decimal format (0.0-1.0)
+                # If they come as percentages (0-100), convert them
+                normalized_rates = []
+                for rate in defense_rates:
+                    if isinstance(rate, (int, float)):
+                        # If rate > 1, assume it's percentage (e.g., 100 = 100%)
+                        if rate > 1:
+                            normalized_rates.append(rate / 100.0)
+                        else:
+                            normalized_rates.append(rate)
+                    else:
+                        normalized_rates.append(0)
+
+                result['categories'] = categories
+                result['attack_counts'] = attack_counts
+                result['defense_rates'] = normalized_rates
+            else:
+                logger.warning(f"Combo chart data source {data_source} is not a dict")
                 return {}
 
         return result
@@ -348,7 +404,7 @@ class LLMOrchestratorV2:
                 result[slide_key] = {}
 
             # Handle chart placeholders
-            if placeholder.type in ('bar_chart', 'pie_chart') and placeholder.chart_config:
+            if placeholder.type in ('bar_chart', 'pie_chart', 'P11_bar', 'P12_pie', 'P13_pie', 'P14_pie', 'P15_line', 'P16_combo') and placeholder.chart_config:
                 chart_data = self._extract_chart_data(
                     tenant_input,
                     placeholder.chart_config,
@@ -742,6 +798,8 @@ class LLMOrchestratorV2:
         tenant_input: TenantInput,
         template: TemplateDescriptorV2,
         max_tokens_per_batch: int = 6000,
+        session_id: str = None,
+        ws_manager = None,
     ) -> Dict[str, Dict[str, Any]]:
         """Generate AI content in batches to avoid timeout issues.
 
@@ -749,6 +807,8 @@ class LLMOrchestratorV2:
             tenant_input: Raw tenant input data
             template: Template descriptor
             max_tokens_per_batch: Maximum estimated tokens per API call
+            session_id: Session ID for progress updates
+            ws_manager: WebSocket manager for real-time progress
 
         Returns:
             Dict[slide_key, Dict[token, value]] with all AI-generated content
@@ -756,21 +816,40 @@ class LLMOrchestratorV2:
         batches = self._get_smart_slide_batches(tenant_input, template, max_tokens_per_batch)
         total_batches = len(batches)
 
+        # Helper to send progress updates
+        def send_progress(progress: int, message: str):
+            if ws_manager and session_id:
+                import asyncio
+                try:
+                    asyncio.create_task(ws_manager.send_progress_update(
+                        session_id, progress, message
+                    ))
+                except:
+                    pass
+
         if total_batches <= 1:
             # No need for batching, use original method
             logger.info("📦 Single batch - using standard generation")
+            send_progress(35, "调用AI生成全部幻灯片内容...")
             system_prompt = self._build_system_prompt(template)
             user_prompt = self._build_user_prompt(tenant_input, template)
-            response = self._call_openai_with_retry(system_prompt, user_prompt)
-            return self._parse_llm_response(response, template)
+            result = self._call_and_parse_with_retry(system_prompt, user_prompt, template)
+            send_progress(60, "AI内容生成完成")
+            return result
 
         logger.info(f"📦 Smart batching: splitting into {total_batches} batches")
 
         all_ai_placeholders: Dict[str, Dict[str, Any]] = {}
         system_prompt = self._build_system_prompt(template)
 
+        # Progress range: 30% - 60%
+        progress_per_batch = 30.0 / total_batches
+
         for i, batch_slide_keys in enumerate(batches):
             logger.info(f"🔄 Processing batch {i + 1}/{total_batches}: slides {batch_slide_keys}")
+
+            current_progress = 30 + int(i * progress_per_batch)
+            send_progress(current_progress, f"AI生成进度 ({i + 1}/{total_batches} 批次)...")
 
             user_prompt = self._build_user_prompt_for_slides(
                 tenant_input,
@@ -783,8 +862,7 @@ class LLMOrchestratorV2:
             prompt_tokens = self._estimate_prompt_tokens(user_prompt)
             logger.info(f"   Batch prompt size: ~{prompt_tokens} tokens")
 
-            response = self._call_openai_with_retry(system_prompt, user_prompt)
-            batch_placeholders = self._parse_llm_response(response, template)
+            batch_placeholders = self._call_and_parse_with_retry(system_prompt, user_prompt, template)
 
             # Merge batch results
             for slide_key, tokens in batch_placeholders.items():
@@ -794,13 +872,68 @@ class LLMOrchestratorV2:
 
             logger.info(f"✅ Batch {i + 1}/{total_batches} completed")
 
+        send_progress(60, "所有AI内容生成完成")
         return all_ai_placeholders
+
+    def _call_and_parse_with_retry(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        template: TemplateDescriptorV2,
+        max_parse_retries: int = 5,
+    ) -> Dict[str, Dict[str, Any]]:
+        """Call LLM and parse response with retry on format errors.
+
+        If parsing fails 5 times, raises LLMGenerationError with suggestion to use mock mode.
+
+        Args:
+            system_prompt: System prompt
+            user_prompt: User prompt
+            template: Template descriptor for parsing
+            max_parse_retries: Maximum parse retry attempts (default: 5)
+
+        Returns:
+            Parsed placeholders dict
+
+        Raises:
+            LLMGenerationError: If all retries fail
+        """
+        for attempt in range(max_parse_retries):
+            try:
+                logger.info(f"🎯 LLM generation attempt {attempt + 1}/{max_parse_retries}")
+
+                # Call OpenAI API (with its own network retry logic)
+                response = self._call_openai_with_retry(system_prompt, user_prompt)
+
+                # Try to parse the response
+                parsed = self._parse_llm_response(response, template)
+
+                logger.info(f"✅ Successfully parsed LLM response on attempt {attempt + 1}")
+                return parsed
+
+            except LLMGenerationError as e:
+                logger.error(f"❌ Parse attempt {attempt + 1}/{max_parse_retries} failed: {e}")
+
+                if attempt < max_parse_retries - 1:
+                    logger.warning(f"🔄 Retrying LLM call due to format error...")
+                else:
+                    # All retries exhausted
+                    error_msg = (
+                        f"AI响应格式错误，已重试{max_parse_retries}次仍失败。"
+                        f"建议切换到mock模式重新生成。"
+                        f"最后错误: {e}"
+                    )
+                    logger.error(f"💥 {error_msg}")
+                    raise LLMGenerationError(error_msg) from e
+
+        # Should not reach here, but just in case
+        raise LLMGenerationError(f"Unexpected error: exceeded {max_parse_retries} retries")
 
     def _call_openai_with_retry(
         self,
         system_prompt: str,
         user_prompt: str,
-        max_retries: int = 3,
+        max_retries: int = 4,
         retry_delay: float = 2.0,
     ) -> str:
         """Call OpenAI API with retry logic."""
@@ -909,7 +1042,19 @@ class LLMOrchestratorV2:
         if "slides" not in data:
             raise LLMGenerationError("Response missing 'slides' field")
 
-        for slide_data in data["slides"]:
+        # Validate slides is a list
+        if not isinstance(data["slides"], list):
+            logger.error(f"'slides' field is not a list: {type(data['slides'])}")
+            logger.error(f"Response data: {json.dumps(data, ensure_ascii=False, indent=2)[:1000]}")
+            raise LLMGenerationError(f"'slides' field must be a list, got {type(data['slides'])}")
+
+        for i, slide_data in enumerate(data["slides"]):
+            # Validate each slide_data is a dict
+            if not isinstance(slide_data, dict):
+                logger.error(f"Slide data at index {i} is not a dict: {type(slide_data)}")
+                logger.error(f"Slide data: {slide_data}")
+                raise LLMGenerationError(f"Slide at index {i} must be a dict, got {type(slide_data)}: {slide_data}")
+
             slide_key = slide_data.get("slide_key")
             placeholders = slide_data.get("placeholders", {})
 
@@ -975,6 +1120,8 @@ class LLMOrchestratorV2:
         tenant_input: TenantInput,
         template_id: str,
         use_mock: bool = False,
+        session_id: str = None,
+        ws_manager = None,
     ) -> SlideSpecV2:
         """Generate SlideSpec for V2 template using AI.
 
@@ -984,21 +1131,36 @@ class LLMOrchestratorV2:
             tenant_input: Raw tenant input data
             template_id: V2 template ID
             use_mock: Whether to force mock/fallback generation
+            session_id: Session ID for WebSocket progress updates
+            ws_manager: WebSocket manager for real-time progress
 
         Returns:
             SlideSpecV2 with all placeholders filled
         """
         logger.info(f"🎯 Generating V2 slidespec for template: {template_id}, use_mock={use_mock}")
 
-        # Load V2 template descriptor
+        # Helper to send progress updates
+        def send_progress(progress: int, message: str):
+            if ws_manager and session_id:
+                import asyncio
+                try:
+                    asyncio.create_task(ws_manager.send_progress_update(
+                        session_id, progress, message
+                    ))
+                except:
+                    pass
+
+        # Load V2 template descriptor (20%)
+        send_progress(20, "加载模板描述符...")
         template = self.template_repo.get_descriptor_v2(template_id)
 
         # Create empty slidespec structure
         slide_keys = [(s.slide_no, s.slide_key) for s in template.slides]
         slidespec = create_empty_slidespec_v2(template_id, slide_keys)
 
-        # Step 1: Extract data placeholders (non-AI)
+        # Step 1: Extract data placeholders (non-AI) (25%)
         logger.info("📊 Extracting data placeholders...")
+        send_progress(25, "提取数据占位符...")
         data_placeholders = self._extract_data_placeholders(tenant_input, template)
 
         for slide_key, tokens in data_placeholders.items():
@@ -1006,35 +1168,41 @@ class LLMOrchestratorV2:
             if slide:
                 slide.placeholders.update(tokens)
 
-        # Step 2: Generate AI placeholders
+        # Step 2: Generate AI placeholders (30% - 70%)
         if config.settings.enable_llm and not use_mock:
             logger.info("🤖 Generating AI content...")
+            send_progress(30, "调用AI生成内容...")
             try:
                 # Use smart batched generation to avoid timeout issues
                 # Batching is based on estimated token count, not hardcoded limits
                 ai_placeholders = self._generate_ai_content_in_batches(
                     tenant_input,
                     template,
+                    session_id=session_id,
+                    ws_manager=ws_manager,
                 )
 
-                # Merge AI content
+                # Merge AI content (65%)
+                send_progress(65, "合并AI生成内容...")
                 for slide_key, tokens in ai_placeholders.items():
                     slide = slidespec.get_slide(slide_key)
                     if slide:
                         slide.placeholders.update(tokens)
 
-                # Validate key numbers
+                # Validate key numbers (70%)
+                send_progress(70, "验证生成内容...")
                 errors = self._validate_key_numbers(slidespec, tenant_input, template)
                 if errors:
                     logger.warning(f"⚠️ Validation warnings: {errors}")
 
             except LLMGenerationError as e:
                 logger.error(f"❌ AI generation failed: {e}")
-                logger.warning("⚠️ Falling back to placeholder text")
-                self._fill_ai_placeholders_with_fallback(slidespec, template)
+                raise
         else:
             logger.info(f"📝 {'Using mock mode' if use_mock else 'LLM disabled'}, using fallback content")
+            send_progress(35, "使用快速生成模式...")
             self._fill_ai_placeholders_with_fallback(slidespec, template)
+            send_progress(70, "快速生成完成...")
 
         logger.info(f"✅ V2 slidespec generation complete: {len(slidespec.slides)} slides")
         return slidespec

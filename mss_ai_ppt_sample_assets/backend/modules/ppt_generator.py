@@ -98,6 +98,19 @@ class PPTGeneratorV2:
                 "python-pptx is required for PPT rendering. Please install via requirements.txt."
             ) from exc
 
+        # Chart renderer function mapping (new architecture)
+        self._chart_renderers = {
+            'bar_chart': self._render_bar_chart,
+            'pie_chart': self._render_pie_chart,
+            'P11_bar': self._render_p11_bar,
+            'P12_pie': self._render_p12_pie,
+            'P13_pie': self._render_p13_pie,
+            'P14_pie': self._render_p14_pie,
+            'P15_line': self._render_p15_line,
+            'P16_combo': self._render_p16_combo,
+            # Add more specific chart types here
+        }
+
     def _replace_tokens_in_shape(self, shape, mapping: Dict[str, str]) -> None:
         """Replace {{TOKEN}} placeholders in shape text."""
         if not shape.has_text_frame:
@@ -434,6 +447,1161 @@ class PPTGeneratorV2:
 
         logger.info(f"Rendered professional pie chart with {len(categories)} categories")
 
+    def _render_p11_bar(
+        self,
+        slide,
+        chart_data: Dict[str, Any],
+        token: str = None
+    ) -> None:
+        """Render P11 response time bar chart (处置时间柱状图).
+
+        This function looks for an existing chart in the slide and updates its data,
+        preserving the manually configured layout and styling.
+
+        The chart is located by finding the placeholder token, then searching for
+        the nearest bar/column chart to that placeholder's position.
+
+        Style specifications:
+        - Bar color: RGB(68, 114, 196) - professional blue
+        - Data labels on top of each bar (显示具体数值)
+        - Legend at top: "平均处置时间（分钟）"
+        - Y-axis with smart scaling based on data range
+        - No gridlines, clean minimal design
+
+        Args:
+            slide: pptx slide object
+            chart_data: Dict with 'categories', 'series', 'position'
+            token: Token name to locate the placeholder (e.g., "abc")
+        """
+        if not chart_data or 'categories' not in chart_data or 'series' not in chart_data:
+            logger.warning("Invalid P11_bar chart data format")
+            return
+
+        categories = chart_data['categories']
+        series_list = chart_data['series']
+
+        if not categories or not series_list:
+            logger.warning("Empty P11_bar chart data")
+            return
+
+        # Find placeholder position first (if token provided)
+        placeholder_position = None
+        placeholder_shape_to_remove = None
+
+        if token:
+            import re
+            placeholder_pattern = re.compile(r'\{\{[^}]+\}\}')
+
+            # More flexible pattern: match {{...}} or {{... (missing closing brace)
+            
+            for shape in slide.shapes:
+                try:
+                    if hasattr(shape, 'has_text_frame') and shape.has_text_frame:
+                        full_text = ''.join(
+                            run.text for paragraph in shape.text_frame.paragraphs
+                            for run in paragraph.runs
+                        ).strip()
+
+                        if placeholder_pattern.fullmatch(full_text):
+                            # Found a placeholder, record its position and the shape for removal
+                            placeholder_position = (shape.left, shape.top)
+                            placeholder_shape_to_remove = shape
+                            logger.info(f"Found placeholder '{full_text}' at position ({shape.left}, {shape.top})")
+                            break
+                except:
+                    continue
+
+        # Find existing chart in the slide - look for BAR chart specifically
+        # If placeholder was found, find the nearest chart to it
+        chart_shape = None
+        chart = None
+        min_distance = float('inf')
+
+        for shape in slide.shapes:
+            try:
+                if shape.has_chart:
+                    # Try to access the chart to verify it's not an external link
+                    try:
+                        temp_chart = shape.chart  # Get chart reference immediately
+                        # Check if it's a bar/column chart type
+                        if temp_chart.chart_type in (
+                            self._XL_CHART_TYPE.COLUMN_CLUSTERED,
+                            self._XL_CHART_TYPE.COLUMN_STACKED,
+                            self._XL_CHART_TYPE.BAR_CLUSTERED,
+                            self._XL_CHART_TYPE.BAR_STACKED
+                        ):
+                            # If we have a placeholder position, find nearest chart
+                            if placeholder_position:
+                                chart_pos = (shape.left, shape.top)
+                                distance = ((chart_pos[0] - placeholder_position[0]) ** 2 +
+                                          (chart_pos[1] - placeholder_position[1]) ** 2) ** 0.5
+
+                                if distance < min_distance:
+                                    min_distance = distance
+                                    chart = temp_chart
+                                    chart_shape = shape
+                                    logger.info(f"Found bar chart at distance {distance} from placeholder")
+                            else:
+                                # No placeholder, just use first chart found
+                                chart = temp_chart
+                                chart_shape = shape
+                                logger.info(f"Found bar chart for P11_bar (no placeholder)")
+                                break
+                    except Exception as chart_error:
+                        # This shape has a chart but it's external or inaccessible
+                        logger.debug(f"Skipping chart shape with external link: {chart_error}")
+                        continue
+            except Exception as e:
+                # Skip shapes that cause errors when checking has_chart
+                logger.debug(f"Skipping shape due to error: {e}")
+                continue
+
+        # Try to update chart if found
+        if chart_shape and chart:
+            try:
+
+                # Create chart data
+                chart_data_obj = self._CategoryChartData()
+                chart_data_obj.categories = categories
+
+                for series in series_list:
+                    series_name = series.get('name', '平均处置时间（分钟）')
+                    series_values = series.get('values', [])
+                    chart_data_obj.add_series(series_name, series_values)
+
+                # Replace chart data
+                chart.replace_data(chart_data_obj)
+
+                # P11-specific styling
+                p11_bar_color = (68, 114, 196)  # Professional blue
+
+                # Remove default chart title (we only want the legend)
+                chart.has_title = False
+
+                # Style the series
+                for series in chart.series:
+                    # Apply bar color
+                    series.format.fill.solid()
+                    series.format.fill.fore_color.rgb = self._RGBColor(*p11_bar_color)
+
+                    # Add data labels on top of bars - MUST show values
+                    series.has_data_labels = True
+                    data_labels = series.data_labels
+                    data_labels.position = self._XL_LABEL_POSITION.OUTSIDE_END
+                    data_labels.show_value = True  # Explicitly show values
+                    data_labels.font.size = self._Pt(9)  # Smaller font size
+                    data_labels.font.color.rgb = self._RGBColor(51, 51, 51)  # Dark gray
+                    data_labels.font.name = "微软雅黑"
+                    data_labels.number_format = '0.00'  # Show 2 decimal places
+
+                # Configure legend (at top, smaller text)
+                chart.has_legend = True
+                chart.legend.position = self._XL_LEGEND_POSITION.TOP
+                chart.legend.include_in_layout = False
+                chart.legend.font.size = self._Pt(10)
+                chart.legend.font.name = "微软雅黑"
+                chart.legend.font.color.rgb = self._RGBColor(102, 102, 102)  # Gray, less prominent
+
+                # Style category axis (X-axis)
+                category_axis = chart.category_axis
+                category_axis.tick_labels.font.size = self._Pt(11)
+                category_axis.tick_labels.font.name = "微软雅黑"
+                category_axis.tick_labels.font.color.rgb = self._RGBColor(51, 51, 51)
+                category_axis.has_major_gridlines = False
+
+                # Style value axis (Y-axis) - NO gridlines, NO axis line, show all tick marks
+                value_axis = chart.value_axis
+                value_axis.tick_labels.font.size = self._Pt(10)
+                value_axis.tick_labels.font.name = "微软雅黑"
+                value_axis.tick_labels.font.color.rgb = self._RGBColor(102, 102, 102)  # Gray
+                value_axis.has_major_gridlines = False  # No gridlines per user requirement
+
+                # Remove Y-axis line (keep only tick labels)
+                try:
+                    value_axis.format.line.fill.background()
+                except:
+                    pass  # If this fails, axis line will remain
+
+                # Smart Y-axis configuration based on data range
+                # Find max value to determine appropriate scale
+                max_value = max(max(s['values']) for s in series_list if s.get('values'))
+
+                # Calculate appropriate major unit (interval between tick marks)
+                # Dynamically determine major_unit based on max_value for better readability
+                if max_value <= 100:
+                    major_unit = 20
+                    max_bound = ((max_value // 20) + 1) * 20
+                elif max_value <= 500:
+                    # For values 100-500: use 100 as interval (show 0, 100, 200, 300, 400, 500)
+                    major_unit = 100
+                    max_bound = ((int(max_value) // 100) + 2) * 100
+                elif max_value <= 1000:
+                    # For values 500-1000: use 200 as interval (show 0, 200, 400, 600, 800, 1000)
+                    major_unit = 200
+                    max_bound = ((int(max_value) // 200) + 1) * 200
+                elif max_value <= 5000:
+                    # For values 1000-5000: use 500 or 1000 as interval
+                    major_unit = 500
+                    max_bound = ((int(max_value) // 500) + 1) * 500
+                else:
+                    # For very large values (>5000): use 1000 as interval
+                    major_unit = 1000
+                    max_bound = ((int(max_value) // 1000) + 1) * 1000
+
+                value_axis.minimum_scale = 0
+                value_axis.maximum_scale = max_bound
+                value_axis.major_unit = major_unit
+
+                # Format Y-axis tick labels with 2 decimal places (e.g., 0.00, 100.00, 200.00)
+                value_axis.tick_labels.number_format = '0.00'
+                value_axis.visible = True  # Ensure axis is visible
+
+                # Try to set tick label spacing to 1 (show every label)
+                # PowerPoint defaults to skipping labels to avoid crowding
+                # We need to set tickLblSkip in the underlying XML
+                try:
+                    # Access the underlying chart XML
+                    axis_xml = value_axis._element
+
+                    # The namespace for chart elements
+                    ns = {'c': 'http://schemas.openxmlformats.org/drawingml/2006/chart'}
+
+                    # Find or create tickLblSkip element
+                    tick_lbl_skip = axis_xml.find('.//c:tickLblSkip', ns)
+
+                    if tick_lbl_skip is not None:
+                        # Element exists, set to 1 (show all labels)
+                        tick_lbl_skip.set('val', '1')
+                        logger.info("Set existing tickLblSkip to 1")
+                    else:
+                        # Element doesn't exist, we need to create it
+                        # Find a reference point (scaling element)
+                        scaling = axis_xml.find('.//c:scaling', ns)
+                        if scaling is not None:
+                            from lxml import etree
+                            # Create tickLblSkip element
+                            tick_lbl_skip = etree.Element(
+                                '{http://schemas.openxmlformats.org/drawingml/2006/chart}tickLblSkip',
+                                nsmap={'c': 'http://schemas.openxmlformats.org/drawingml/2006/chart'}
+                            )
+                            tick_lbl_skip.set('val', '1')
+
+                            # Insert after scaling element
+                            parent = scaling.getparent()
+                            idx = list(parent).index(scaling)
+                            parent.insert(idx + 1, tick_lbl_skip)
+                            logger.info("Created new tickLblSkip element with val=1")
+                except Exception as e:
+                    logger.warning(f"Could not set tick label spacing via XML: {e}")
+
+                # Set minor unit to None to avoid label crowding
+                try:
+                    value_axis.minor_unit = None
+                except:
+                    pass  # Some versions may not support setting minor_unit to None
+
+                logger.info(f"Updated existing P11_bar chart with {len(categories)} categories")
+
+            except Exception as e:
+                logger.error(f"Failed to update P11_bar chart: {e}")
+                # Don't return - continue to remove placeholder
+        else:
+            logger.warning("No existing chart found in slide for P11_bar")
+
+        # Remove the placeholder text box if we found it earlier
+        if placeholder_shape_to_remove:
+            try:
+                sp = placeholder_shape_to_remove.element
+                sp.getparent().remove(sp)
+                logger.info(f"Successfully removed placeholder text box for P11_bar")
+            except Exception as e:
+                logger.error(f"Failed to remove placeholder: {e}")
+
+    def _render_p12_pie(
+        self,
+        slide,
+        chart_data: Dict[str, Any],
+        token: str = None
+    ) -> None:
+        """Render P12 donut pie chart (威胁类型分布饼图).
+
+        This function looks for an existing chart in the slide and updates its data,
+        preserving the manually configured layout and legend position.
+
+        The chart is located by finding the placeholder token, then searching for
+        the nearest pie/doughnut chart to that placeholder's position.
+
+        Style specifications:
+        - Donut chart (pie with hole in center)
+        - Custom colors: 挖矿(68,114,196), 僵尸网络(49,134,155), 木马(167,104,60),
+          账号爆破(178,128,44), 代理工具(229,99,22)
+        - Legend on right side with category names
+        - Data labels showing percentages
+        - Clean, minimal design
+
+        Args:
+            slide: pptx slide object
+            chart_data: Dict with 'categories', 'values', 'position'
+            token: Token name to locate the placeholder (e.g., "P12_PIE_CHART")
+        """
+        if not chart_data or 'categories' not in chart_data or 'values' not in chart_data:
+            logger.warning("Invalid P12_pie chart data format")
+            return
+
+        categories = chart_data['categories']
+        values = chart_data['values']
+
+        if not categories or not values or len(categories) != len(values):
+            logger.warning("Invalid or mismatched P12_pie chart data")
+            return
+
+        # Find placeholder position first (if token provided)
+        placeholder_position = None
+        placeholder_shape_to_remove = None
+
+        if token:
+            import re
+            # More flexible pattern: match {{...}} or {{... (missing closing brace)
+            placeholder_pattern = re.compile(r'\{\{[^}]+\}?\}?')
+
+            for shape in slide.shapes:
+                try:
+                    if hasattr(shape, 'has_text_frame') and shape.has_text_frame:
+                        full_text = ''.join(
+                            run.text for paragraph in shape.text_frame.paragraphs
+                            for run in paragraph.runs
+                        ).strip()
+
+                        if placeholder_pattern.fullmatch(full_text):
+                            # Found a placeholder, record its position and the shape for removal
+                            placeholder_position = (shape.left, shape.top)
+                            placeholder_shape_to_remove = shape
+                            logger.info(f"Found placeholder '{full_text}' at position ({shape.left}, {shape.top})")
+                            break
+                except:
+                    continue
+
+        # Find existing chart in the slide - look for PIE/DOUGHNUT chart specifically
+        # If placeholder was found, find the nearest chart to it
+        chart_shape = None
+        chart = None
+        min_distance = float('inf')
+
+        for shape in slide.shapes:
+            try:
+                if shape.has_chart:
+                    # Try to access the chart to verify it's not an external link
+                    try:
+                        temp_chart = shape.chart  # Get chart reference immediately
+                        # Check if it's a pie or doughnut chart type
+                        if temp_chart.chart_type in (
+                            self._XL_CHART_TYPE.PIE,
+                            self._XL_CHART_TYPE.DOUGHNUT,
+                            self._XL_CHART_TYPE.PIE_EXPLODED,
+                            self._XL_CHART_TYPE.DOUGHNUT_EXPLODED
+                        ):
+                            # If we have a placeholder position, find nearest chart
+                            if placeholder_position:
+                                chart_pos = (shape.left, shape.top)
+                                distance = ((chart_pos[0] - placeholder_position[0]) ** 2 +
+                                          (chart_pos[1] - placeholder_position[1]) ** 2) ** 0.5
+
+                                if distance < min_distance:
+                                    min_distance = distance
+                                    chart = temp_chart
+                                    chart_shape = shape
+                                    logger.info(f"Found pie chart at distance {distance} from placeholder")
+                            else:
+                                # No placeholder, just use first chart found
+                                chart = temp_chart
+                                chart_shape = shape
+                                logger.info(f"Found pie/doughnut chart for P12_pie (no placeholder)")
+                                break
+                    except Exception as chart_error:
+                        # This shape has a chart but it's external or inaccessible
+                        logger.debug(f"Skipping chart shape with external link: {chart_error}")
+                        continue
+            except Exception as e:
+                # Skip shapes that cause errors when checking has_chart
+                logger.debug(f"Skipping shape due to error: {e}")
+                continue
+
+        # Try to update chart if found
+        if chart_shape and chart:
+            try:
+
+                # Update chart data
+                chart_data_obj = self._CategoryChartData()
+                chart_data_obj.categories = categories
+                chart_data_obj.add_series('', values)
+
+                # Replace chart data
+                chart.replace_data(chart_data_obj)
+
+                # P12-specific colors (matching the uploaded image - threat type distribution)
+                p12_colors = [
+                    (68, 114, 196),    # 挖矿 - Blue
+                    (49, 134, 155),    # 僵尸网络 - Teal/Cyan
+                    (167, 104, 60),    # 木马 - Brown
+                    (178, 128, 44),    # 账号爆破 - Olive/Dark Yellow
+                    (229, 99, 22),     # 代理工具 - Orange
+                ]
+
+                # Style pie slices with custom colors and white borders for separation
+                plot = chart.plots[0]
+                for idx, point in enumerate(plot.series[0].points):
+                    if idx < len(p12_colors):
+                        color = p12_colors[idx]
+                        point.format.fill.solid()
+                        point.format.fill.fore_color.rgb = self._RGBColor(*color)
+
+                        # Add white border between slices for better visual separation
+                        line = point.format.line
+                        line.color.rgb = self._RGBColor(255, 255, 255)  # White border
+                        line.width = self._Pt(2)  # 2pt border width
+
+                # Update data labels with percentages (smaller font)
+                plot.has_data_labels = True
+                data_labels = plot.data_labels
+                data_labels.show_category_name = False
+                data_labels.show_percentage = True
+                data_labels.show_value = False
+                data_labels.font.size = self._Pt(9)  # Smaller font for percentages
+                data_labels.font.name = "微软雅黑"
+                data_labels.font.color.rgb = self._RGBColor(51, 51, 51)
+                data_labels.number_format = '0%'
+
+                # Update legend styling (position should already be set in template)
+                if chart.has_legend:
+                    chart.legend.font.size = self._Pt(10)
+                    chart.legend.font.name = "微软雅黑"
+                    chart.legend.font.color.rgb = self._RGBColor(51, 51, 51)
+
+                logger.info(f"Updated existing P12_pie donut chart with {len(categories)} categories")
+
+            except Exception as e:
+                logger.error(f"Failed to update chart: {e}")
+                # Don't return - continue to remove placeholder
+        else:
+            logger.warning("No existing chart found in slide for P12_pie")
+
+        # Remove the placeholder text box if we found it earlier
+        if placeholder_shape_to_remove:
+            try:
+                sp = placeholder_shape_to_remove.element
+                sp.getparent().remove(sp)
+                logger.info(f"Successfully removed placeholder text box for P12_pie")
+            except Exception as e:
+                logger.error(f"Failed to remove placeholder: {e}")
+
+    def _render_p13_pie(
+        self,
+        slide,
+        chart_data: Dict[str, Any],
+        token: str = None
+    ) -> None:
+        """Render P13 donut pie chart (资产类型分布饼图).
+
+        This function looks for an existing chart in the slide and updates its data,
+        preserving the manually configured layout and legend position.
+
+        The chart is located by finding the placeholder token, then searching for
+        the nearest pie/doughnut chart to that placeholder's position.
+
+        Style specifications:
+        - Donut chart (pie with hole in center)
+        - Custom colors: 服务器(72,116,203), 终端(238,130,47), 网络设备(117,189,66),
+          安全设备(242,186,2), 物联网设备(48,192,180)
+        - Legend on right side with category names
+        - Data labels showing percentages
+        - Clean, minimal design
+
+        Args:
+            slide: pptx slide object
+            chart_data: Dict with 'categories', 'values', 'position'
+            token: Token name to locate the placeholder (e.g., "SEVERITY_PIE_CHART")
+        """
+        if not chart_data or 'categories' not in chart_data or 'values' not in chart_data:
+            logger.warning("Invalid P13_pie chart data format")
+            return
+
+        categories = chart_data['categories']
+        values = chart_data['values']
+
+        if not categories or not values or len(categories) != len(values):
+            logger.warning("Invalid or mismatched P13_pie chart data")
+            return
+
+        # Find placeholder position first (if token provided)
+        placeholder_position = None
+        placeholder_shape_to_remove = None
+
+        if token:
+            import re
+            # More flexible pattern: match {{...}} or {{... (missing closing brace)
+            placeholder_pattern = re.compile(r'\{\{[^}]+\}?\}?')
+
+            for shape in slide.shapes:
+                try:
+                    if hasattr(shape, 'has_text_frame') and shape.has_text_frame:
+                        full_text = ''.join(
+                            run.text for paragraph in shape.text_frame.paragraphs
+                            for run in paragraph.runs
+                        ).strip()
+
+                        if placeholder_pattern.fullmatch(full_text):
+                            # Found a placeholder, record its position and the shape for removal
+                            placeholder_position = (shape.left, shape.top)
+                            placeholder_shape_to_remove = shape
+                            logger.info(f"Found placeholder '{full_text}' at position ({shape.left}, {shape.top})")
+                            break
+                except:
+                    continue
+
+        # Find existing chart in the slide - look for PIE/DOUGHNUT chart specifically
+        # If placeholder was found, find the nearest chart to it
+        chart_shape = None
+        chart = None
+        min_distance = float('inf')
+
+        for shape in slide.shapes:
+            try:
+                if shape.has_chart:
+                    # Try to access the chart to verify it's not an external link
+                    try:
+                        temp_chart = shape.chart  # Get chart reference immediately
+                        # Check if it's a pie or doughnut chart type
+                        if temp_chart.chart_type in (
+                            self._XL_CHART_TYPE.PIE,
+                            self._XL_CHART_TYPE.DOUGHNUT,
+                            self._XL_CHART_TYPE.PIE_EXPLODED,
+                            self._XL_CHART_TYPE.DOUGHNUT_EXPLODED
+                        ):
+                            # If we have a placeholder position, find nearest chart
+                            if placeholder_position:
+                                chart_pos = (shape.left, shape.top)
+                                distance = ((chart_pos[0] - placeholder_position[0]) ** 2 +
+                                          (chart_pos[1] - placeholder_position[1]) ** 2) ** 0.5
+
+                                if distance < min_distance:
+                                    min_distance = distance
+                                    chart = temp_chart
+                                    chart_shape = shape
+                                    logger.info(f"Found pie chart at distance {distance} from placeholder")
+                            else:
+                                # No placeholder, just use first chart found
+                                chart = temp_chart
+                                chart_shape = shape
+                                logger.info(f"Found pie/doughnut chart for P13_pie (no placeholder)")
+                                break
+                    except Exception as chart_error:
+                        # This shape has a chart but it's external or inaccessible
+                        logger.debug(f"Skipping chart shape with external link: {chart_error}")
+                        continue
+            except Exception as e:
+                # Skip shapes that cause errors when checking has_chart
+                logger.debug(f"Skipping shape due to error: {e}")
+                continue
+
+        # Try to update chart if found
+        if chart_shape and chart:
+            try:
+
+                # Update chart data
+                chart_data_obj = self._CategoryChartData()
+                chart_data_obj.categories = categories
+                chart_data_obj.add_series('', values)
+
+                # Replace chart data
+                chart.replace_data(chart_data_obj)
+
+                # P13-specific colors (matching the uploaded image)
+                p13_colors = [
+                    (72, 116, 203),    # 服务器 - Blue
+                    (238, 130, 47),    # 终端 - Orange
+                    (117, 189, 66),    # 网络设备 - Green
+                    (242, 186, 2),     # 安全设备 - Yellow
+                    (48, 192, 180),    # 物联网设备 - Teal
+                ]
+
+                # Style pie slices with custom colors and white borders for separation
+                plot = chart.plots[0]
+                for idx, point in enumerate(plot.series[0].points):
+                    if idx < len(p13_colors):
+                        color = p13_colors[idx]
+                        point.format.fill.solid()
+                        point.format.fill.fore_color.rgb = self._RGBColor(*color)
+
+                        # Add white border between slices for better visual separation
+                        line = point.format.line
+                        line.color.rgb = self._RGBColor(255, 255, 255)  # White border
+                        line.width = self._Pt(2)  # 2pt border width
+
+                # Update data labels with percentages (smaller font)
+                plot.has_data_labels = True
+                data_labels = plot.data_labels
+                data_labels.show_category_name = False
+                data_labels.show_percentage = True
+                data_labels.show_value = False
+                data_labels.font.size = self._Pt(9)  # Smaller font for percentages
+                data_labels.font.name = "微软雅黑"
+                data_labels.font.color.rgb = self._RGBColor(51, 51, 51)
+                data_labels.number_format = '0%'
+
+                # Update legend styling (position should already be set in template)
+                if chart.has_legend:
+                    chart.legend.font.size = self._Pt(10)
+                    chart.legend.font.name = "微软雅黑"
+                    chart.legend.font.color.rgb = self._RGBColor(51, 51, 51)
+
+                logger.info(f"Updated existing P13_pie donut chart with {len(categories)} categories")
+
+            except Exception as e:
+                logger.error(f"Failed to update chart: {e}")
+                # Don't return - continue to remove placeholder
+        else:
+            logger.warning("No existing chart found in slide for P13_pie")
+
+        # Remove the placeholder text box if we found it earlier
+        if placeholder_shape_to_remove:
+            try:
+                sp = placeholder_shape_to_remove.element
+                sp.getparent().remove(sp)
+                logger.info(f"Successfully removed placeholder text box for P13_pie")
+            except Exception as e:
+                logger.error(f"Failed to remove placeholder: {e}")
+
+    def _render_p14_pie(
+        self,
+        slide,
+        chart_data: Dict[str, Any],
+        token: str = None
+    ) -> None:
+        """Render P14 donut pie chart (告警严重程度分布饼图 - 高危/中危/低危).
+
+        This function looks for an existing chart in the slide and updates its data,
+        preserving the manually configured layout and legend position.
+
+        Style specifications:
+        - Donut chart (pie with hole in center)
+        - Custom severity colors: 高危(220,38,38 红色), 中危(234,179,8 黄色), 低危(34,197,94 绿色)
+        - Legend on right side with category names
+        - Data labels showing percentages
+        - Clean, minimal design
+
+        Args:
+            slide: pptx slide object
+            chart_data: Dict with 'categories', 'values', 'position'
+            token: Token name to locate the placeholder (e.g., "P14_pie")
+        """
+        if not chart_data or 'categories' not in chart_data or 'values' not in chart_data:
+            logger.warning("Invalid P14_pie chart data format")
+            return
+
+        categories = chart_data['categories']
+        values = chart_data['values']
+
+        if not categories or not values or len(categories) != len(values):
+            logger.warning("Invalid or mismatched P14_pie chart data")
+            return
+
+        # Find placeholder position first (if token provided)
+        placeholder_position = None
+        placeholder_shape_to_remove = None
+
+        if token:
+            import re
+            # More flexible pattern: match {{...}} or {{... (missing closing brace)
+            placeholder_pattern = re.compile(r'\{\{[^}]+\}?\}?')
+
+            for shape in slide.shapes:
+                try:
+                    if hasattr(shape, 'has_text_frame') and shape.has_text_frame:
+                        full_text = ''.join(
+                            run.text for paragraph in shape.text_frame.paragraphs
+                            for run in paragraph.runs
+                        ).strip()
+
+                        if placeholder_pattern.fullmatch(full_text):
+                            # Found a placeholder, record its position and the shape for removal
+                            placeholder_position = (shape.left, shape.top)
+                            placeholder_shape_to_remove = shape
+                            logger.info(f"Found placeholder '{full_text}' at position ({shape.left}, {shape.top})")
+                            break
+                except:
+                    continue
+
+        # Find existing chart in the slide - look for PIE/DOUGHNUT chart specifically
+        # If placeholder was found, find the nearest chart to it
+        chart_shape = None
+        chart = None
+        min_distance = float('inf')
+
+        for shape in slide.shapes:
+            try:
+                if shape.has_chart:
+                    # Try to access the chart to verify it's not an external link
+                    try:
+                        temp_chart = shape.chart  # Get chart reference immediately
+                        # Check if it's a pie or doughnut chart type
+                        if temp_chart.chart_type in (
+                            self._XL_CHART_TYPE.PIE,
+                            self._XL_CHART_TYPE.DOUGHNUT,
+                            self._XL_CHART_TYPE.PIE_EXPLODED,
+                            self._XL_CHART_TYPE.DOUGHNUT_EXPLODED
+                        ):
+                            # If we have a placeholder position, find nearest chart
+                            if placeholder_position:
+                                chart_pos = (shape.left, shape.top)
+                                distance = ((chart_pos[0] - placeholder_position[0]) ** 2 +
+                                          (chart_pos[1] - placeholder_position[1]) ** 2) ** 0.5
+
+                                if distance < min_distance:
+                                    min_distance = distance
+                                    chart = temp_chart
+                                    chart_shape = shape
+                                    logger.info(f"Found pie chart at distance {distance} from placeholder")
+                            else:
+                                # No placeholder, just use first chart found
+                                chart = temp_chart
+                                chart_shape = shape
+                                logger.info(f"Found pie/doughnut chart for P14_pie (no placeholder)")
+                                break
+                    except Exception as chart_error:
+                        # This shape has a chart but it's external or inaccessible
+                        logger.debug(f"Skipping chart shape with external link: {chart_error}")
+                        continue
+            except Exception as e:
+                # Skip shapes that cause errors when checking has_chart
+                logger.debug(f"Skipping shape due to error: {e}")
+                continue
+
+        # Try to update chart if found
+        if chart_shape and chart:
+            try:
+
+                # Update chart data
+                chart_data_obj = self._CategoryChartData()
+                chart_data_obj.categories = categories
+                chart_data_obj.add_series('', values)
+
+                # Replace chart data
+                chart.replace_data(chart_data_obj)
+
+                # P14-specific colors for severity levels (高危/中危/低危)
+                p14_colors = [
+                    (220, 38, 38),     # 高危 - Red
+                    (234, 179, 8),     # 中危 - Yellow/Amber
+                    (34, 197, 94),     # 低危 - Green
+                ]
+
+                # Style pie slices with custom colors and white borders for separation
+                plot = chart.plots[0]
+                for idx, point in enumerate(plot.series[0].points):
+                    if idx < len(p14_colors):
+                        color = p14_colors[idx]
+                        point.format.fill.solid()
+                        point.format.fill.fore_color.rgb = self._RGBColor(*color)
+
+                        # Add white border between slices for better visual separation
+                        line = point.format.line
+                        line.color.rgb = self._RGBColor(255, 255, 255)  # White border
+                        line.width = self._Pt(2)  # 2pt border width
+
+                # Update data labels with percentages (smaller font)
+                plot.has_data_labels = True
+                data_labels = plot.data_labels
+                data_labels.show_category_name = False
+                data_labels.show_percentage = True
+                data_labels.show_value = False
+                data_labels.font.size = self._Pt(9)  # Smaller font for percentages
+                data_labels.font.name = "微软雅黑"
+                data_labels.font.color.rgb = self._RGBColor(51, 51, 51)
+                data_labels.number_format = '0%'
+
+                # Update legend styling (position should already be set in template)
+                if chart.has_legend:
+                    chart.legend.font.size = self._Pt(10)
+                    chart.legend.font.name = "微软雅黑"
+                    chart.legend.font.color.rgb = self._RGBColor(51, 51, 51)
+
+                logger.info(f"Updated existing P14_pie donut chart with {len(categories)} categories")
+
+            except Exception as e:
+                logger.error(f"Failed to update chart: {e}")
+                # Don't return - continue to remove placeholder
+        else:
+            logger.warning("No existing chart found in slide for P14_pie")
+
+        # Remove the placeholder text box if we found it earlier
+        if placeholder_shape_to_remove:
+            try:
+                sp = placeholder_shape_to_remove.element
+                sp.getparent().remove(sp)
+                logger.info(f"Successfully removed placeholder text box for P14_pie")
+            except Exception as e:
+                logger.error(f"Failed to remove placeholder: {e}")
+
+    def _render_p15_line(
+        self,
+        slide,
+        chart_data: Dict[str, Any],
+        token: str = None
+    ) -> None:
+        """Render P15 line chart (月度威胁趋势折线图 - 外部攻击数和恶意外联数).
+
+        This function looks for an existing chart in the slide and updates its data,
+        preserving the manually configured layout and legend position.
+
+        Style specifications:
+        - Line chart with two series (dual-line)
+        - Series 1: External attacks (外部攻击数)
+        - Series 2: Malicious outbound (恶意外联数)
+        - X-axis: 12 months
+        - Custom colors for each series
+        - Data labels optional
+        - Clean, minimal design
+
+        Args:
+            slide: pptx slide object
+            chart_data: Dict with 'months', 'external_attacks', 'malicious_outbound'
+            token: Token name to locate the placeholder (e.g., "P15_line")
+        """
+        if not chart_data or 'months' not in chart_data:
+            logger.warning("Invalid P15_line chart data format")
+            return
+
+        months = chart_data.get('months', [])
+        external_attacks = chart_data.get('external_attacks', [])
+        malicious_outbound = chart_data.get('malicious_outbound', [])
+
+        if not months or not external_attacks or not malicious_outbound:
+            logger.warning("Invalid or missing P15_line chart data")
+            return
+
+        # Find placeholder position first (if token provided)
+        placeholder_position = None
+        placeholder_shape_to_remove = None
+
+        if token:
+            import re
+            # More flexible pattern: match {{...}} or {{... (missing closing brace)
+            placeholder_pattern = re.compile(r'\{\{[^}]+\}?\}?')
+
+            for shape in slide.shapes:
+                try:
+                    if hasattr(shape, 'has_text_frame') and shape.has_text_frame:
+                        full_text = ''.join(
+                            run.text for paragraph in shape.text_frame.paragraphs
+                            for run in paragraph.runs
+                        ).strip()
+
+                        if placeholder_pattern.fullmatch(full_text):
+                            # Found a placeholder, record its position and the shape for removal
+                            placeholder_position = (shape.left, shape.top)
+                            placeholder_shape_to_remove = shape
+                            logger.info(f"Found placeholder '{full_text}' at position ({shape.left}, {shape.top})")
+                            break
+                except:
+                    continue
+
+        # Find existing chart in the slide - look for LINE chart specifically
+        # If placeholder was found, find the nearest chart to it
+        # Also search inside group shapes
+        chart_shape = None
+        chart = None
+        min_distance = float('inf')
+
+        def check_shape_for_line_chart(shape, parent_left=0, parent_top=0):
+            """Check if a shape contains a line chart. Returns (chart, chart_shape) or (None, None)."""
+            nonlocal chart, chart_shape, min_distance
+
+            try:
+                if shape.has_chart:
+                    # Try to access the chart to verify it's not an external link
+                    try:
+                        temp_chart = shape.chart  # Get chart reference immediately
+                        # Check if it's a line chart type
+                        if temp_chart.chart_type in (
+                            self._XL_CHART_TYPE.LINE,
+                            self._XL_CHART_TYPE.LINE_MARKERS,
+                            self._XL_CHART_TYPE.LINE_MARKERS_STACKED,
+                            self._XL_CHART_TYPE.LINE_STACKED
+                        ):
+                            # If we have a placeholder position, find nearest chart
+                            if placeholder_position:
+                                # For shapes in groups, use absolute position
+                                chart_pos = (parent_left + shape.left, parent_top + shape.top)
+                                distance = ((chart_pos[0] - placeholder_position[0]) ** 2 +
+                                          (chart_pos[1] - placeholder_position[1]) ** 2) ** 0.5
+
+                                if distance < min_distance:
+                                    min_distance = distance
+                                    chart = temp_chart
+                                    chart_shape = shape
+                                    logger.info(f"Found line chart at distance {distance} from placeholder")
+                            else:
+                                # No placeholder, just use first chart found
+                                chart = temp_chart
+                                chart_shape = shape
+                                logger.info(f"Found line chart for P15_line (no placeholder)")
+                                return True  # Stop searching
+                    except Exception as chart_error:
+                        # This shape has a chart but it's external or inaccessible
+                        logger.debug(f"Skipping chart shape with external link: {chart_error}")
+            except Exception as e:
+                # Skip shapes that cause errors when checking has_chart
+                logger.debug(f"Skipping shape due to error: {e}")
+
+            return False
+
+        # Search all shapes, including those inside groups
+        for shape in slide.shapes:
+            # Check if it's a group shape
+            if shape.shape_type == 6:  # GROUP
+                try:
+                    # Search inside the group
+                    for sub_shape in shape.shapes:
+                        if check_shape_for_line_chart(sub_shape, shape.left, shape.top):
+                            break
+                except Exception as e:
+                    logger.debug(f"Error searching group shape: {e}")
+            else:
+                # Regular shape
+                if check_shape_for_line_chart(shape):
+                    break
+
+        # Try to update chart if found
+        if chart_shape and chart:
+            try:
+                # Update chart data with two series
+                chart_data_obj = self._CategoryChartData()
+                chart_data_obj.categories = months
+
+                # Add two series
+                chart_data_obj.add_series('外部攻击数', external_attacks)
+                chart_data_obj.add_series('恶意外联数', malicious_outbound)
+
+                # Replace chart data
+                try:
+                    chart.replace_data(chart_data_obj)
+                except Exception as replace_error:
+                    # Chart has external data source - try to access chart part to embed it
+                    logger.warning(f"Cannot replace external chart data directly: {replace_error}")
+                    logger.info("Attempting to work with existing data series...")
+                    # If chart has external data, we can't replace_data
+                    # But we can still style existing series and modify labels
+                    if len(chart.plots) == 0 or len(chart.plots[0].series) < 2:
+                        raise Exception("Chart does not have 2 series to update")
+
+                # Style line series - keep original colors from template
+                plot = chart.plots[0]
+                for idx, series in enumerate(plot.series):
+                    # Don't change line colors - keep template colors
+                    # series.format.line.color.rgb = ... (removed)
+
+                    # 添加数据标签，显示"万"单位
+                    series.has_data_labels = True
+                    data_labels = series.data_labels
+
+                    # Position labels ABOVE the line to avoid overlap
+                    data_labels.position = self._XL_LABEL_POSITION.ABOVE
+
+                    
+                    # Critical: Set show_value to False first to avoid conflict
+                    data_labels.show_value = False
+                    data_labels.show_category_name = False
+
+                    # 方案：直接设置每个数据点的标签文本
+                    # 这样可以完全控制显示格式
+                    try:
+                        for point_idx, point in enumerate(series.points):
+                            if point_idx < len(external_attacks if idx == 0 else malicious_outbound):
+                                value = external_attacks[point_idx] if idx == 0 else malicious_outbound[point_idx]
+                                # 格式化：整数不显示小数，小数保留1位
+                                if value == int(value):
+                                    # 整数，不显示小数点
+                                    formatted = f"{int(value)}万"
+                                else:
+                                    # 小数，保留1位
+                                    formatted = f"{value:.1f}万"
+
+                                # Set text on individual point's data label
+                                try:
+                                    point.data_label.text_frame.text = formatted
+                                    logger.info(f"Series {idx}, Point {point_idx}: set label to '{formatted}'")
+                                except Exception as point_error:
+                                    logger.error(f"Failed to set label for point {point_idx}: {point_error}")
+                    except Exception as label_error:
+                        logger.error(f"Failed to iterate through points for series {idx}: {label_error}")
+
+                # Update legend styling (position should already be set in template)
+                if chart.has_legend:
+                    chart.legend.font.size = self._Pt(10)
+                    chart.legend.font.name = "微软雅黑"
+                    chart.legend.font.color.rgb = self._RGBColor(51, 51, 51)
+
+                logger.info(f"Updated existing P15_line chart with {len(months)} months and 2 series")
+
+            except Exception as e:
+                logger.error(f"Failed to update chart: {e}")
+                # Don't return - continue to remove placeholder
+        else:
+            logger.warning("No existing chart found in slide for P15_line")
+
+        # Remove the placeholder text box if we found it earlier
+        if placeholder_shape_to_remove:
+            try:
+                sp = placeholder_shape_to_remove.element
+                sp.getparent().remove(sp)
+                logger.info(f"Successfully removed placeholder text box for P15_line")
+            except Exception as e:
+                logger.error(f"Failed to remove placeholder: {e}")
+
+    def _render_p16_combo(
+        self,
+        slide,
+        chart_data: Dict[str, Any],
+        token: str = None
+    ) -> None:
+        """Render P16 combo chart (柱状图+折线图混合图表).
+
+        This is a combination chart with:
+        - Bar series: Daily attack count (日均攻击数) - values like 123, 145
+        - Line series: Defense rate (防御率) - percentages like 100%
+        - 7 data points (categories)
+
+        The chart is located by finding the placeholder token, then searching for
+        the nearest combo chart to that placeholder's position.
+
+        Args:
+            slide: pptx slide object
+            chart_data: Dict with 'categories', 'attack_counts', 'defense_rates'
+            token: Token name to locate the placeholder (e.g., "P16_combo")
+        """
+        if not chart_data or 'categories' not in chart_data:
+            logger.warning("Invalid P16_combo chart data format")
+            return
+
+        categories = chart_data.get('categories', [])
+        attack_counts = chart_data.get('attack_counts', [])
+        defense_rates = chart_data.get('defense_rates', [])
+
+        if not categories or not attack_counts or not defense_rates:
+            logger.warning("Invalid or missing P16_combo chart data")
+            return
+
+        # Find placeholder position first (if token provided)
+        placeholder_position = None
+        placeholder_shape_to_remove = None
+
+        if token:
+            import re
+            placeholder_pattern = re.compile(r'\{\{[^}]+\}?\}?')
+
+            for shape in slide.shapes:
+                try:
+                    if hasattr(shape, 'has_text_frame') and shape.has_text_frame:
+                        full_text = ''.join(
+                            run.text for paragraph in shape.text_frame.paragraphs
+                            for run in paragraph.runs
+                        ).strip()
+
+                        if placeholder_pattern.fullmatch(full_text):
+                            placeholder_position = (shape.left, shape.top)
+                            placeholder_shape_to_remove = shape
+                            logger.info(f"Found placeholder '{full_text}' at position ({shape.left}, {shape.top})")
+                            break
+                except:
+                    continue
+
+        # Find existing chart - look for combo charts (COLUMN_CLUSTERED with multiple chart types)
+        chart_shape = None
+        chart = None
+        min_distance = float('inf')
+
+        def check_shape_for_combo_chart(shape, parent_left=0, parent_top=0):
+            """Check if a shape contains a combo chart."""
+            nonlocal chart, chart_shape, min_distance
+
+            try:
+                if shape.has_chart:
+                    try:
+                        temp_chart = shape.chart
+                        # Combo charts can be identified by having multiple plot types
+                        # or by checking if chart has both bar and line series
+                        # For now, we'll accept COLUMN_CLUSTERED charts as potential combo charts
+                        if temp_chart.chart_type in (
+                            self._XL_CHART_TYPE.COLUMN_CLUSTERED,
+                            self._XL_CHART_TYPE.LINE_MARKERS,
+                            self._XL_CHART_TYPE.AREA  # Combo charts may report as various types
+                        ):
+                            if placeholder_position:
+                                chart_pos = (parent_left + shape.left, parent_top + shape.top)
+                                distance = ((chart_pos[0] - placeholder_position[0]) ** 2 +
+                                          (chart_pos[1] - placeholder_position[1]) ** 2) ** 0.5
+
+                                if distance < min_distance:
+                                    min_distance = distance
+                                    chart = temp_chart
+                                    chart_shape = shape
+                                    logger.info(f"Found combo chart at distance {distance} from placeholder")
+                            else:
+                                chart = temp_chart
+                                chart_shape = shape
+                                logger.info(f"Found combo chart for P16_combo (no placeholder)")
+                                return True
+                    except Exception as chart_error:
+                        logger.debug(f"Skipping chart shape with external link: {chart_error}")
+            except Exception as e:
+                logger.debug(f"Skipping shape due to error: {e}")
+
+            return False
+
+        # Search all shapes, including those inside groups
+        for shape in slide.shapes:
+            if shape.shape_type == 6:  # GROUP
+                try:
+                    for sub_shape in shape.shapes:
+                        if check_shape_for_combo_chart(sub_shape, shape.left, shape.top):
+                            break
+                except Exception as e:
+                    logger.debug(f"Error searching group shape: {e}")
+            else:
+                if check_shape_for_combo_chart(shape):
+                    break
+
+        # Try to update chart if found
+        if chart_shape and chart:
+            try:
+                # Update chart data ONLY - preserve all template styling
+                chart_data_obj = self._CategoryChartData()
+                chart_data_obj.categories = categories
+
+                # Add bar series (attack counts)
+                chart_data_obj.add_series('日均攻击数', attack_counts)
+                # Add line series (defense rates) - these should be decimal values (e.g., 1.0 for 100%)
+                chart_data_obj.add_series('防御率', defense_rates)
+
+                # Replace chart data only - all styling from template is preserved
+                chart.replace_data(chart_data_obj)
+
+                logger.info(f"Updated P16_combo chart with {len(categories)} categories")
+
+            except Exception as e:
+                logger.error(f"Failed to update P16_combo chart: {e}")
+        else:
+            logger.warning("No existing combo chart found in slide for P16_combo")
+
+        # Remove placeholder text box if found
+        if placeholder_shape_to_remove:
+            try:
+                sp = placeholder_shape_to_remove.element
+                sp.getparent().remove(sp)
+                logger.info(f"Successfully removed placeholder text box for P16_combo")
+            except Exception as e:
+                logger.error(f"Failed to remove placeholder: {e}")
+
     def _process_chart_placeholder(
         self,
         slide,
@@ -441,13 +1609,13 @@ class PPTGeneratorV2:
         value: Any,
         chart_type: str
     ) -> bool:
-        """Process a chart placeholder value.
+        """Process a chart placeholder value using the new architecture.
 
         Args:
             slide: pptx slide object
             token: placeholder token name
             value: chart data (dict or special format)
-            chart_type: 'bar_chart' or 'pie_chart'
+            chart_type: specific chart type (e.g., 'bar_chart', 'pie_chart', 'P11_bar')
 
         Returns:
             True if chart was rendered, False otherwise
@@ -456,17 +1624,23 @@ class PPTGeneratorV2:
             logger.warning(f"Chart placeholder {token} has invalid data type: {type(value)}")
             return False
 
-        try:
-            if chart_type == 'bar_chart':
-                self._render_bar_chart(slide, value, value.get('position'))
-            elif chart_type == 'pie_chart':
-                self._render_pie_chart(slide, value, value.get('position'))
-            else:
-                logger.warning(f"Unknown chart type: {chart_type}")
+        # Look up the renderer function for this chart type
+        renderer = self._chart_renderers.get(chart_type)
+
+        if renderer:
+            try:
+                # For legacy types (bar_chart, pie_chart), pass position separately
+                if chart_type in ('bar_chart', 'pie_chart'):
+                    renderer(slide, value, value.get('position'))
+                else:
+                    # For new specific chart types (P11_bar, P13_pie), pass token for positioning
+                    renderer(slide, value, token)
+                return True
+            except Exception as e:
+                logger.error(f"Failed to render {chart_type} for {token}: {e}")
                 return False
-            return True
-        except Exception as e:
-            logger.error(f"Failed to render {chart_type} for {token}: {e}")
+        else:
+            logger.warning(f"Unknown chart type: {chart_type}")
             return False
 
     def _process_table_placeholder(
@@ -537,17 +1711,15 @@ class PPTGeneratorV2:
 
             # Separate placeholders by type
             text_placeholders = {}
-            chart_bar_placeholders = []
-            chart_pie_placeholders = []
+            chart_placeholders = []  # Unified chart list with type info
             table_placeholders = []
 
             for token, value in slide_content.placeholders.items():
                 ph_type = slide_types.get(token, 'text')
 
-                if ph_type in ('bar_chart',):
-                    chart_bar_placeholders.append((token, value))
-                elif ph_type in ('pie_chart',):
-                    chart_pie_placeholders.append((token, value))
+                # Check if it's a chart type (in the renderer mapping)
+                if ph_type in self._chart_renderers:
+                    chart_placeholders.append((token, value, ph_type))
                 elif ph_type in ('native_table',):
                     table_placeholders.append((token, value))
                 else:
@@ -563,12 +1735,9 @@ class PPTGeneratorV2:
             for shape in pptx_slide.shapes:
                 self._replace_tokens_in_shape(shape, text_placeholders)
 
-            # Render charts
-            for token, value in chart_bar_placeholders:
-                self._process_chart_placeholder(pptx_slide, token, value, 'bar_chart')
-
-            for token, value in chart_pie_placeholders:
-                self._process_chart_placeholder(pptx_slide, token, value, 'pie_chart')
+            # Render charts (using specific renderer for each type)
+            for token, value, chart_type in chart_placeholders:
+                self._process_chart_placeholder(pptx_slide, token, value, chart_type)
 
             # Render tables
             for token, value in table_placeholders:

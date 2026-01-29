@@ -34,6 +34,14 @@ pip install -r requirements.txt
 
 **External requirement**: LibreOffice must be installed for preview generation (PPTX → PDF → PNG pipeline).
 
+### Testing
+
+```bash
+# Test chart generation
+cd mss_ai_ppt_sample_assets/backend
+python test_charts.py
+```
+
 ## Code Architecture
 
 ### Backend Pipeline (mss_ai_ppt_sample_assets/backend/)
@@ -173,3 +181,39 @@ mss_ai_ppt_sample_assets/backend/
 - Text tokens: `PPTGeneratorV2._replace_tokens_in_shape()` replaces `{{TOKEN}}` in text frames
 - Charts: `_render_bar_chart()`, `_render_pie_chart()` add native PowerPoint charts
 - Tables: `_render_native_table()` adds PowerPoint tables with headers and data rows
+
+### Chart Types and Excel Integration
+
+The system supports two chart rendering modes:
+1. **Programmatic charts** (bar_chart, pie_chart) - Code creates charts from scratch using position config
+2. **Template-based charts** (P11_bar, P12_pie, P13_pie, P14_pie) - Updates existing template charts via placeholder positioning
+
+For detailed chart type specifications, Excel data extraction workflows, and custom chart implementation guide, see [docs/excel-to-ppt-workflow.md](docs/excel-to-ppt-workflow.md).
+
+**Excel data extraction pattern:**
+```python
+# Use openpyxl to extract data from Excel → JSON format
+# Then use existing V2 pipeline with template descriptors
+# See docs/excel-to-ppt-workflow.md for complete workflow
+```
+
+## Troubleshooting
+
+### LibreOffice Preview Issues
+- Ensure LibreOffice is installed and in PATH
+- Windows: Set `LIBREOFFICE_PATH` environment variable if not in default location
+- Test: `soffice --version` should work from command line
+
+### OpenAI API Issues
+- Verify `OPENAI_API_KEY` is set in `.env` file at project root
+- Check `ENABLE_LLM=true` is set
+- Test with mock data: set `use_mock=true` in generate request
+
+### Import Errors
+- Ensure you're in the backend directory when running
+- All module imports use absolute paths: `mss_ai_ppt_sample_assets.backend.*`
+
+### Port Already in Use
+- Default port 8000 may be occupied
+- Change port: `python app.py` runs on 0.0.0.0:8000 by default
+- Or use `uvicorn` with `--port` flag

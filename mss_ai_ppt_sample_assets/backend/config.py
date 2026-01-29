@@ -18,6 +18,7 @@ REPORTS_DIR = OUTPUTS_DIR / "reports"
 LOGS_DIR = OUTPUTS_DIR / "logs"
 PREVIEWS_DIR = OUTPUTS_DIR / "previews"
 SLIDESPECS_DIR = OUTPUTS_DIR / "slidespecs"
+SESSIONS_DIR = OUTPUTS_DIR / "sessions"  # Isolated session directories for concurrent requests
 
 
 class Settings:
@@ -27,7 +28,7 @@ class Settings:
         # OpenAI-compatible endpoint configuration
         self.openai_api_key: Optional[str] = os.getenv("OPENAI_API_KEY")
         self.openai_base_url: Optional[str] = os.getenv("OPENAI_BASE_URL")
-        self.openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        self.openai_model: str = os.getenv("OPENAI_MODEL", "GLM4.7")
 
         # Feature flags
         self.enable_llm: bool = os.getenv("ENABLE_LLM", "false").lower() == "true"

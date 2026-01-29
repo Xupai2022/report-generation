@@ -364,9 +364,180 @@
         ::-webkit-scrollbar-thumb:hover { background: var(--slate-400); }
         
         .hidden { display: none !important; }
+
+        /* --- Compact Progress Bar --- */
+        .progress-panel {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 360px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--slate-200);
+            padding: 16px;
+            z-index: 1000;
+            display: none;
+            animation: slideInUp 0.3s ease-out;
+        }
+
+        .progress-panel.active { display: block; }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .progress-panel-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .progress-panel-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--slate-700);
+            flex: 1;
+        }
+
+        .progress-panel-close {
+            background: none;
+            border: none;
+            color: var(--slate-400);
+            cursor: pointer;
+            padding: 4px;
+            display: none;
+        }
+
+        .progress-panel-close:hover {
+            color: var(--slate-600);
+        }
+
+        /* Compact Steps */
+        .progress-steps-compact {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .progress-step-compact {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 11px;
+            transition: all 0.3s;
+        }
+
+        .progress-step-compact.pending {
+            opacity: 0.3;
+        }
+
+        .progress-step-compact.active {
+            opacity: 1;
+        }
+
+        .progress-step-compact.completed {
+            opacity: 0.6;
+        }
+
+        .step-icon-compact {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 10px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .progress-step-compact.pending .step-icon-compact {
+            background: var(--slate-100);
+            color: var(--slate-400);
+            border: 2px solid var(--slate-200);
+        }
+
+        .progress-step-compact.active .step-icon-compact {
+            background: var(--brand-500);
+            color: white;
+            border: 2px solid var(--brand-600);
+        }
+
+        .progress-step-compact.completed .step-icon-compact {
+            background: #10b981;
+            color: white;
+            border: 2px solid #059669;
+        }
+
+        .step-label-compact {
+            flex: 1;
+            font-weight: 500;
+            color: var(--slate-700);
+        }
+
+        .step-spinner-compact {
+            width: 12px;
+            height: 12px;
+            border: 2px solid white;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        /* Compact Progress Bar */
+        .progress-bar-compact {
+            background: var(--slate-100);
+            height: 6px;
+            border-radius: 99px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-bar-fill-compact {
+            height: 100%;
+            background: linear-gradient(90deg, var(--brand-500), var(--brand-600));
+            border-radius: 99px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        .progress-percentage-compact {
+            font-size: 11px;
+            color: var(--slate-500);
+            font-weight: 600;
+            text-align: right;
+        }
     </style>
 </head>
 <body>
+
+    <!-- Compact Progress Panel (Bottom Right) -->
+    <div id="progressPanel" class="progress-panel">
+        <div class="progress-panel-header">
+            <div class="progress-panel-title">正在生成报告</div>
+            <button id="progressClose" class="progress-panel-close">✕</button>
+        </div>
+
+        <div class="progress-steps-compact" id="progressStepsCompact">
+            <!-- Steps will be injected here -->
+        </div>
+
+        <div class="progress-bar-compact">
+            <div class="progress-bar-fill-compact" id="progressBarFillCompact"></div>
+        </div>
+        <div class="progress-percentage-compact" id="progressPercentageCompact">0%</div>
+    </div>
 
     <!-- Header -->
     <header>
@@ -492,25 +663,209 @@
             activeSlideKey: null,
             loading: false,
             logsVisible: false,
-            isClickScrolling: false // flag to prevent intersection observer conflict
+            isClickScrolling: false, // flag to prevent intersection observer conflict
+            websocket: null,
+            clientId: null,
+            sessionId: null,
+            progressSteps: [],
+            wsReady: false  // Track if WebSocket is ready
         };
 
         const $ = (id) => document.getElementById(id);
+
+        // --- WebSocket Connection ---
+        function initWebSocket() {
+            // Generate unique client ID
+            state.clientId = 'client_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/${state.clientId}`;
+
+            console.log('Connecting to WebSocket:', wsUrl);
+
+            state.websocket = new WebSocket(wsUrl);
+
+            state.websocket.onopen = () => {
+                console.log('WebSocket connected:', state.clientId);
+                state.wsReady = true;  // Mark as ready
+            };
+
+            state.websocket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                console.log('WebSocket message:', data);
+                handleWebSocketMessage(data);
+            };
+
+            state.websocket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                state.wsReady = false;
+            };
+
+            state.websocket.onclose = () => {
+                console.log('WebSocket closed, reconnecting in 3s...');
+                state.wsReady = false;
+                setTimeout(initWebSocket, 3000);
+            };
+        }
+
+        function handleWebSocketMessage(data) {
+            switch(data.type) {
+                case 'connected':
+                    console.log('Connected to server');
+                    break;
+
+                case 'progress':
+                    updateProgress(data.progress, data.message, data.details);
+                    break;
+
+                case 'step_update':
+                    updateStep(data.step_id, data.status, data.message);
+                    break;
+
+                case 'completed':
+                    handleGenerationComplete(data.result);
+                    break;
+
+                case 'failed':
+                    handleGenerationFailed(data.result);
+                    break;
+            }
+        }
+
+        // --- Progress UI Management ---
+        const PROGRESS_STEPS = [
+            { id: 'init', label: '初始化' },
+            { id: 'load_template', label: '加载模板' },
+            { id: 'generate_content', label: 'AI生成内容' },
+            { id: 'render_ppt', label: '渲染PPT' },
+            { id: 'complete', label: '完成' }
+        ];
+
+        function showProgressPanel() {
+            state.progressSteps = PROGRESS_STEPS.map(s => ({ ...s, status: 'pending' }));
+            renderProgressSteps();
+            $('progressPanel').classList.add('active');
+            updateProgressBar(0);
+        }
+
+        function hideProgressPanel() {
+            setTimeout(() => {
+                $('progressPanel').classList.remove('active');
+            }, 2000);
+        }
+
+        function renderProgressSteps() {
+            const container = $('progressStepsCompact');
+            container.innerHTML = state.progressSteps.map((step, idx) => `
+                <div class="progress-step-compact ${step.status}" data-step-id="${step.id}">
+                    <div class="step-icon-compact">
+                        ${step.status === 'active' ? '<div class="step-spinner-compact"></div>' :
+                          step.status === 'completed' ? '✓' : (idx + 1)}
+                    </div>
+                    <div class="step-label-compact">${step.label}</div>
+                </div>
+            `).join('');
+        }
+
+        function updateStep(stepId, status) {
+            const step = state.progressSteps.find(s => s.id === stepId);
+            if (step) {
+                step.status = status;
+                renderProgressSteps();
+            }
+        }
+
+        function updateProgress(progress, message, details) {
+            updateProgressBar(progress);
+
+            // Update current step based on progress
+            let currentStepIndex = Math.floor(progress / (100 / state.progressSteps.length));
+            if (currentStepIndex >= state.progressSteps.length) {
+                currentStepIndex = state.progressSteps.length - 1;
+            }
+
+            // Mark previous steps as completed
+            for (let i = 0; i < currentStepIndex; i++) {
+                if (state.progressSteps[i].status !== 'completed') {
+                    state.progressSteps[i].status = 'completed';
+                }
+            }
+
+            // Mark current step as active
+            if (state.progressSteps[currentStepIndex]) {
+                state.progressSteps[currentStepIndex].status = 'active';
+            }
+
+            renderProgressSteps();
+        }
+
+        function updateProgressBar(progress) {
+            $('progressBarFillCompact').style.width = progress + '%';
+            $('progressPercentageCompact').textContent = Math.round(progress) + '%';
+        }
+
+        function handleGenerationComplete(result) {
+            // Mark all steps as completed
+            state.progressSteps.forEach(s => s.status = 'completed');
+            renderProgressSteps();
+            updateProgressBar(100);
+
+            // Update state with result
+            if (result.job_id) {
+                state.jobId = result.job_id;
+                state.slidespec = result.slidespec;
+                $('jobIdDisplay').textContent = "任务ID: " + result.job_id;
+
+                if (result.slidespec && result.slidespec.slides && result.slidespec.slides.length) {
+                    state.activeSlideKey = result.slidespec.slides[0].slide_key;
+                }
+
+                renderSlides();
+                renderPreviewList();
+
+                // Fetch previews
+                setTimeout(async () => {
+                    try {
+                        const prevRes = await api(`/preview?job_id=${result.job_id}&regenerate_if_missing=true`);
+                        state.previews = prevRes.images || [];
+                        renderPreviewList();
+                        updateActiveState(state.activeSlideKey, true);
+
+                        // Update logs
+                        const l = await api('/logs?limit=20');
+                        renderLogs(l.lines || []);
+                    } catch (e) {
+                        console.error('Failed to load previews:', e);
+                    }
+                }, 500);
+            }
+
+            hideProgressPanel();
+        }
+
+        function handleGenerationFailed(result) {
+            alert('生成失败: ' + (result.error || '未知错误'));
+            hideProgressPanel();
+        }
         
         // --- API Client ---
         async function api(path, opts = {}) {
-            try {
-                const res = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...opts });
-                if (!res.ok) throw new Error(await res.text() || res.statusText);
-                return await res.json();
-            } catch (e) {
-                alert("错误: " + e.message);
-                throw e;
+            const res = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...opts });
+            if (!res.ok) {
+                // 尝试解析 JSON 错误响应
+                const errorData = await res.json().catch(() => null);
+                const error = new Error(errorData?.error?.message || res.statusText);
+                error.data = errorData;  // 保存完整错误信息
+                throw error;
             }
+            return await res.json();
         }
 
         // --- Init ---
         async function init() {
+            // Initialize WebSocket
+            initWebSocket();
+
             try {
                 const [tpls, inputs, logs] = await Promise.all([
                     api('/templates'),
@@ -719,42 +1074,68 @@
             const tId = $('templateSelect').value;
             if (!iId || !tId) return alert("请选择数据源和模板");
 
+            // Check WebSocket connection
+            if (!state.wsReady) {
+                console.warn('WebSocket not ready, waiting...');
+                // Wait for WebSocket to connect (max 3 seconds)
+                for (let i = 0; i < 30; i++) {
+                    if (state.wsReady) break;
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                if (!state.wsReady) {
+                    console.error('WebSocket connection timeout');
+                }
+            }
+
+            // Generate session ID
+            state.sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+            // Show progress panel
+            showProgressPanel();
+
             setLoading(true);
             try {
-                // 1. Generate SlideSpec
-                const res = await api('/generate', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        input_id: iId, template_id: tId, use_mock: $('useMock').checked
-                    })
-                });
-                
-                state.jobId = res.job_id;
-                state.slidespec = res.slidespec;
-                state.previews = []; // reset
-                $('jobIdDisplay').textContent = "任务ID: " + res.job_id;
-
-                if (res.slidespec.slides.length) {
-                    state.activeSlideKey = res.slidespec.slides[0].slide_key;
+                await doGenerate(iId, tId, $('useMock').checked);
+            } catch (e) {
+                console.error(e);
+                // Check if automatic mock retry is suggested
+                if (e.data?.error?.auto_retry_with_mock) {
+                    // Auto retry with mock
+                    try {
+                        await doGenerate(iId, tId, true); // Force mock
+                    } catch (retryError) {
+                        console.error('Mock retry failed:', retryError);
+                        handleGenerationFailed({ error: retryError.message });
+                    }
+                } else {
+                    handleGenerationFailed({ error: e.message });
                 }
-                
-                renderSlides(); // Left Sidebar
-                renderPreviewList(); // Right List (Placeholders)
-                
-                // 2. Fetch Previews (Async)
-                const prevRes = await api(`/preview?job_id=${res.job_id}&regenerate_if_missing=true`);
-                state.previews = prevRes.images || [];
-                renderPreviewList(); // Refresh with images
-
-                // 3. Set Active (Scroll to top)
-                updateActiveState(state.activeSlideKey, true);
-                
-                // 4. Logs
-                const l = await api('/logs?limit=20');
-                renderLogs(l.lines || []);
-            } catch (e) { console.error(e); } 
-            finally { setLoading(false); }
+            } finally {
+                setLoading(false);
+            }
         };
+
+        // Extract generation logic as separate function
+        async function doGenerate(inputId, templateId, useMock) {
+            // 1. Generate SlideSpec
+            const res = await api('/generate', {
+                method: 'POST',
+                body: JSON.stringify({
+                    input_id: inputId,
+                    template_id: templateId,
+                    use_mock: useMock,
+                    session_id: state.sessionId,
+                    client_id: state.clientId
+                })
+            });
+
+            // Note: Progress updates will come via WebSocket
+            // Only handle the final result here if WebSocket fails
+            if (!state.websocket || state.websocket.readyState !== WebSocket.OPEN) {
+                // Fallback: handle result directly if WebSocket not available
+                handleGenerationComplete(res);
+            }
+        }
 
         $('downloadBtn').onclick = () => {
             if (!state.jobId) return;
