@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 from openai import OpenAI, APIError, RateLimitError, APIConnectionError
 
 from mss_ai_ppt_sample_assets.backend import config
+from mss_ai_ppt_sample_assets.backend.modules.retry_policy import with_llm_retry
 from mss_ai_ppt_sample_assets.backend.models.slidespec import (
     SlideSpecV2, create_empty_slidespec_v2
 )
@@ -947,56 +948,33 @@ class LLMOrchestratorV2:
         logger.info(f"User prompt length: {len(user_prompt)} chars")
         logger.info("=" * 80)
 
-        last_error = None
-        for attempt in range(max_retries):
-            try:
-                logger.info(f"🔄 API Call Attempt {attempt + 1}/{max_retries}")
+        # Use tenacity retry decorator for better error handling
+        content = self._call_openai_api(system_prompt, user_prompt)
+        return content
 
-                response = self.client.chat.completions.create(
-                    model=config.settings.openai_model,
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt}
-                    ],
-                    temperature=0.7,
-                    response_format={"type": "json_object"},
-                )
+    @with_llm_retry
+    def _call_openai_api(self, system_prompt: str, user_prompt: str) -> str:
+        """Make the actual OpenAI API call (wrapped with retry decorator)."""
+        response = self.client.chat.completions.create(
+            model=config.settings.openai_model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.7,
+            response_format={"type": "json_object"},
+        )
 
-                content = response.choices[0].message.content
-                if not content:
-                    raise LLMGenerationError("OpenAI returned empty response")
+        content = response.choices[0].message.content
+        if not content:
+            raise LLMGenerationError("OpenAI returned empty response")
 
-                logger.info("=" * 80)
-                logger.info("✅ OPENAI API CALL SUCCESSFUL")
-                logger.info(f"Total tokens used: {response.usage.total_tokens}")
-                logger.info(f"Response length: {len(content)} chars")
-                logger.info("=" * 80)
-                return content
-
-            except RateLimitError as e:
-                last_error = e
-                if attempt < max_retries - 1:
-                    wait_time = retry_delay * (2 ** attempt)
-                    logger.warning(f"⚠️ Rate limit hit, waiting {wait_time}s...")
-                    time.sleep(wait_time)
-
-            except APIConnectionError as e:
-                last_error = e
-                if attempt < max_retries - 1:
-                    logger.warning(f"⚠️ Connection error: {e}, retrying...")
-                    time.sleep(retry_delay)
-
-            except APIError as e:
-                last_error = e
-                logger.error(f"❌ OpenAI API error: {e}")
-                break
-
-            except Exception as e:
-                last_error = e
-                logger.error(f"❌ Unexpected error: {e}")
-                break
-
-        raise LLMGenerationError(f"Failed after {max_retries} attempts: {last_error}") from last_error
+        logger.info("=" * 80)
+        logger.info("✅ OPENAI API CALL SUCCESSFUL")
+        logger.info(f"Total tokens used: {response.usage.total_tokens}")
+        logger.info(f"Response length: {len(content)} chars")
+        logger.info("=" * 80)
+        return content
 
     def _sanitize_llm_json(self, content: str) -> str:
         """Clean up LLM response for JSON parsing."""

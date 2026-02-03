@@ -1,0 +1,81 @@
+{
+  "pageTitle": "MSS AI PPT 报告生成系统",
+  "pageSubtitle": "智能报告生成器",
+
+  "sectionGenerate": "生成报告",
+  "sectionJobs": "任务列表",
+  "sectionSlides": "幻灯片列表",
+  "sectionLogs": "系统日志",
+
+  "labelInput": "输入数据",
+  "labelTemplate": "选择模板",
+  "labelUseMock": "快速生成 (Mock)",
+
+  "btnGenerate": "生成报告",
+  "btnPreview": "预览",
+  "btnDownload": "下载 PPT",
+  "btnDownloadPdf": "下载 PDF",
+  "btnRefresh": "刷新列表",
+  "btnViewDetails": "查看详情",
+  "btnApplyRegenerate": "应用并重新生成",
+  "btnRefreshPreview": "刷新预览",
+
+  "statusPending": "等待中",
+  "statusProcessing": "生成中",
+  "statusCompleted": "已完成",
+  "statusFailed": "失败",
+  "statusRetrying": "重试中",
+
+  "progressInit": "初始化",
+  "progressLoadTemplate": "加载模板",
+  "progressGenerateContent": "AI生成内容",
+  "progressRenderPpt": "渲染PPT",
+  "progressComplete": "完成",
+
+  "tableJobId": "任务ID",
+  "tableInput": "输入数据",
+  "tableTemplate": "模板",
+  "tableStatus": "状态",
+  "tableProgress": "进度",
+  "tableCreatedAt": "创建时间",
+  "tableActions": "操作",
+
+  "msgGenerating": "正在生成报告",
+  "msgSuccess": "报告生成成功！",
+  "msgError": "生成失败",
+  "msgNoPreview": "暂无预览",
+  "msgLoading": "加载中...",
+  "msgNoData": "暂无数据",
+  "msgSelectInput": "请选择输入数据",
+  "msgSelectTemplate": "请选择报告模板",
+  "msgSelectDataSource": "选择数据源...",
+  "msgConfirmGenerate": "确认生成报告？",
+  "msgSelectDataAndTemplate": "请选择数据和模板以开始",
+  "msgNoJob": "任务ID: 无",
+  "msgJobId": "任务ID",
+  "msgRetryIn": "秒后可重试",
+  "msgRequestTooFrequent": "请求过于频繁，请",
+  "msgPleaseWait": "请稍候",
+  "msgPageNumber": "第",
+  "msgPage": "页",
+
+  "editorTitle": "JSON 属性编辑器",
+  "editorHint": "编辑提示：只能修改字段的值，不能修改字段名（如TITLE、SUBTITLE等）。删除或重命名字段将被忽略。",
+  "editorPlaceholder": "// 选择幻灯片以编辑属性...",
+
+  "tooltipMockData": "使用预生成的模拟数据，跳过AI生成过程，适合快速测试",
+  "tooltipPreview": "预览报告内容（生成PNG图片）",
+  "tooltipDownload": "下载生成的PPT文件",
+
+  "errorNetworkFailed": "网络请求失败",
+  "errorGenerationFailed": "报告生成失败",
+  "errorPreviewFailed": "预览生成失败",
+  "errorLoadFailed": "数据加载失败",
+
+  "langSwitcher": "语言",
+  "langChinese": "中文",
+  "langEnglish": "English",
+
+  "templateExecutive": "MSS月度安全报告（管理版）",
+  "templateTechnical": "MSS月度安全报告（技术版）"
+}

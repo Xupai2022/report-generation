@@ -518,14 +518,145 @@
             font-weight: 600;
             text-align: right;
         }
+
+        /* --- Toast Notifications --- */
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 24px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--slate-200);
+            padding: 16px 20px;
+            min-width: 320px;
+            max-width: 420px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            pointer-events: auto;
+            animation: slideInRight 0.3s ease-out;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+
+        .toast.toast-success {
+            border-left: 4px solid #10b981;
+        }
+
+        .toast.toast-error {
+            border-left: 4px solid #ef4444;
+        }
+
+        .toast.toast-info {
+            border-left: 4px solid var(--brand-500);
+        }
+
+        .toast.toast-warning {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .toast.removing {
+            opacity: 0;
+            transform: translateX(100px);
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .toast-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 14px;
+        }
+
+        .toast-success .toast-icon {
+            background: #d1fae5;
+            color: #10b981;
+        }
+
+        .toast-error .toast-icon {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .toast-info .toast-icon {
+            background: var(--brand-100);
+            color: var(--brand-600);
+        }
+
+        .toast-warning .toast-icon {
+            background: #fef3c7;
+            color: #f59e0b;
+        }
+
+        .toast-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .toast-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--slate-900);
+        }
+
+        .toast-message {
+            font-size: 12px;
+            color: var(--slate-600);
+            line-height: 1.4;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: var(--slate-400);
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .toast-close:hover {
+            background: var(--slate-100);
+            color: var(--slate-600);
+        }
     </style>
 </head>
 <body>
 
+    <!-- Toast Container (Top Right) -->
+    <div id="toastContainer" class="toast-container"></div>
+
     <!-- Compact Progress Panel (Bottom Right) -->
     <div id="progressPanel" class="progress-panel">
         <div class="progress-panel-header">
-            <div class="progress-panel-title">正在生成报告</div>
+            <div class="progress-panel-title" data-i18n="msgGenerating">正在生成报告</div>
             <button id="progressClose" class="progress-panel-close">✕</button>
         </div>
 
@@ -551,8 +682,25 @@
             </div>
             <div>
                 <h1 style="font-size: 16px; font-weight: 700;">MSS AI PPT</h1>
-                <div style="font-size: 10px; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.5px;">智能报告生成器</div>
+                <div style="font-size: 10px; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.5px;" data-i18n="pageSubtitle">智能报告生成器</div>
             </div>
+        </div>
+
+        <!-- Language Switcher -->
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <span style="font-size: 12px; color: var(--slate-500); margin-right: 4px;" data-i18n="langSwitcher">语言</span>
+            <button
+                onclick="switchLanguage('zh-CN')"
+                id="langBtnZh"
+                style="padding: 6px 12px; border: 1px solid var(--slate-300); background: white; cursor: pointer; border-radius: 6px; font-size: 13px; transition: all 0.2s;">
+                中文
+            </button>
+            <button
+                onclick="switchLanguage('en-US')"
+                id="langBtnEn"
+                style="padding: 6px 12px; border: 1px solid var(--slate-300); background: white; cursor: pointer; border-radius: 6px; font-size: 13px; transition: all 0.2s;">
+                English
+            </button>
         </div>
         <div style="display: flex; gap: 12px; align-items: center;">
             <div style="font-size: 12px; color: var(--slate-400);">v0.1.0-beta</div>
@@ -564,28 +712,33 @@
     <div class="toolbar">
         <div style="display: flex; gap: 20px; align-items: center;">
             <div>
-                <div class="text-xs uppercase font-bold" style="color: var(--slate-400); margin-bottom: 4px;">输入数据</div>
-                <select id="inputSelect"><option>加载中...</option></select>
+                <div class="text-xs uppercase font-bold" style="color: var(--slate-400); margin-bottom: 4px;" data-i18n="labelInput">输入数据</div>
+                <select id="inputSelect"><option data-i18n="msgLoading">加载中...</option></select>
             </div>
             <div style="width: 1px; height: 32px; background: var(--slate-200);"></div>
             <div>
-                <div class="text-xs uppercase font-bold" style="color: var(--slate-400); margin-bottom: 4px;">选择模板</div>
-                <select id="templateSelect"><option>加载中...</option></select>
+                <div class="text-xs uppercase font-bold" style="color: var(--slate-400); margin-bottom: 4px;" data-i18n="labelTemplate">选择模板</div>
+                <select id="templateSelect"><option data-i18n="msgLoading">加载中...</option></select>
             </div>
         </div>
-        
+
         <div style="display: flex; align-items: center; gap: 16px;">
             <label style="font-size: 12px; color: var(--slate-600); display: flex; align-items: center; gap: 6px; cursor: pointer;">
                 <input type="checkbox" id="useMock" checked>
-                快速生成 (Mock)
+                <span data-i18n="labelUseMock">快速生成 (Mock)</span>
             </label>
-            <button id="downloadBtn" class="btn-secondary" disabled>Download PPT</button>
+            <button id="downloadBtn" class="btn-secondary" disabled>
+                <span data-i18n="btnDownload">下载 PPT</span>
+            </button>
+            <button id="downloadPdfBtn" class="btn-secondary" disabled>
+                <span data-i18n="btnDownloadPdf">下载 PDF</span>
+            </button>
             <button id="generateBtn" class="btn-primary">
                 <span id="genIcon">
                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                 </span>
                 <span id="genSpinner" class="spinner hidden"></span>
-                生成报告
+                <span data-i18n="btnGenerate">生成报告</span>
             </button>
         </div>
     </div>
@@ -596,18 +749,18 @@
         <!-- Left Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <span class="text-xs font-bold uppercase" style="color: var(--slate-500);">幻灯片列表</span>
+                <span class="text-xs font-bold uppercase" style="color: var(--slate-500);" data-i18n="sectionSlides">幻灯片列表</span>
                 <span id="slideCount" class="badge">0</span>
             </div>
             <div id="slidesList" class="sidebar-content">
                 <div class="empty-state" style="margin-top: 40px;">
-                    <div style="font-size: 12px;">暂无幻灯片</div>
+                    <div style="font-size: 12px;" data-i18n="msgNoData">暂无幻灯片</div>
                 </div>
             </div>
-            
+
             <div class="logs-section">
                 <button id="toggleLogsBtn" class="logs-toggle">
-                    <span>系统日志</span>
+                    <span data-i18n="sectionLogs">系统日志</span>
                     <span id="logArrow" style="transition: transform 0.2s;">▲</span>
                 </button>
                 <div id="logContainer" class="logs-container">
@@ -620,7 +773,7 @@
         <div class="canvas-area">
             <div class="canvas-toolbar">
                 <span id="activeSlideTitle" style="font-size: 12px; font-weight: 600; color: var(--slate-700);">总览</span>
-                <button id="refreshPreviewBtn" style="background:none; border:none; color: var(--brand-600); font-size: 12px; font-weight: 600; cursor: pointer;">
+                <button id="refreshPreviewBtn" style="background:none; border:none; color: var(--brand-600); font-size: 12px; font-weight: 600; cursor: pointer;" data-i18n="btnRefreshPreview">
                     刷新预览
                 </button>
             </div>
@@ -631,12 +784,12 @@
                 </div>
                 <div id="emptyState" class="empty-state">
                     <div style="font-size: 40px; color: var(--slate-300); margin-bottom: 16px;">▨</div>
-                    <div style="font-size: 14px; font-weight: 500; color: var(--slate-500);">请选择数据和模板以开始</div>
+                    <div style="font-size: 14px; font-weight: 500; color: var(--slate-500);" data-i18n="msgSelectDataAndTemplate">请选择数据和模板以开始</div>
                 </div>
             </div>
-            
+
             <div style="padding: 6px 16px; background: #fff; border-top: 1px solid var(--slate-200); font-size: 10px; color: var(--slate-400); display: flex; justify-content: space-between;">
-                <span id="jobIdDisplay">任务ID: 无</span>
+                <span id="jobIdDisplay" data-i18n="msgNoJob">任务ID: 无</span>
                 <span>1920 x 1080</span>
             </div>
         </div>
@@ -644,10 +797,19 @@
         <!-- Right Editor -->
         <div class="editor-panel">
             <div class="editor-header">
-                <span class="text-xs font-bold uppercase" style="color: var(--slate-500);">JSON 属性编辑器</span>
-                <button id="rewriteBtn" class="btn-primary btn-sm">应用并重新生成</button>
+                <span class="text-xs font-bold uppercase" style="color: var(--slate-500);" data-i18n="editorTitle">JSON 属性编辑器</span>
+                <button id="rewriteBtn" class="btn-primary btn-sm" data-i18n="btnApplyRegenerate">应用并重新生成</button>
             </div>
-            <textarea id="slideJson" class="code-editor" spellcheck="false" placeholder="// 选择幻灯片以编辑属性..."></textarea>
+
+            <!-- Info banner -->
+            <div style="background: var(--brand-50); border-bottom: 1px solid var(--brand-200); padding: 10px 16px; display: flex; gap: 10px; align-items: start;">
+                <div style="color: var(--brand-600); font-size: 14px; flex-shrink: 0;">ℹ</div>
+                <div style="font-size: 11px; color: var(--brand-700); line-height: 1.4;" data-i18n="editorHint">
+                    <strong>编辑提示：</strong>只能修改字段的<strong>值</strong>，不能修改字段名（如TITLE、SUBTITLE等）。删除或重命名字段将被忽略。
+                </div>
+            </div>
+
+            <textarea id="slideJson" class="code-editor" spellcheck="false" data-i18n-placeholder="editorPlaceholder"></textarea>
             <div style="padding: 8px 16px; background: var(--slate-50); border-top: 1px solid var(--slate-200); font-size: 10px; color: var(--slate-400); text-align: right;">
                 JSON 格式
             </div>
@@ -656,6 +818,164 @@
 
     <!-- Logic -->
     <script>
+        // --- i18n System ---
+        let currentLang = localStorage.getItem('lang') || 'zh-CN';
+        let translations = {};
+
+        async function loadTranslations(lang) {
+            try {
+                const response = await fetch(`/i18n/${lang}.json`);
+                translations = await response.json();
+                return true;
+            } catch (e) {
+                console.error('Failed to load translations:', e);
+                return false;
+            }
+        }
+
+        function t(key) {
+            return translations[key] || key;
+        }
+
+        function switchLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('lang', lang);
+            loadTranslations(lang).then(() => {
+                updateUILanguage();
+                updateLanguageButtonStyles();
+            });
+        }
+
+        function updateLanguageButtonStyles() {
+            const zhBtn = document.getElementById('langBtnZh');
+            const enBtn = document.getElementById('langBtnEn');
+
+            if (currentLang === 'zh-CN') {
+                zhBtn.style.background = 'var(--brand-500)';
+                zhBtn.style.color = 'white';
+                zhBtn.style.borderColor = 'var(--brand-500)';
+                enBtn.style.background = 'white';
+                enBtn.style.color = 'var(--slate-700)';
+                enBtn.style.borderColor = 'var(--slate-300)';
+            } else {
+                enBtn.style.background = 'var(--brand-500)';
+                enBtn.style.color = 'white';
+                enBtn.style.borderColor = 'var(--brand-500)';
+                zhBtn.style.background = 'white';
+                zhBtn.style.color = 'var(--slate-700)';
+                zhBtn.style.borderColor = 'var(--slate-300)';
+            }
+        }
+
+        function updateUILanguage() {
+            // Update all elements with data-i18n attribute
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.textContent = t(key);
+            });
+
+            // Update placeholders
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                el.placeholder = t(key);
+            });
+
+            // Update title attributes (tooltips)
+            document.querySelectorAll('[data-i18n-title]').forEach(el => {
+                const key = el.getAttribute('data-i18n-title');
+                el.title = t(key);
+            });
+
+            // Update page title
+            document.title = t('pageTitle');
+
+            // Update progress steps
+            if (state.progressSteps.length > 0) {
+                updateProgressStepsLanguage();
+            }
+
+            // Update dropdowns if loaded
+            updateInputDropdown();
+            updateTemplateDropdown();
+
+            // Update modified slides button
+            updateModifiedSlidesUI();
+        }
+
+        function getTemplateNameTranslated(templateId, originalName) {
+            // Map template IDs to translation keys
+            const templateKeyMap = {
+                'mss_executive_v2': 'templateExecutive',
+                'mss_technical_v2': 'templateTechnical'
+            };
+
+            const key = templateKeyMap[templateId];
+            if (key && translations[key]) {
+                return translations[key];
+            }
+            return originalName; // Fallback to original name
+        }
+
+        function updateTemplateDropdown() {
+            const tplSel = $('templateSelect');
+            if (!tplSel || !window.cachedTemplates) return;
+
+            const currentValue = tplSel.value;
+            tplSel.innerHTML = `<option value="">${t('msgSelectTemplate')}</option>`;
+
+            window.cachedTemplates.forEach(tpl => {
+                const opt = document.createElement('option');
+                opt.value = tpl.template_id;
+                opt.textContent = getTemplateNameTranslated(tpl.template_id, tpl.name);
+                tplSel.appendChild(opt);
+            });
+
+            // Restore selection
+            if (currentValue) {
+                tplSel.value = currentValue;
+            }
+        }
+
+        function updateInputDropdown() {
+            const inputSel = $('inputSelect');
+            if (!inputSel || !window.cachedInputs) return;
+
+            const currentValue = inputSel.value;
+            inputSel.innerHTML = `<option value="">${t('msgSelectDataSource')}</option>`;
+
+            window.cachedInputs.forEach(i => {
+                const opt = document.createElement('option');
+                opt.value = i.id;
+                opt.textContent = `${i.tenant_name || i.id} (${i.period})`;
+                inputSel.appendChild(opt);
+            });
+
+            // Restore selection
+            if (currentValue) {
+                inputSel.value = currentValue;
+            }
+        }
+
+        function updateProgressStepsLanguage() {
+            const stepTranslations = {
+                'init': t('progressInit'),
+                'load_template': t('progressLoadTemplate'),
+                'generate_content': t('progressGenerateContent'),
+                'render_ppt': t('progressRenderPpt'),
+                'complete': t('progressComplete')
+            };
+
+            state.progressSteps.forEach(step => {
+                if (stepTranslations[step.id]) {
+                    step.label = stepTranslations[step.id];
+                }
+            });
+
+            if (state.progressSteps.length > 0) {
+                renderProgressSteps();
+            }
+        }
+
         const state = {
             jobId: null,
             slidespec: null,
@@ -668,10 +988,85 @@
             clientId: null,
             sessionId: null,
             progressSteps: [],
-            wsReady: false  // Track if WebSocket is ready
+            wsReady: false,  // Track if WebSocket is ready
+            modifiedSlides: new Map()  // Track all modified slides: Map<slide_key, new_content>
         };
 
         const $ = (id) => document.getElementById(id);
+
+        // --- Toast Notification System ---
+        function showToast(message, options = {}) {
+            const {
+                type = 'info',  // 'success', 'error', 'warning', 'info'
+                title = '',
+                duration = 4000,  // Auto-dismiss after 4 seconds
+                closable = true
+            } = options;
+
+            const container = $('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+
+            // Icon mapping
+            const icons = {
+                success: '✓',
+                error: '✕',
+                warning: '!',
+                info: 'i'
+            };
+
+            const icon = icons[type] || icons.info;
+
+            // Build toast HTML
+            let html = `
+                <div class="toast-icon">${icon}</div>
+                <div class="toast-content">
+            `;
+
+            if (title) {
+                html += `<div class="toast-title">${title}</div>`;
+            }
+
+            html += `<div class="toast-message">${message}</div>`;
+            html += `</div>`;
+
+            if (closable) {
+                html += `<button class="toast-close">✕</button>`;
+            }
+
+            toast.innerHTML = html;
+            container.appendChild(toast);
+
+            // Close button handler
+            if (closable) {
+                const closeBtn = toast.querySelector('.toast-close');
+                closeBtn.onclick = () => removeToast(toast);
+            }
+
+            // Auto-dismiss
+            if (duration > 0) {
+                setTimeout(() => removeToast(toast), duration);
+            }
+
+            return toast;
+        }
+
+        function removeToast(toast) {
+            toast.classList.add('removing');
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);  // Match CSS transition duration
+        }
+
+        // Convenience methods
+        const toast = {
+            success: (message, title) => showToast(message, { type: 'success', title }),
+            error: (message, title) => showToast(message, { type: 'error', title, duration: 6000 }),
+            warning: (message, title) => showToast(message, { type: 'warning', title }),
+            info: (message, title) => showToast(message, { type: 'info', title })
+        };
 
         // --- WebSocket Connection ---
         function initWebSocket() {
@@ -734,11 +1129,11 @@
 
         // --- Progress UI Management ---
         const PROGRESS_STEPS = [
-            { id: 'init', label: '初始化' },
-            { id: 'load_template', label: '加载模板' },
-            { id: 'generate_content', label: 'AI生成内容' },
-            { id: 'render_ppt', label: '渲染PPT' },
-            { id: 'complete', label: '完成' }
+            { id: 'init', label: 'progressInit' },
+            { id: 'load_template', label: 'progressLoadTemplate' },
+            { id: 'generate_content', label: 'progressGenerateContent' },
+            { id: 'render_ppt', label: 'progressRenderPpt' },
+            { id: 'complete', label: 'progressComplete' }
         ];
 
         function showProgressPanel() {
@@ -762,7 +1157,7 @@
                         ${step.status === 'active' ? '<div class="step-spinner-compact"></div>' :
                           step.status === 'completed' ? '✓' : (idx + 1)}
                     </div>
-                    <div class="step-label-compact">${step.label}</div>
+                    <div class="step-label-compact">${t(step.label)}</div>
                 </div>
             `).join('');
         }
@@ -810,11 +1205,15 @@
             renderProgressSteps();
             updateProgressBar(100);
 
+            // Clear modified slides on new generation
+            state.modifiedSlides.clear();
+
             // Update state with result
             if (result.job_id) {
                 state.jobId = result.job_id;
                 state.slidespec = result.slidespec;
-                $('jobIdDisplay').textContent = "任务ID: " + result.job_id;
+                $('jobIdDisplay').textContent = t('msgJobId') + ": " + result.job_id;
+                syncActionButtons();
 
                 if (result.slidespec && result.slidespec.slides && result.slidespec.slides.length) {
                     state.activeSlideKey = result.slidespec.slides[0].slide_key;
@@ -826,14 +1225,16 @@
                 // Fetch previews
                 setTimeout(async () => {
                     try {
-                        const prevRes = await api(`/preview?job_id=${result.job_id}&regenerate_if_missing=true`);
-                        state.previews = prevRes.images || [];
+                        const prevRes = await api(`/api/v1/reports/${encodeURIComponent(result.job_id)}/preview?regenerate_if_missing=true`);
+                        const prevData = prevRes.data || prevRes;
+                        state.previews = prevData.preview_urls || prevData.images || [];
                         renderPreviewList();
                         updateActiveState(state.activeSlideKey, true);
 
                         // Update logs
-                        const l = await api('/logs?limit=20');
-                        renderLogs(l.lines || []);
+                        const l = await api('/api/v1/system/logs?limit=20');
+                        const logData = l.data || l;
+                        renderLogs(logData.lines || []);
                     } catch (e) {
                         console.error('Failed to load previews:', e);
                     }
@@ -844,10 +1245,44 @@
         }
 
         function handleGenerationFailed(result) {
-            alert('生成失败: ' + (result.error || '未知错误'));
+            toast.error(result.error || '未知错误', '生成失败');
             hideProgressPanel();
         }
-        
+
+        // --- Cooldown Management ---
+        function checkAndRestoreCooldown() {
+            const cooldownEnd = parseInt(localStorage.getItem('generateCooldownEnd') || '0');
+            const now = Date.now();
+
+            if (cooldownEnd > now) {
+                // Still in cooldown period, restore countdown
+                const btn = $('generateBtn');
+                if (!btn) {
+                    console.warn('Generate button not found, skipping cooldown restore');
+                    return;
+                }
+
+                const cooldownInterval = setInterval(() => {
+                    const cooldownEnd = parseInt(localStorage.getItem('generateCooldownEnd') || '0');
+                    const remaining = Math.ceil((cooldownEnd - Date.now()) / 1000);
+                    const btnTextSpan = btn.querySelector('[data-i18n="btnGenerate"]');
+
+                    if (remaining <= 0) {
+                        clearInterval(cooldownInterval);
+                        localStorage.removeItem('generateCooldownEnd');
+                        if (btnTextSpan) btnTextSpan.textContent = t('btnGenerate');
+                    } else {
+                        if (btnTextSpan) btnTextSpan.textContent = `${t('btnGenerate')} (${remaining}${t('msgRetryIn')})`;
+                    }
+                }, 1000);
+
+                // Update immediately
+                const remaining = Math.ceil((cooldownEnd - now) / 1000);
+                const btnTextSpan = btn.querySelector('[data-i18n="btnGenerate"]');
+                if (btnTextSpan) btnTextSpan.textContent = `${t('btnGenerate')} (${remaining}${t('msgRetryIn')})`;
+            }
+        }
+
         // --- API Client ---
         async function api(path, opts = {}) {
             const res = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...opts });
@@ -863,18 +1298,35 @@
 
         // --- Init ---
         async function init() {
+            // Load translations first
+            await loadTranslations(currentLang);
+            updateUILanguage();
+            updateLanguageButtonStyles();
+
             // Initialize WebSocket
             initWebSocket();
 
+            // Check for existing cooldown on page load
+            checkAndRestoreCooldown();
+
             try {
-                const [tpls, inputs, logs] = await Promise.all([
-                    api('/templates'),
-                    api('/inputs'),
-                    api('/logs?limit=20')
+                const [tplsResp, inputsResp, logsResp] = await Promise.all([
+                    api('/api/v1/templates'),
+                    api('/api/v1/inputs'),
+                    api('/api/v1/system/logs?limit=20')
                 ]);
 
+                // Extract data from new response format
+                const tpls = tplsResp.data || tplsResp;
+                const inputs = inputsResp.data || inputsResp;
+                const logs = logsResp.data || logsResp;
+
+                // Cache templates and inputs for language switching
+                window.cachedTemplates = tpls;
+                window.cachedInputs = inputs;
+
                 const inputSel = $('inputSelect');
-                inputSel.innerHTML = '<option value="">选择数据源...</option>';
+                inputSel.innerHTML = `<option value="">${t('msgSelectDataSource')}</option>`;
                 inputs.forEach(i => {
                     const opt = document.createElement('option');
                     opt.value = i.id;
@@ -883,11 +1335,11 @@
                 });
 
                 const tplSel = $('templateSelect');
-                tplSel.innerHTML = '<option value="">选择模板...</option>';
-                tpls.forEach(t => {
+                tplSel.innerHTML = `<option value="">${t('msgSelectTemplate')}</option>`;
+                tpls.forEach(tpl => {
                     const opt = document.createElement('option');
-                    opt.value = t.template_id;
-                    opt.textContent = t.name;
+                    opt.value = tpl.template_id;
+                    opt.textContent = getTemplateNameTranslated(tpl.template_id, tpl.name);
                     tplSel.appendChild(opt);
                 });
 
@@ -957,7 +1409,6 @@
                     <div class="slide-num">${idx + 1}</div>
                     <div style="flex:1; overflow:hidden;">
                         <div class="text-sm font-bold truncate">${s.slide_key}</div>
-                        <div class="text-xs truncate" style="color: var(--slate-400)">${s.layout || '默认布局'}</div>
                     </div>
                 `;
                 list.appendChild(div);
@@ -988,7 +1439,7 @@
 
                 const label = document.createElement('div');
                 label.className = 'slide-view-label';
-                label.textContent = `第 ${idx+1} 页: ${s.slide_key}`;
+                label.textContent = `${t('msgPageNumber')} ${idx+1} ${t('msgPage')}: ${s.slide_key}`;
                 viewItem.appendChild(label);
 
                 if (imgUrl) {
@@ -1027,19 +1478,28 @@
         }
 
         function updateActiveState(key, scrollRightView) {
+            // Save current slide modifications before switching
+            if (state.activeSlideKey && state.activeSlideKey !== key) {
+                saveCurrentSlideModifications();
+            }
+
             state.activeSlideKey = key;
-            
+
             // 1. Sidebar Highlight
             highlightSidebar(key);
-            
+
             // 2. Editor & Header
             $('activeSlideTitle').textContent = key;
             const slide = state.slidespec.slides.find(s => s.slide_key === key);
             if (slide) {
-                // V2 placeholders
-                const editorContent = slide.placeholders || {};
+                // Check if this slide has pending modifications
+                const pendingMods = state.modifiedSlides.get(key);
+                const editorContent = pendingMods || slide.placeholders || {};
                 $('slideJson').value = JSON.stringify(editorContent, null, 2);
             }
+
+            // Update modified slides count badge
+            updateModifiedSlidesUI();
 
             // 3. Scroll Right View (Only if clicked)
             if (scrollRightView) {
@@ -1053,11 +1513,96 @@
             }
         }
 
+        // Save current slide modifications to state
+        function saveCurrentSlideModifications() {
+            if (!state.activeSlideKey) return;
+
+            try {
+                const currentJson = $('slideJson').value;
+                const editedContent = JSON.parse(currentJson);
+
+                // Find original content
+                const slide = state.slidespec.slides.find(s => s.slide_key === state.activeSlideKey);
+                if (!slide) return;
+
+                const originalContent = slide.placeholders || {};
+
+                // **IMPORTANT**: Protect token keys from modification
+                // Only allow editing VALUES, not KEYS
+                // This prevents users from accidentally breaking token references
+                const protectedContent = {};
+
+                // Iterate through ORIGINAL keys to preserve them
+                for (const originalKey in originalContent) {
+                    if (originalKey in editedContent) {
+                        // User kept the key, use their edited value
+                        protectedContent[originalKey] = editedContent[originalKey];
+                    } else {
+                        // User deleted the key, keep original to prevent breaking
+                        protectedContent[originalKey] = originalContent[originalKey];
+                    }
+                }
+
+                // Warn if user tried to add new keys (not supported)
+                const addedKeys = Object.keys(editedContent).filter(k => !(k in originalContent));
+                if (addedKeys.length > 0) {
+                    console.warn(`Warning: Ignored added keys (not in template): ${addedKeys.join(', ')}`);
+                    toast.warning(
+                        `忽略了新增的字段: ${addedKeys.join(', ')}。只能修改现有字段的值。`,
+                        '提示',
+                        { duration: 5000 }
+                    );
+                }
+
+                // Check if content has changed
+                if (JSON.stringify(protectedContent) !== JSON.stringify(originalContent)) {
+                    state.modifiedSlides.set(state.activeSlideKey, protectedContent);
+                } else {
+                    // Remove from modified if it's been reverted to original
+                    state.modifiedSlides.delete(state.activeSlideKey);
+                }
+
+            } catch (e) {
+                console.warn('Failed to save slide modifications:', e);
+                toast.error('JSON格式错误，无法保存修改', '保存失败');
+            }
+        }
+
+        // Update UI to show modified slides count
+        function updateModifiedSlidesUI() {
+            const count = state.modifiedSlides.size;
+            const btn = $('rewriteBtn');
+
+            if (count > 0) {
+                btn.textContent = `${t('btnApplyRegenerate')} (${count}页已修改)`;
+                btn.style.background = '#f59e0b'; // Orange to indicate pending changes
+            } else {
+                btn.textContent = t('btnApplyRegenerate');
+                btn.style.background = ''; // Reset to default
+            }
+
+            // Add visual indicator to modified slides in sidebar
+            document.querySelectorAll('.slide-item').forEach(el => {
+                const key = el.dataset.key;
+                const indicator = el.querySelector('.modified-indicator');
+
+                if (state.modifiedSlides.has(key)) {
+                    if (!indicator) {
+                        const dot = document.createElement('div');
+                        dot.className = 'modified-indicator';
+                        dot.style.cssText = 'width:6px;height:6px;background:#f59e0b;border-radius:50%;margin-left:auto;';
+                        dot.title = '已修改';
+                        el.appendChild(dot);
+                    }
+                } else {
+                    if (indicator) indicator.remove();
+                }
+            });
+        }
+
         function setLoading(flag) {
             state.loading = flag;
-            $('generateBtn').disabled = flag;
-            $('rewriteBtn').disabled = flag;
-            $('downloadBtn').disabled = flag || !state.jobId;
+            syncActionButtons();
             
             if (flag) {
                 $('genIcon').classList.add('hidden');
@@ -1068,11 +1613,33 @@
             }
         }
 
+        function syncActionButtons() {
+            $('generateBtn').disabled = state.loading;
+            $('rewriteBtn').disabled = state.loading || !state.jobId;
+            $('downloadBtn').disabled = state.loading || !state.jobId;
+            $('downloadPdfBtn').disabled = state.loading || !state.jobId;
+        }
+
         // --- Actions ---
         $('generateBtn').onclick = async () => {
             const iId = $('inputSelect').value;
             const tId = $('templateSelect').value;
-            if (!iId || !tId) return alert("请选择数据源和模板");
+            if (!iId || !tId) {
+                toast.warning('请选择数据源和模板', '提示');
+                return;
+            }
+
+            // 前端防抖：检查按钮是否被禁用（冷却中）
+            // 从 localStorage 读取冷却结束时间
+            const btn = $('generateBtn');
+            const cooldownEnd = parseInt(localStorage.getItem('generateCooldownEnd') || '0');
+            const now = Date.now();
+
+            if (cooldownEnd > now) {
+                const remainingTime = Math.ceil((cooldownEnd - now) / 1000);
+                toast.warning(`${t('msgRequestTooFrequent')}${remainingTime} ${t('msgRetryIn')}`, t('msgPleaseWait'));
+                return;
+            }
 
             // Check WebSocket connection
             if (!state.wsReady) {
@@ -1087,17 +1654,91 @@
                 }
             }
 
-            // Generate session ID
-            state.sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            // Generate session ID with new format: {uuid8}_{timestamp20}
+            // Example: a3f2c5d8_20250129143025123456
+            const uuid8 = Array.from({length: 8}, () =>
+                Math.floor(Math.random() * 16).toString(16)
+            ).join('');
+            const nowDate = new Date();
+            const timestamp20 =
+                nowDate.getFullYear().toString() +
+                (nowDate.getMonth() + 1).toString().padStart(2, '0') +
+                nowDate.getDate().toString().padStart(2, '0') +
+                nowDate.getHours().toString().padStart(2, '0') +
+                nowDate.getMinutes().toString().padStart(2, '0') +
+                nowDate.getSeconds().toString().padStart(2, '0') +
+                nowDate.getMilliseconds().toString().padStart(3, '0') +
+                Math.floor(Math.random() * 1000).toString().padStart(3, '0'); // Add 3 more digits for microseconds
+            state.sessionId = uuid8 + '_' + timestamp20;
 
             // Show progress panel
             showProgressPanel();
+
+            // 设置冷却时间（与后端同步为30秒）
+            const COOLDOWN_SECONDS = 30;
+            const cooldownEndTime = Date.now() + (COOLDOWN_SECONDS * 1000);
+            localStorage.setItem('generateCooldownEnd', cooldownEndTime.toString());
+
+            // 启动倒计时
+            const cooldownInterval = setInterval(() => {
+                const cooldownEnd = parseInt(localStorage.getItem('generateCooldownEnd') || '0');
+                const remaining = Math.ceil((cooldownEnd - Date.now()) / 1000);
+                const btnTextSpan = btn.querySelector('[data-i18n="btnGenerate"]');
+
+                if (remaining <= 0) {
+                    clearInterval(cooldownInterval);
+                    localStorage.removeItem('generateCooldownEnd');
+                    if (btnTextSpan) btnTextSpan.textContent = t('btnGenerate');
+                } else {
+                    if (btnTextSpan) btnTextSpan.textContent = `${t('btnGenerate')} (${remaining}${t('msgRetryIn')})`;
+                }
+            }, 1000);
 
             setLoading(true);
             try {
                 await doGenerate(iId, tId, $('useMock').checked);
             } catch (e) {
                 console.error(e);
+
+                // 如果出错，清除冷却时间（允许重试）
+                clearInterval(cooldownInterval);
+
+                // Check if it's a 429 rate limit error
+                if (e.message && e.message.includes('429')) {
+                    // Extract remaining seconds from error message if available
+                    // Message format: "请求过于频繁，请 N 秒后再试"
+                    const match = e.message.match(/(\d+)\s*秒/);
+                    if (match) {
+                        const serverSeconds = parseInt(match[1]);
+                        const newCooldownEnd = Date.now() + (serverSeconds * 1000);
+                        localStorage.setItem('generateCooldownEnd', newCooldownEnd.toString());
+
+                        // Restart countdown with server's time
+                        const newInterval = setInterval(() => {
+                            const cooldownEnd = parseInt(localStorage.getItem('generateCooldownEnd') || '0');
+                            const remaining = Math.ceil((cooldownEnd - Date.now()) / 1000);
+                            const btnTextSpan = btn.querySelector('[data-i18n="btnGenerate"]');
+
+                            if (remaining <= 0) {
+                                clearInterval(newInterval);
+                                localStorage.removeItem('generateCooldownEnd');
+                                if (btnTextSpan) btnTextSpan.textContent = t('btnGenerate');
+                            } else {
+                                if (btnTextSpan) btnTextSpan.textContent = `${t('btnGenerate')} (${remaining}${t('msgRetryIn')})`;
+                            }
+                        }, 1000);
+
+                        toast.warning(e.message, t('msgPleaseWait'));
+                        setLoading(false);
+                        return; // Don't clear cooldown
+                    }
+                }
+
+                // For other errors, clear cooldown to allow retry
+                localStorage.removeItem('generateCooldownEnd');
+                const btnTextSpan = btn.querySelector('[data-i18n="btnGenerate"]');
+                if (btnTextSpan) btnTextSpan.textContent = t('btnGenerate');
+
                 // Check if automatic mock retry is suggested
                 if (e.data?.error?.auto_retry_with_mock) {
                     // Auto retry with mock
@@ -1118,7 +1759,7 @@
         // Extract generation logic as separate function
         async function doGenerate(inputId, templateId, useMock) {
             // 1. Generate SlideSpec
-            const res = await api('/generate', {
+            const res = await api('/api/v1/reports', {
                 method: 'POST',
                 body: JSON.stringify({
                     input_id: inputId,
@@ -1129,45 +1770,98 @@
                 })
             });
 
-            // Note: Progress updates will come via WebSocket
-            // Only handle the final result here if WebSocket fails
+            // Extract data from new response format
+            const result = res.data || res;
+
+            // WebSocket will send completion message with progress updates
+            // Only handle result directly if WebSocket is not available (fallback)
             if (!state.websocket || state.websocket.readyState !== WebSocket.OPEN) {
-                // Fallback: handle result directly if WebSocket not available
-                handleGenerationComplete(res);
+                console.log("WebSocket not connected, handling response directly");
+                handleGenerationComplete(result);
             }
+            // Otherwise, wait for WebSocket 'completed' message which includes the result
         }
 
         $('downloadBtn').onclick = () => {
             if (!state.jobId) return;
-            window.location.href = `/download?job_id=${encodeURIComponent(state.jobId)}&regenerate_if_missing=true`;
+            window.location.href = `/api/v1/reports/${encodeURIComponent(state.jobId)}/download?regenerate_if_missing=true`;
+        };
+
+        $('downloadPdfBtn').onclick = () => {
+            if (!state.jobId) return;
+            window.location.href = `/api/v1/reports/${encodeURIComponent(state.jobId)}/download-pdf?regenerate_if_missing=true`;
         };
 
         $('rewriteBtn').onclick = async () => {
             if (!state.jobId) return;
+
+            // Save current slide modifications before submitting
+            saveCurrentSlideModifications();
+
+            if (state.modifiedSlides.size === 0) {
+                toast.warning('没有修改需要应用', '提示');
+                return;
+            }
+
             try {
-                const data = JSON.parse($('slideJson').value);
                 setLoading(true);
-                const res = await api('/rewrite', {
-                    method: 'POST',
+
+                // Convert Map to array format for API
+                const slidesArray = Array.from(state.modifiedSlides.entries()).map(([slide_key, new_content]) => ({
+                    slide_key,
+                    new_content
+                }));
+
+                console.log(`Submitting ${slidesArray.length} modified slides:`, slidesArray);
+
+                // Use batch rewrite API
+                const res = await api(`/api/v1/reports/${encodeURIComponent(state.jobId)}/slides`, {
+                    method: 'PATCH',
                     body: JSON.stringify({
-                        job_id: state.jobId, slide_key: state.activeSlideKey, new_content: data
+                        slides: slidesArray
                     })
                 });
-                
-                // Update Spec? The API returns full spec usually?
-                // Assuming res.slidespec is updated
-                if (res.slidespec) state.slidespec = res.slidespec;
+
+                console.log('Rewrite response:', res);
+
+                // Extract data from new response format
+                const result = res.data || res;
+
+                // Update Spec with new data
+                if (result.slidespec) state.slidespec = result.slidespec;
+
+                // Clear modified slides after successful submission
+                state.modifiedSlides.clear();
+                updateModifiedSlidesUI();
 
                 // Refresh Previews
-                const prevRes = await api(`/preview?job_id=${state.jobId}&regenerate_if_missing=true`);
-                state.previews = prevRes.images || [];
-                renderPreviewList(); // Refresh images (will keep scroll pos usually as DOM IDs match)
-                
-                const l = await api('/logs?limit=20');
-                renderLogs(l.lines || []);
-                
-            } catch(e) { alert("失败: " + e.message); }
-            finally { setLoading(false); }
+                const prevRes = await api(`/api/v1/reports/${encodeURIComponent(state.jobId)}/preview?regenerate_if_missing=true`);
+                const prevData = prevRes.data || prevRes;
+                state.previews = prevData.preview_urls || prevData.images || [];
+                renderPreviewList(); // Refresh images
+
+                // Reload current slide content from updated slidespec
+                const slide = state.slidespec.slides.find(s => s.slide_key === state.activeSlideKey);
+                if (slide) {
+                    $('slideJson').value = JSON.stringify(slide.placeholders || {}, null, 2);
+                }
+
+                const l = await api('/api/v1/system/logs?limit=20');
+                const logData = l.data || l;
+                renderLogs(logData.lines || []);
+
+                // Show success toast instead of alert
+                toast.success(
+                    `已成功更新 ${result.updated_count || result.updated_slides?.length || 0} 个幻灯片`,
+                    '更新完成'
+                );
+
+            } catch(e) {
+                toast.error(e.message, '更新失败');
+                console.error(e);
+            } finally {
+                setLoading(false);
+            }
         };
 
         $('toggleLogsBtn').onclick = () => {

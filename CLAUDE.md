@@ -65,6 +65,11 @@ The V2 pipeline uses AI-driven content generation:
    - **template_loader.py** - Loads template catalog and descriptors
    - **validator.py** - `ValidatorV2` validates key numbers match input data
    - **audit_logger.py** - Writes structured events to `outputs/logs/audit.jsonl`
+   - **file_lock.py** - Cross-platform file locking for concurrent operations
+     - Provides `FileLock` context manager for safe file access
+     - Includes `cleanup_stale_locks()` for removing locks from crashed processes
+     - Automatically cleans locks older than 5 minutes on server startup
+   - **session_manager.py** - Manages unique session IDs and directory isolation
 
 3. **Data Models** (models/):
    - **inputs.py** - `TenantInput` wraps raw JSON with `.get()` accessor
@@ -122,7 +127,13 @@ OPENAI_BASE_URL=https://...    # Optional: custom endpoint
 OPENAI_MODEL=gpt-4o-mini       # Default model
 ENABLE_LLM=true                # Enable real LLM (default: false, uses mock)
 DEFAULT_LOCALE=zh-CN           # Default locale
+PREVIEW_CLEANUP_DAYS=7         # Days to keep preview images (0 = no cleanup, default: 7)
 ```
+
+**Preview Cleanup**:
+- Automatically cleans up old preview images when generating new previews
+- Recommended values: 1-3 days (dev), 7-14 days (production), 30 days (archive)
+- Set to `0` to disable automatic cleanup
 
 ### Important File Locations
 
@@ -217,3 +228,9 @@ For detailed chart type specifications, Excel data extraction workflows, and cus
 - Default port 8000 may be occupied
 - Change port: `python app.py` runs on 0.0.0.0:8000 by default
 - Or use `uvicorn` with `--port` flag
+
+### Stale Lock Files After Process Crash
+- If the process crashes while holding file locks, `*.lock` files may remain
+- The server automatically cleans up locks older than 5 minutes on startup
+- Manual cleanup: Run `cleanup_stale_locks(outputs_dir, max_age_seconds=300)`
+- Lock files are stored alongside the actual files (e.g., `report.pptx.lock`)

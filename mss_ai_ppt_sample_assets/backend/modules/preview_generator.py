@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import time
 from pathlib import Path
 from typing import List
 
@@ -30,8 +31,17 @@ class PPTPreviewGenerator:
     Pipeline: PPTX → LibreOffice → PDF → PyMuPDF → PNG images
     """
 
-    def __init__(self, base_dir: Path = config.PREVIEWS_DIR):
+    def __init__(self, base_dir: Path = config.PREVIEWS_DIR, cleanup_days: int = 7):
+        """
+        Initialize the preview generator.
+
+        Args:
+            base_dir: Base directory for storing previews
+            cleanup_days: Number of days to keep previews (default: 7)
+                         Set to 0 to disable automatic cleanup
+        """
         self.base_dir = base_dir
+        self.cleanup_days = cleanup_days
         self.base_dir.mkdir(parents=True, exist_ok=True)
 
     def _find_soffice(self) -> str:
@@ -55,6 +65,39 @@ class PPTPreviewGenerator:
                 return str(cand)
 
         return shutil.which("soffice") or "soffice"
+
+    def _cleanup_old_previews(self) -> None:
+        """
+        Clean up preview directories older than cleanup_days.
+
+        This method is automatically called when generating new previews.
+        It removes directories whose last modification time exceeds the threshold.
+        """
+        if self.cleanup_days <= 0:
+            return  # Cleanup disabled
+
+        cutoff_time = time.time() - (self.cleanup_days * 24 * 60 * 60)
+
+        try:
+            for item in self.base_dir.iterdir():
+                if not item.is_dir():
+                    continue
+
+                # Check directory modification time (last access/creation)
+                dir_mtime = item.stat().st_mtime
+
+                if dir_mtime < cutoff_time:
+                    try:
+                        shutil.rmtree(item)
+                        # Optional: log cleanup (you can enable logging if needed)
+                        # import logging
+                        # logging.info(f"Cleaned up old preview: {item.name}")
+                    except Exception:
+                        # Ignore errors for individual directories (might be in use)
+                        pass
+        except Exception:
+            # Ignore cleanup errors to not block preview generation
+            pass
 
     def _pptx_to_pdf(self, ppt_path: Path, output_dir: Path) -> Path:
         """
@@ -142,7 +185,13 @@ class PPTPreviewGenerator:
         Convert PPTX to PNG images.
 
         Pipeline: PPTX → LibreOffice → PDF → PyMuPDF → PNG
+
+        This method also triggers automatic cleanup of old previews
+        if cleanup_days > 0.
         """
+        # Cleanup old previews before generating new ones
+        self._cleanup_old_previews()
+
         if not ppt_path.exists():
             raise PreviewGenerationError(f"PPT file not found: {ppt_path}")
 
@@ -158,3 +207,29 @@ class PPTPreviewGenerator:
         images = self._pdf_to_images(pdf_path, output_dir)
 
         return images
+
+    def get_pdf_path(self, ppt_path: Path, job_id: str) -> Path:
+        """
+        Get or generate PDF file for a PPT file.
+
+        If PDF already exists in preview directory, return it.
+        Otherwise, generate it using LibreOffice.
+
+        Returns:
+            Path to the PDF file
+        """
+        if not ppt_path.exists():
+            raise PreviewGenerationError(f"PPT file not found: {ppt_path}")
+
+        job_dir = sanitize_job_id(job_id)
+        output_dir = self.base_dir / job_dir
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Check if PDF already exists
+        pdf_files = sorted(output_dir.glob("*.pdf"))
+        if pdf_files:
+            return pdf_files[0]
+
+        # Generate PDF if not exists
+        pdf_path = self._pptx_to_pdf(ppt_path, output_dir)
+        return pdf_path

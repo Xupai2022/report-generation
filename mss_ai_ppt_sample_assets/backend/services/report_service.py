@@ -40,7 +40,9 @@ class ReportService:
     def __init__(self):
         self.template_repo = TemplateRepository()
         self.audit_logger = AuditLogger()
-        self.preview_generator = PPTPreviewGenerator()
+        self.preview_generator = PPTPreviewGenerator(
+            cleanup_days=config.settings.preview_cleanup_days
+        )
         self.inputs_catalog = self._load_inputs_catalog()
         self.session_manager = SessionManager(config.SESSIONS_DIR)
 
@@ -213,17 +215,26 @@ class ReportService:
         return SlideSpecV2.model_validate(data)
 
     def rewrite(
-        self, job_id: str, slide_key: str, new_content: Dict[str, Any]
+        self,
+        job_id: str,
+        slide_key: str = None,
+        new_content: Dict[str, Any] = None,
+        slides: list[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
-        """Rewrite a slide with new content.
+        """Rewrite one or multiple slides with new content.
+
+        Supports two modes:
+        1. Single slide mode (legacy): provide slide_key + new_content
+        2. Batch mode: provide slides array [{"slide_key": "...", "new_content": {...}}, ...]
 
         Args:
             job_id: Job ID in format "{session_id}:{template_id}"
-            slide_key: Slide key to update
-            new_content: New placeholder content to merge
+            slide_key: (Optional) Slide key to update (single mode)
+            new_content: (Optional) New placeholder content to merge (single mode)
+            slides: (Optional) List of slides to update (batch mode)
 
         Returns:
-            Dict with job_id, slide_key, report_path, etc.
+            Dict with job_id, updated_slides, report_path, etc.
         """
         try:
             session_id, template_id = job_id.split(":", 1)
@@ -233,12 +244,39 @@ class ReportService:
         if not self.template_repo.is_v2(template_id):
             raise ValueError(f"Template {template_id} is not V2. Rewrite only supported for V2.")
 
-        # For V2, just update the placeholder directly
+        # Validate input mode
+        has_single = slide_key is not None and new_content is not None
+        has_batch = slides is not None and len(slides) > 0
+
+        if not has_single and not has_batch:
+            raise ValueError("Must provide either (slide_key + new_content) or slides array")
+
+        if has_single and has_batch:
+            raise ValueError("Cannot provide both single mode and batch mode simultaneously")
+
+        # Load slidespec
         slidespec = self._load_slidespec(session_id, template_id)
 
-        slide = slidespec.get_slide(slide_key)
-        if slide:
-            slide.placeholders.update(new_content)
+        # Normalize to batch mode internally
+        if has_single:
+            slides_to_update = [{"slide_key": slide_key, "new_content": new_content}]
+        else:
+            slides_to_update = slides
+
+        # Update all slides
+        updated_slides = []
+        not_found_slides = []
+
+        for slide_update in slides_to_update:
+            key = slide_update.get("slide_key")
+            content = slide_update.get("new_content", {})
+
+            slide = slidespec.get_slide(key)
+            if slide:
+                slide.placeholders.update(content)
+                updated_slides.append(key)
+            else:
+                not_found_slides.append(key)
 
         # Use session-isolated paths
         report_path = self.session_manager.get_report_path(session_id, template_id)
@@ -251,15 +289,40 @@ class ReportService:
         with FileLock(report_path, timeout=60.0):
             self.ppt_generator_v2.render(slidespec, report_path)
 
-        return {
+        # Log audit event
+        self.audit_logger.log(
+            event="rewrite_v2",
+            details={
+                "updated_slides": updated_slides,
+                "not_found_slides": not_found_slides,
+                "total_updated": len(updated_slides),
+            },
+            job_id=job_id,
+        )
+
+        result = {
             "job_id": job_id,
             "session_id": session_id,
-            "slide_key": slide_key,
             "report_path": str(report_path),
             "warnings": [],
             "slidespec": slidespec.model_dump(),
             "version": "v2",
+            "updated_slides": updated_slides,
+            "updated_count": len(updated_slides),
         }
+
+        # Add warnings for not found slides
+        if not_found_slides:
+            result["warnings"].append(
+                f"以下幻灯片未找到: {', '.join(not_found_slides)}"
+            )
+            result["not_found_slides"] = not_found_slides
+
+        # Legacy compatibility: return slide_key for single mode
+        if has_single:
+            result["slide_key"] = slide_key
+
+        return result
 
     def read_logs(self, limit: int = 100) -> str:
         path = self.audit_logger.log_path
@@ -352,6 +415,27 @@ class ReportService:
             raise SlideSpecNotFoundError(f"PPT not found for {job_id}, generate first.")
 
         return report_path
+
+    def get_pdf_path(self, job_id: str, regenerate_if_missing: bool = True) -> Path:
+        """Return the PDF path for a job, generating it from the PPTX if needed.
+
+        Args:
+            job_id: Job ID in format "{session_id}:{template_id}"
+            regenerate_if_missing: Whether to regenerate PDF if missing
+
+        Returns:
+            Path to the PDF file
+
+        Raises:
+            SlideSpecNotFoundError: If report doesn't exist and can't be generated
+        """
+        # First ensure the PPTX exists
+        report_path = self.get_report_path(job_id, regenerate_if_missing=regenerate_if_missing)
+
+        # Get or generate PDF using preview generator
+        pdf_path = self.preview_generator.get_pdf_path(report_path, job_id)
+
+        return pdf_path
 
     def cleanup_old_sessions(self, max_age_hours: int = 24) -> int:
         """Clean up old session directories.

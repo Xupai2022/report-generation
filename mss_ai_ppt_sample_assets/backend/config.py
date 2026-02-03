@@ -19,6 +19,7 @@ LOGS_DIR = OUTPUTS_DIR / "logs"
 PREVIEWS_DIR = OUTPUTS_DIR / "previews"
 SLIDESPECS_DIR = OUTPUTS_DIR / "slidespecs"
 SESSIONS_DIR = OUTPUTS_DIR / "sessions"  # Isolated session directories for concurrent requests
+JOBS_DIR = OUTPUTS_DIR / "jobs"  # Job state storage directory
 
 
 class Settings:
@@ -33,6 +34,18 @@ class Settings:
         # Feature flags
         self.enable_llm: bool = os.getenv("ENABLE_LLM", "false").lower() == "true"
         self.default_locale: str = os.getenv("DEFAULT_LOCALE", "zh-CN")
+
+        # Preview cleanup configuration
+        self.preview_cleanup_days: int = int(os.getenv("PREVIEW_CLEANUP_DAYS", "7"))
+
+        # Logging configuration
+        self.log_level: str = os.getenv("LOG_LEVEL", "INFO").upper()
+        self.log_max_bytes: int = int(os.getenv("LOG_MAX_BYTES", str(50 * 1024 * 1024)))  # 50MB default
+        self.log_backup_count: int = int(os.getenv("LOG_BACKUP_COUNT", "10"))
+
+        # Job management configuration
+        self.job_retention_days: int = int(os.getenv("JOB_RETENTION_DAYS", "7"))
+        self.job_max_retries: int = int(os.getenv("JOB_MAX_RETRIES", "3"))
 
         # Validate OpenAI configuration when LLM is enabled
         if self.enable_llm and not self.openai_api_key:

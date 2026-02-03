@@ -1,0 +1,24 @@
+{
+  "job_id": "639deced_20260202141527506145:mss_technical_v2",
+  "session_id": "639deced_20260202141527506145",
+  "template_id": "mss_technical_v2",
+  "input_id": "tenant_acme_2025-11",
+  "status": "completed",
+  "progress": 100,
+  "message": "完成",
+  "created_at": "2026-02-02 06:15:27.538510",
+  "started_at": "2026-02-02 06:15:27.584631",
+  "completed_at": "2026-02-02 06:15:28.001090",
+  "updated_at": "2026-02-02 06:15:28.004181",
+  "idempotency_key": null,
+  "retry_count": 0,
+  "max_retries": 3,
+  "last_error": null,
+  "report_path": "C:\\Users\\User\\Desktop\\report-generation\\mss_ai_ppt_sample_assets\\backend\\outputs\\sessions\\639deced_20260202141527506145\\report_mss_technical_v2.pptx",
+  "slidespec_path": "C:\\Users\\User\\Desktop\\report-generation\\mss_ai_ppt_sample_assets\\backend\\outputs\\sessions\\639deced_20260202141527506145\\slidespec_mss_technical_v2.json",
+  "preview_urls": null,
+  "metadata": {
+    "warnings": [],
+    "version": "v2"
+  }
+}

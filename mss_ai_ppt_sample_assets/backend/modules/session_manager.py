@@ -9,12 +9,19 @@ from __future__ import annotations
 import uuid
 import time
 import shutil
+import re
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 import logging
 
 logger = logging.getLogger(__name__)
+
+# Session ID format: {uuid8}_{timestamp20}
+# Example: a3f2c5d8_20250129143025123456
+# - uuid8: 8-character hexadecimal UUID for uniqueness
+# - timestamp20: YYYYMMDDHHMMSSffffff (year-month-day-hour-minute-second-microsecond)
+SESSION_ID_PATTERN = re.compile(r'^[a-f0-9]{8}_\d{20}$')
 
 
 class SessionManager:
@@ -42,6 +49,36 @@ class SessionManager:
         timestamp_part = datetime.now().strftime('%Y%m%d%H%M%S%f')
         return f"{uuid_part}_{timestamp_part}"
 
+    def validate_session_id(self, session_id: str) -> bool:
+        """Validate session ID format for security.
+
+        Prevents path traversal attacks by ensuring session_id matches expected format.
+
+        Args:
+            session_id: Session ID to validate
+
+        Returns:
+            True if valid, False otherwise
+
+        Raises:
+            ValueError: If session_id is invalid (contains path traversal or wrong format)
+        """
+        if not session_id:
+            raise ValueError("Session ID cannot be empty")
+
+        # Check for path traversal attempts
+        if '..' in session_id or '/' in session_id or '\\' in session_id:
+            raise ValueError(f"Invalid session ID (path traversal detected): {session_id}")
+
+        # Validate format: {uuid8}_{timestamp20}
+        if not SESSION_ID_PATTERN.match(session_id):
+            raise ValueError(
+                f"Invalid session ID format: {session_id}. "
+                f"Expected format: 8-char-hex_20-digit-timestamp (e.g., a3f2c5d8_20250129143025123456)"
+            )
+
+        return True
+
     def get_session_dir(self, session_id: str) -> Path:
         """Get isolated directory for a session.
 
@@ -50,7 +87,13 @@ class SessionManager:
 
         Returns:
             Path to session directory
+
+        Raises:
+            ValueError: If session_id format is invalid
         """
+        # Validate session ID for security
+        self.validate_session_id(session_id)
+
         session_dir = self.base_dir / session_id
         session_dir.mkdir(parents=True, exist_ok=True)
         return session_dir

@@ -1,0 +1,81 @@
+{
+  "pageTitle": "MSS AI PPT Report Generation System",
+  "pageSubtitle": "Intelligent Report Generator",
+
+  "sectionGenerate": "Generate Report",
+  "sectionJobs": "Job List",
+  "sectionSlides": "Slide List",
+  "sectionLogs": "System Logs",
+
+  "labelInput": "Input Data",
+  "labelTemplate": "Select Template",
+  "labelUseMock": "Quick Generate (Mock)",
+
+  "btnGenerate": "Generate Report",
+  "btnPreview": "Preview",
+  "btnDownload": "Download PPT",
+  "btnDownloadPdf": "Download PDF",
+  "btnRefresh": "Refresh List",
+  "btnViewDetails": "View Details",
+  "btnApplyRegenerate": "Apply & Regenerate",
+  "btnRefreshPreview": "Refresh Preview",
+
+  "statusPending": "Pending",
+  "statusProcessing": "Processing",
+  "statusCompleted": "Completed",
+  "statusFailed": "Failed",
+  "statusRetrying": "Retrying",
+
+  "progressInit": "Initializing",
+  "progressLoadTemplate": "Loading Template",
+  "progressGenerateContent": "AI Generating Content",
+  "progressRenderPpt": "Rendering PPT",
+  "progressComplete": "Completed",
+
+  "tableJobId": "Job ID",
+  "tableInput": "Input Data",
+  "tableTemplate": "Template",
+  "tableStatus": "Status",
+  "tableProgress": "Progress",
+  "tableCreatedAt": "Created At",
+  "tableActions": "Actions",
+
+  "msgGenerating": "Generating Report",
+  "msgSuccess": "Report generated successfully!",
+  "msgError": "Generation failed",
+  "msgNoPreview": "No preview available",
+  "msgLoading": "Loading...",
+  "msgNoData": "No data available",
+  "msgSelectInput": "Please select input data",
+  "msgSelectTemplate": "Please select report template",
+  "msgSelectDataSource": "Select data source...",
+  "msgConfirmGenerate": "Confirm to generate report?",
+  "msgSelectDataAndTemplate": "Please select data and template to start",
+  "msgNoJob": "Job ID: None",
+  "msgJobId": "Job ID",
+  "msgRetryIn": "seconds until retry",
+  "msgRequestTooFrequent": "Request too frequent, please wait",
+  "msgPleaseWait": "Please wait",
+  "msgPageNumber": "Page",
+  "msgPage": "",
+
+  "editorTitle": "JSON Property Editor",
+  "editorHint": "Edit Hint: You can only modify field values, not field names (e.g., TITLE, SUBTITLE). Deleting or renaming fields will be ignored.",
+  "editorPlaceholder": "// Select a slide to edit properties...",
+
+  "tooltipMockData": "Use pre-generated mock data, skip AI generation process, suitable for quick testing",
+  "tooltipPreview": "Preview report content (generate PNG images)",
+  "tooltipDownload": "Download generated PPT file",
+
+  "errorNetworkFailed": "Network request failed",
+  "errorGenerationFailed": "Report generation failed",
+  "errorPreviewFailed": "Preview generation failed",
+  "errorLoadFailed": "Data loading failed",
+
+  "langSwitcher": "Language",
+  "langChinese": "中文",
+  "langEnglish": "English",
+
+  "templateExecutive": "MSS Monthly Security Report (Executive)",
+  "templateTechnical": "MSS Monthly Security Report (Technical)"
+}

@@ -1,0 +1,21 @@
+{
+  "job_id": "f9ad7a3e_20260202193936038860:mss_technical_v2",
+  "session_id": "f9ad7a3e_20260202193936038860",
+  "template_id": "mss_technical_v2",
+  "input_id": "tenant_demo_2025-01",
+  "status": "failed",
+  "progress": 0,
+  "message": "",
+  "created_at": "2026-02-02 11:39:36.038860",
+  "started_at": "2026-02-02 11:39:36.049326",
+  "completed_at": "2026-02-02 11:39:42.230891",
+  "updated_at": "2026-02-02 11:39:42.232894",
+  "idempotency_key": null,
+  "retry_count": 3,
+  "max_retries": 3,
+  "last_error": "Input tenant_demo_2025-01 not found",
+  "report_path": null,
+  "slidespec_path": null,
+  "preview_urls": null,
+  "metadata": {}
+}
