@@ -74,10 +74,10 @@ async def list_inputs():
     """List all available input data sources."""
     try:
         inputs = service.list_inputs()
-        logger.info(f"✓ Listed {len(inputs)} input sources")
+        logger.info(f"Listed {len(inputs)} input sources")
         return SuccessResponse(data=inputs)
     except Exception as e:
-        logger.exception(f"✗ Failed to list inputs: {e}")
+        logger.exception(f"Failed to list inputs: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -184,14 +184,14 @@ async def get_input(input_id: str):
             if stats:
                 response_data["statistics"] = stats
 
-        logger.info(f"✓ Retrieved input details: {input_id}")
+        logger.info(f"Retrieved input details: {input_id}")
         return SuccessResponse(data=response_data)
 
     except InputNotFoundError as e:
-        logger.error(f"✗ Input not found: {e}")
+        logger.error(f"Input not found: {e}")
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        logger.exception(f"✗ Failed to get input details: {e}")
+        logger.exception(f"Failed to get input details: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -322,20 +322,20 @@ async def upload_excel(file: UploadFile = File(...)):
             }
         }
 
-        logger.info(f"✓ Excel uploaded successfully: session_id={session_id}")
+        logger.info(f"Excel uploaded successfully: session_id={session_id}")
         return SuccessResponse(data=response_data)
 
     except FileValidationError as e:
-        logger.error(f"✗ File validation error: {e}")
+        logger.error(f"File validation error: {e}")
         raise HTTPException(status_code=400, detail=e.to_dict())
     except DataValidationError as e:
-        logger.error(f"✗ Data validation error: {e}")
+        logger.error(f"Data validation error: {e}")
         raise HTTPException(status_code=400, detail=e.to_dict())
     except MSSAIException as e:
-        logger.error(f"✗ Excel upload error: {e}")
+        logger.error(f"Excel upload error: {e}")
         raise HTTPException(status_code=500, detail=e.to_dict())
     except Exception as e:
-        logger.exception("✗ Unexpected error during Excel upload")
+        logger.exception("Unexpected error during Excel upload")
         raise HTTPException(status_code=500, detail={
             "error": "INTERNAL_ERROR",
             "message": f"服务器内部错误: {str(e)}"

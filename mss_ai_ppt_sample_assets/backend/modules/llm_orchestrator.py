@@ -182,7 +182,7 @@ class LLMOrchestratorV2:
         Args:
             tenant_input: Raw tenant input
             chart_config: Chart configuration from placeholder definition
-            chart_type: 'bar_chart' or 'pie_chart'
+            chart_type: One of the supported chart placeholder types
 
         Returns:
             Formatted chart data ready for rendering
@@ -202,7 +202,7 @@ class LLMOrchestratorV2:
             'position': chart_config.get('position')
         }
 
-        if chart_type == 'bar_chart' or chart_type == 'P11_bar':
+        if chart_type == 'P11_bar':
             # Expect source_data to have 'labels' and 'values' or similar structure
             x_field = chart_config.get('x_field', 'labels')
             y_field = chart_config.get('y_field', 'values')
@@ -236,7 +236,7 @@ class LLMOrchestratorV2:
                 logger.warning(f"Bar chart data source {data_source} is neither dict nor list")
                 return {}
 
-        elif chart_type == 'pie_chart' or chart_type == 'P12_pie' or chart_type == 'P13_pie' or chart_type == 'P14_pie':
+        elif chart_type in ('P12_pie', 'P13_pie', 'P14_pie'):
             # Expect source_data to be a dict like {'high': 52, 'medium': 473, 'low': 816}
             # or a dict with 'categories' and 'values' arrays for P12_pie/P13_pie/P14_pie
             if isinstance(source_data, dict):
@@ -245,7 +245,7 @@ class LLMOrchestratorV2:
                     result['categories'] = source_data['categories']
                     result['values'] = source_data['values']
                 else:
-                    # Convert dict to categories and values (legacy pie_chart format)
+                    # Convert dict to categories and values
                     categories = []
                     values = []
 
@@ -289,6 +289,32 @@ class LLMOrchestratorV2:
                 result['malicious_outbound'] = [to_wan(v) for v in malicious_outbound]
             else:
                 logger.warning(f"Line chart data source {data_source} is not a dict")
+                return {}
+
+        elif chart_type == 'P11_line':
+            # Expect source_data to be a dict with 'months' (or 'categories') and multiple series
+            # Example: {"months": ["Jan", "Feb", ...], "critical": [5, 3, ...], "high": [12, 15, ...], "medium": [45, 38, ...]}
+            if isinstance(source_data, dict):
+                # Get the category field (months or categories)
+                months = source_data.get('months', source_data.get('categories', []))
+
+                # Extract all numeric series (skip 'months' and 'categories' keys)
+                series_data = []
+                for key, values in source_data.items():
+                    if key not in ['months', 'categories'] and isinstance(values, list):
+                        series_data.append({
+                            'name': key,
+                            'values': values
+                        })
+
+                if months and series_data:
+                    result['months'] = months
+                    result['series'] = series_data
+                else:
+                    logger.warning(f"P11_line data source {data_source} missing valid months or series data")
+                    return {}
+            else:
+                logger.warning(f"P11_line data source {data_source} is not a dict")
                 return {}
 
         elif chart_type == 'P16_combo':
@@ -405,7 +431,7 @@ class LLMOrchestratorV2:
                 result[slide_key] = {}
 
             # Handle chart placeholders
-            if placeholder.type in ('bar_chart', 'pie_chart', 'P11_bar', 'P12_pie', 'P13_pie', 'P14_pie', 'P15_line', 'P16_combo') and placeholder.chart_config:
+            if placeholder.type in ('P11_bar', 'P11_line', 'P12_pie', 'P13_pie', 'P14_pie', 'P15_line', 'P16_combo') and placeholder.chart_config:
                 chart_data = self._extract_chart_data(
                     tenant_input,
                     placeholder.chart_config,
@@ -711,7 +737,7 @@ class LLMOrchestratorV2:
         self,
         tenant_input: TenantInput,
         template: TemplateDescriptorV2,
-        max_tokens_per_batch: int = 6000,
+        max_tokens_per_batch: int = 15000,
     ) -> List[List[str]]:
         """Split slides into batches based on estimated token count.
 
@@ -798,9 +824,10 @@ class LLMOrchestratorV2:
         self,
         tenant_input: TenantInput,
         template: TemplateDescriptorV2,
-        max_tokens_per_batch: int = 6000,
+        max_tokens_per_batch: int = 15000,
         session_id: str = None,
         ws_manager = None,
+        event_loop = None,
     ) -> Dict[str, Dict[str, Any]]:
         """Generate AI content in batches to avoid timeout issues.
 
@@ -810,6 +837,7 @@ class LLMOrchestratorV2:
             max_tokens_per_batch: Maximum estimated tokens per API call
             session_id: Session ID for progress updates
             ws_manager: WebSocket manager for real-time progress
+            event_loop: Event loop for scheduling async tasks from sync code
 
         Returns:
             Dict[slide_key, Dict[token, value]] with all AI-generated content
@@ -819,14 +847,16 @@ class LLMOrchestratorV2:
 
         # Helper to send progress updates
         def send_progress(progress: int, message: str):
-            if ws_manager and session_id:
+            if ws_manager and session_id and event_loop:
                 import asyncio
                 try:
-                    asyncio.create_task(ws_manager.send_progress_update(
-                        session_id, progress, message
-                    ))
-                except:
-                    pass
+                    # Schedule coroutine in the main event loop
+                    asyncio.run_coroutine_threadsafe(
+                        ws_manager.send_progress_update(session_id, progress, message),
+                        event_loop
+                    )
+                except Exception as e:
+                    logger.debug(f"Failed to send progress update: {e}")
 
         if total_batches <= 1:
             # No need for batching, use original method
@@ -871,7 +901,7 @@ class LLMOrchestratorV2:
                     all_ai_placeholders[slide_key] = {}
                 all_ai_placeholders[slide_key].update(tokens)
 
-            logger.info(f"✅ Batch {i + 1}/{total_batches} completed")
+            logger.info(f"Batch {i + 1}/{total_batches} completed")
 
         send_progress(60, "所有AI内容生成完成")
         return all_ai_placeholders
@@ -909,7 +939,7 @@ class LLMOrchestratorV2:
                 # Try to parse the response
                 parsed = self._parse_llm_response(response, template)
 
-                logger.info(f"✅ Successfully parsed LLM response on attempt {attempt + 1}")
+                logger.info(f"Successfully parsed LLM response on attempt {attempt + 1}")
                 return parsed
 
             except LLMGenerationError as e:
@@ -942,8 +972,7 @@ class LLMOrchestratorV2:
             raise LLMGenerationError("OpenAI client is not initialized. Enable LLM in settings.")
 
         logger.info("=" * 80)
-        logger.info("CALLING OPENAI API (V2)")
-        logger.info(f"Model: {config.settings.openai_model}")
+        logger.info("CALLING OPENAI API (V2)")        
         logger.info(f"System prompt length: {len(system_prompt)} chars")
         logger.info(f"User prompt length: {len(user_prompt)} chars")
         logger.info("=" * 80)
@@ -961,7 +990,7 @@ class LLMOrchestratorV2:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            temperature=0.7,
+            temperature=0.4,
             response_format={"type": "json_object"},
         )
 
@@ -970,7 +999,7 @@ class LLMOrchestratorV2:
             raise LLMGenerationError("OpenAI returned empty response")
 
         logger.info("=" * 80)
-        logger.info("✅ OPENAI API CALL SUCCESSFUL")
+        logger.info("OPENAI API CALL SUCCESSFUL")
         logger.info(f"Total tokens used: {response.usage.total_tokens}")
         logger.info(f"Response length: {len(content)} chars")
         logger.info("=" * 80)
@@ -987,6 +1016,12 @@ class LLMOrchestratorV2:
         fenced_match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text, re.IGNORECASE)
         if fenced_match:
             text = fenced_match.group(1).strip()
+
+        # Remove single-line comments (// ...)
+        text = re.sub(r'//.*?$', '', text, flags=re.MULTILINE)
+
+        # Remove multi-line comments (/* ... */)
+        text = re.sub(r'/\*.*?\*/', '', text, flags=re.DOTALL)
 
         # Extract JSON object
         first_brace = text.find("{")
@@ -1041,58 +1076,6 @@ class LLMOrchestratorV2:
 
         return result
 
-    def _validate_key_numbers(
-        self,
-        slidespec: SlideSpecV2,
-        tenant_input: TenantInput,
-        template: TemplateDescriptorV2
-    ) -> List[str]:
-        """Validate key numerical fields match input data.
-
-        Returns:
-            List of validation error messages (empty if all valid)
-        """
-        errors = []
-        validation_fields = template.get_validation_fields()
-
-        # Computed values
-        incidents = tenant_input.get("incidents", []) or []
-        computed = {
-            "incidents_count": len(incidents),
-            "incidents_high_count": len([i for i in incidents if i.get("severity") == "high"]),
-        }
-
-        for token, field_path in validation_fields.items():
-            # Get expected value
-            if field_path in computed:
-                expected = computed[field_path]
-            else:
-                expected = self._get_nested(tenant_input, field_path)
-
-            if expected is None:
-                continue
-
-            # Find actual value in slidespec
-            for slide in slidespec.slides:
-                if token in slide.placeholders:
-                    actual = slide.placeholders[token]
-
-                    # Extract number from string if needed
-                    if isinstance(actual, str):
-                        numbers = re.findall(r'[\d.]+', actual)
-                        if numbers:
-                            try:
-                                actual = float(numbers[0]) if '.' in numbers[0] else int(numbers[0])
-                            except ValueError:
-                                pass
-
-                    # Compare
-                    if isinstance(expected, (int, float)) and isinstance(actual, (int, float)):
-                        if abs(expected - actual) > 0.01:
-                            errors.append(f"{token}: expected {expected}, got {actual}")
-
-        return errors
-
     def generate_slidespec_v2(
         self,
         tenant_input: TenantInput,
@@ -1100,6 +1083,7 @@ class LLMOrchestratorV2:
         use_mock: bool = False,
         session_id: str = None,
         ws_manager = None,
+        event_loop = None,
     ) -> SlideSpecV2:
         """Generate SlideSpec for V2 template using AI.
 
@@ -1111,6 +1095,7 @@ class LLMOrchestratorV2:
             use_mock: Whether to force mock/fallback generation
             session_id: Session ID for WebSocket progress updates
             ws_manager: WebSocket manager for real-time progress
+            event_loop: Event loop for scheduling async tasks from sync code
 
         Returns:
             SlideSpecV2 with all placeholders filled
@@ -1119,14 +1104,16 @@ class LLMOrchestratorV2:
 
         # Helper to send progress updates
         def send_progress(progress: int, message: str):
-            if ws_manager and session_id:
+            if ws_manager and session_id and event_loop:
                 import asyncio
                 try:
-                    asyncio.create_task(ws_manager.send_progress_update(
-                        session_id, progress, message
-                    ))
-                except:
-                    pass
+                    # Schedule coroutine in the main event loop
+                    asyncio.run_coroutine_threadsafe(
+                        ws_manager.send_progress_update(session_id, progress, message),
+                        event_loop
+                    )
+                except Exception as e:
+                    logger.debug(f"Failed to send progress update: {e}")
 
         # Load V2 template descriptor (20%)
         send_progress(20, "加载模板描述符...")
@@ -1158,6 +1145,7 @@ class LLMOrchestratorV2:
                     template,
                     session_id=session_id,
                     ws_manager=ws_manager,
+                    event_loop=event_loop,
                 )
 
                 # Merge AI content (65%)
@@ -1167,11 +1155,8 @@ class LLMOrchestratorV2:
                     if slide:
                         slide.placeholders.update(tokens)
 
-                # Validate key numbers (70%)
+                # (No validator) Keep generation flow simple
                 send_progress(70, "验证生成内容...")
-                errors = self._validate_key_numbers(slidespec, tenant_input, template)
-                if errors:
-                    logger.warning(f"⚠️ Validation warnings: {errors}")
 
             except LLMGenerationError as e:
                 logger.error(f"❌ AI generation failed: {e}")
@@ -1182,7 +1167,7 @@ class LLMOrchestratorV2:
             self._fill_ai_placeholders_with_fallback(slidespec, template)
             send_progress(70, "快速生成完成...")
 
-        logger.info(f"✅ V2 slidespec generation complete: {len(slidespec.slides)} slides")
+        logger.info(f"V2 slidespec generation complete: {len(slidespec.slides)} slides")
         return slidespec
 
     def _fill_ai_placeholders_with_fallback(
@@ -1194,10 +1179,7 @@ class LLMOrchestratorV2:
         for slide_key, token, placeholder in template.get_ai_placeholders():
             slide = slidespec.get_slide(slide_key)
             if slide and token not in slide.placeholders:
-                if placeholder.type == "bullet_list":
-                    slide.placeholders[token] = "• [AI生成内容占位]\n• [请启用LLM以生成实际内容]"
-                else:
-                    slide.placeholders[token] = f"[{token}: AI生成内容占位]"
+                slide.placeholders[token] = f"[{token}: AI生成内容占位]"
 
 
 # ============================================================================

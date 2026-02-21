@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import logging
 import shutil
+import time
 from pathlib import Path
 from typing import Any, Dict, Union
 
@@ -19,11 +21,12 @@ from mss_ai_ppt_sample_assets.backend.modules.llm_orchestrator import (
     LLMGenerationError,
 )
 from mss_ai_ppt_sample_assets.backend.modules.ppt_generator import PPTGeneratorV2
-from mss_ai_ppt_sample_assets.backend.modules.validator import ValidatorV2
 from mss_ai_ppt_sample_assets.backend.modules.preview_generator import (
     PPTPreviewGenerator,
     sanitize_job_id,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class InputNotFoundError(Exception):
@@ -72,9 +75,6 @@ class ReportService:
             raise InputNotFoundError(f"Input {input_id} not found")
         return entry
 
-    def get_template_meta(self, template_id: str) -> Dict[str, Any]:
-        return self.template_repo.get_catalog_entry(template_id)
-
     def _get_input_path(self, input_id: str) -> Path:
         entry = self.inputs_catalog.get(input_id)
         if not entry:
@@ -86,7 +86,7 @@ class ReportService:
         return TenantInput.load_from_file(path)
 
     def generate(
-        self, input_id: str, template_id: str, use_mock: bool = False, session_id: str = None
+        self, input_id: str, template_id: str, use_mock: bool = False, session_id: str = None, ws_manager=None, event_loop=None
     ) -> Dict[str, Any]:
         """Generate report using V2 template.
 
@@ -101,24 +101,30 @@ class ReportService:
             use_mock: Whether to use mock LLM generation
             session_id: Optional session ID for concurrent request isolation.
                        If None, a new session ID will be generated.
+            ws_manager: WebSocket manager for real-time progress updates
+            event_loop: Event loop for scheduling async tasks from sync code
 
         Returns:
             Dict with job_id, report_path, warnings, slidespec, etc.
         """
+        logger.debug(f"Starting generation: input={input_id}, template={template_id}, mock={use_mock}, session={session_id}")
+
         # Generate session ID if not provided
         if session_id is None:
             session_id = self.session_manager.generate_session_id()
+            logger.debug(f"Generated new session ID: {session_id}")
 
         tenant_input = self.load_input(input_id)
+        logger.debug(f"Loaded input data: {len(tenant_input.raw)} keys")
 
         # Ensure we only handle V2
         if not self.template_repo.is_v2(template_id):
              raise ValueError(f"Template {template_id} is not a V2 template. Only V2 templates are supported.")
 
-        return self._generate_v2(input_id, template_id, tenant_input, session_id=session_id, use_mock=use_mock)
+        return self._generate_v2(input_id, template_id, tenant_input, session_id=session_id, use_mock=use_mock, ws_manager=ws_manager, event_loop=event_loop)
 
     def _generate_v2(
-        self, input_id: str, template_id: str, tenant_input: TenantInput, session_id: str, use_mock: bool = False
+        self, input_id: str, template_id: str, tenant_input: TenantInput, session_id: str, use_mock: bool = False, ws_manager=None, event_loop=None
     ) -> Dict[str, Any]:
         """Generate report using V2 AI-driven flow.
 
@@ -128,6 +134,8 @@ class ReportService:
             tenant_input: Parsed tenant input data
             session_id: Unique session ID for file isolation
             use_mock: Whether to use mock LLM generation
+            ws_manager: WebSocket manager for real-time progress updates
+            event_loop: Event loop for scheduling async tasks from sync code
 
         Returns:
             Dict with job_id, report_path, warnings, etc.
@@ -135,42 +143,58 @@ class ReportService:
 
         # Clear template cache to ensure latest descriptor is loaded
         self.template_repo.clear_cache()
-
-        # Note: Progress updates are sent from within the orchestrator
-        # This is a synchronous function, so we don't send WebSocket updates here
-        # The async /generate endpoint will handle WebSocket notifications
+        logger.debug(f"Template cache cleared for: {template_id}")
 
         # V2: Direct to LLM with raw data
+        # Pass ws_manager, session_id, and event_loop to enable real-time progress updates
+        logger.debug(f"Generating slidespec via LLM orchestrator...")
         slidespec: SlideSpecV2 = self.llm_orchestrator_v2.generate_slidespec_v2(
             tenant_input=tenant_input,
             template_id=template_id,
             use_mock=use_mock,
+            session_id=session_id,
+            ws_manager=ws_manager,
+            event_loop=event_loop,
         )
+        logger.debug(f"Slidespec generated: {len(slidespec.slides)} slides")
+        warnings: list[str] = []
 
-        # V2: Only validate key numbers
-        validator = ValidatorV2(tenant_input)
-        validation_result = validator.validate_key_numbers(slidespec)
-        warnings = validation_result.warnings
-
-        if warnings:
-            self.audit_logger.log(
-                event="validation_warning_v2",
-                details={"warnings": warnings},
-                job_id=f"{session_id}:{template_id}",
-                severity="warning",
-            )
+        # Helper to send progress updates
+        def send_progress(progress: int, message: str):
+            if ws_manager and session_id and event_loop:
+                import asyncio
+                try:
+                    # Schedule coroutine in the main event loop
+                    asyncio.run_coroutine_threadsafe(
+                        ws_manager.send_progress_update(session_id, progress, message),
+                        event_loop
+                    )
+                except Exception as e:
+                    pass
 
         # Use session-isolated paths
         report_path = self.session_manager.get_report_path(session_id, template_id)
         slidespec_path = self.session_manager.get_slidespec_path(session_id, template_id)
+        logger.debug(f"Output paths: report={report_path.name}, slidespec={slidespec_path.name}")
+
+        # Send progress update for rendering (75%)
+        send_progress(75, "渲染PPT文件...")
 
         # Render with file lock to prevent concurrent write conflicts
+        logger.debug("Rendering PPT file with file lock...")
         with FileLock(report_path, timeout=60.0):
             self.ppt_generator_v2.render(slidespec, report_path)
+        logger.debug(f"PPT rendered: {report_path.stat().st_size / 1024:.1f} KB")
+
+        # Send progress update after rendering (90%)
+        send_progress(90, "保存文件...")
 
         # Save slidespec with file lock
         with FileLock(slidespec_path, timeout=60.0):
             slidespec.save(slidespec_path)
+
+        # Send final progress update (95%)
+        send_progress(95, "生成完成...")
 
         self.audit_logger.log(
             event="generate_v2",
@@ -181,10 +205,10 @@ class ReportService:
         return {
             "job_id": f"{session_id}:{template_id}",
             "session_id": session_id,
-            "report_path": str(report_path),
+            "report_path": config.outputs_url_for(report_path),
             "warnings": warnings,
             "slidespec": slidespec.model_dump(),
-            "slidespec_path": str(slidespec_path),
+            "slidespec_path": config.outputs_url_for(slidespec_path),
             "version": "v2",
         }
 
@@ -303,7 +327,7 @@ class ReportService:
         result = {
             "job_id": job_id,
             "session_id": session_id,
-            "report_path": str(report_path),
+            "report_path": config.outputs_url_for(report_path),
             "warnings": [],
             "slidespec": slidespec.model_dump(),
             "version": "v2",
@@ -333,12 +357,18 @@ class ReportService:
             return "\n".join(lines)
         return "\n".join(lines[-limit:])
 
-    def preview(self, job_id: str, regenerate_if_missing: bool = True) -> Dict[str, Any]:
+    def preview(
+        self,
+        job_id: str,
+        regenerate_if_missing: bool = True,
+        force_regenerate: bool = False,
+    ) -> Dict[str, Any]:
         """Generate preview images for a report.
 
         Args:
             job_id: Job ID in format "{session_id}:{template_id}"
             regenerate_if_missing: Whether to regenerate report if missing
+            force_regenerate: Whether to force regenerate previews even if cached
 
         Returns:
             Dict with job_id and list of image URLs
@@ -350,16 +380,9 @@ class ReportService:
 
         report_path = self.get_report_path(job_id, regenerate_if_missing=regenerate_if_missing)
 
-        # Work on a temp copy to avoid locks on the report file
-        tmp_dir = config.PREVIEWS_DIR / "tmp"
-        tmp_dir.mkdir(parents=True, exist_ok=True)
         job_dir = sanitize_job_id(job_id)
-        tmp_copy = tmp_dir / f"{job_dir}.pptx"
-
-        # Use file lock when copying to prevent race conditions
-        with FileLock(report_path, timeout=30.0):
-            shutil.copyfile(report_path, tmp_copy)
-
+        preview_dir = config.PREVIEWS_DIR / job_dir
+        meta_path = preview_dir / "meta.json"
         base_url_prefix = f"/static/previews/{job_dir}"
 
         slides_count = None
@@ -369,8 +392,115 @@ class ReportService:
         except Exception:
             slides_count = None
 
-        # Generate physical image files for the PPTX
-        images = self.preview_generator.to_images(tmp_copy, job_id)
+        report_stat = report_path.stat()
+        report_mtime_ns = report_stat.st_mtime_ns
+        report_size = report_stat.st_size
+
+        preview_start = time.perf_counter()
+
+        # Serialize preview generation per job_id to avoid concurrent delete/regenerate races.
+        lock_target = config.PREVIEWS_DIR / f"{job_dir}.preview"
+        lock_target.parent.mkdir(parents=True, exist_ok=True)
+
+        with FileLock(lock_target, timeout=120.0):
+            images: list[Path] = []
+            has_images = False
+            cached = False
+            timings: Dict[str, Any] = {}
+
+            def _list_cached_images() -> list[Path]:
+                if not preview_dir.exists():
+                    return []
+                files = list(preview_dir.glob("slide*.png"))
+
+                def _num(p: Path) -> int:
+                    s = p.stem.replace("slide", "")
+                    try:
+                        return int(s)
+                    except Exception:
+                        return 10**9
+
+                return sorted(files, key=_num)
+
+            if not force_regenerate:
+                cached_images = _list_cached_images()
+                meta = None
+                if meta_path.exists():
+                    try:
+                        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+                    except Exception:
+                        meta = None
+
+                cache_ok = (
+                    bool(cached_images)
+                    and isinstance(meta, dict)
+                    and (
+                        meta.get("report_mtime_ns") == report_mtime_ns
+                        or meta.get("report_mtime") == report_stat.st_mtime
+                    )
+                    and meta.get("report_size") == report_size
+                    and (slides_count is None or len(cached_images) >= slides_count)
+                )
+                if cache_ok:
+                    images = cached_images
+                    has_images = True
+                    cached = True
+                    if isinstance(meta, dict):
+                        timings = meta.get("timings") or {}
+
+            if not has_images:
+                # Work on a temp copy to avoid locks on the report file
+                tmp_dir = config.PREVIEWS_DIR / "tmp"
+                tmp_dir.mkdir(parents=True, exist_ok=True)
+                tmp_copy = tmp_dir / f"{job_dir}.pptx"
+
+                # Use file lock when copying to prevent race conditions
+                with FileLock(report_path, timeout=30.0):
+                    shutil.copyfile(report_path, tmp_copy)
+
+                # Generate physical image files for the PPTX (overwrites preview_dir)
+                images, timings = self.preview_generator.to_images_with_timings(tmp_copy, job_id)
+                has_images = True
+
+                try:
+                    preview_dir.mkdir(parents=True, exist_ok=True)
+                    timings = dict(timings) if isinstance(timings, dict) else {}
+                    timings["cached"] = False
+                    meta_path.write_text(
+                        json.dumps(
+                            {
+                                "job_id": job_id,
+                                "report_mtime_ns": report_mtime_ns,
+                                "report_size": report_size,
+                                "slides_count": slides_count,
+                                "timings": timings,
+                            },
+                            ensure_ascii=False,
+                            indent=2,
+                        ),
+                        encoding="utf-8",
+                    )
+                except Exception:
+                    # Never fail preview generation due to cache metadata I/O.
+                    pass
+
+        end_to_end_ms = (time.perf_counter() - preview_start) * 1000
+        if not isinstance(timings, dict):
+            timings = {}
+        timings = dict(timings)
+        timings.setdefault("cached", cached)
+        timings["preview_service_ms"] = end_to_end_ms
+        try:
+            logger.info(
+                "Preview timings: cached=%s pptx_to_pdf_ms=%s pdf_to_images_ms=%s total_ms=%s service_ms=%.0f",
+                timings.get("cached"),
+                f"{timings.get('pptx_to_pdf_ms', ''):.0f}" if isinstance(timings.get("pptx_to_pdf_ms"), (int, float)) else "",
+                f"{timings.get('pdf_to_images_ms', ''):.0f}" if isinstance(timings.get("pdf_to_images_ms"), (int, float)) else "",
+                f"{timings.get('pptx_to_images_total_ms', ''):.0f}" if isinstance(timings.get("pptx_to_images_total_ms"), (int, float)) else "",
+                end_to_end_ms,
+            )
+        except Exception:
+            pass
 
         if slides_count is None:
             slides_count = len(images)
@@ -384,7 +514,7 @@ class ReportService:
                 img_path = images[img_idx]
                 urls.append(f"{base_url_prefix}/{img_path.name}")
 
-        return {"job_id": job_id, "images": urls}
+        return {"job_id": job_id, "images": urls, "timings": timings}
 
     def get_report_path(self, job_id: str, regenerate_if_missing: bool = True) -> Path:
         """Return the generated PPTX path for a job, optionally regenerating it from the saved SlideSpec.
@@ -437,7 +567,7 @@ class ReportService:
 
         return pdf_path
 
-    def cleanup_old_sessions(self, max_age_hours: int = 24) -> int:
+    def cleanup_old_sessions(self, max_age_hours: int = 168) -> int:
         """Clean up old session directories.
 
         Args:

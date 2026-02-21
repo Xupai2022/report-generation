@@ -100,9 +100,8 @@ class PPTGeneratorV2:
 
         # Chart renderer function mapping (new architecture)
         self._chart_renderers = {
-            'bar_chart': self._render_bar_chart,
-            'pie_chart': self._render_pie_chart,
             'P11_bar': self._render_p11_bar,
+            'P11_line': self._render_p11_line,
             'P12_pie': self._render_p12_pie,
             'P13_pie': self._render_p13_pie,
             'P14_pie': self._render_p14_pie,
@@ -1458,6 +1457,200 @@ class PPTGeneratorV2:
             except Exception as e:
                 logger.error(f"Failed to remove placeholder: {e}")
 
+    def _render_p11_line(
+        self,
+        slide,
+        chart_data: Dict[str, Any],
+        token: str = None
+    ) -> None:
+        """Render P11 line chart (月度事件趋势折线图).
+
+        This function looks for an existing line chart in the slide and updates its data
+        with multiple series (e.g., critical, high, medium severity incidents by month).
+
+        Style specifications:
+        - Line chart with markers
+        - Multiple series with different colors
+        - Data labels showing counts
+        - Clean, minimal design
+        - Legend on top or right side
+
+        Args:
+            slide: pptx slide object
+            chart_data: Dict with 'months' and 'series' (list of {name, values})
+            token: Token name to locate the placeholder (e.g., "P11_line")
+        """
+        if not chart_data or 'months' not in chart_data or 'series' not in chart_data:
+            logger.warning("Invalid P11_line chart data format")
+            return
+
+        months = chart_data.get('months', [])
+        series_list = chart_data.get('series', [])
+
+        if not months or not series_list:
+            logger.warning("Invalid or missing P11_line chart data")
+            return
+
+        # Find placeholder position first (if token provided)
+        placeholder_position = None
+        placeholder_shape_to_remove = None
+
+        if token:
+            import re
+            placeholder_pattern = re.compile(r'\{\{[^}]+\}?\}?')
+
+            for shape in slide.shapes:
+                try:
+                    if hasattr(shape, 'has_text_frame') and shape.has_text_frame:
+                        full_text = ''.join(
+                            run.text for paragraph in shape.text_frame.paragraphs
+                            for run in paragraph.runs
+                        ).strip()
+
+                        if placeholder_pattern.fullmatch(full_text):
+                            placeholder_position = (shape.left, shape.top)
+                            placeholder_shape_to_remove = shape
+                            logger.info(f"Found placeholder '{full_text}' at position ({shape.left}, {shape.top})")
+                            break
+                except:
+                    continue
+
+        # Find existing line chart in the slide
+        chart_shape = None
+        chart = None
+        min_distance = float('inf')
+
+        def check_shape_for_line_chart(shape, parent_left=0, parent_top=0):
+            """Check if a shape contains a line chart."""
+            nonlocal chart, chart_shape, min_distance
+
+            try:
+                if shape.has_chart:
+                    try:
+                        temp_chart = shape.chart
+                        if temp_chart.chart_type in (
+                            self._XL_CHART_TYPE.LINE,
+                            self._XL_CHART_TYPE.LINE_MARKERS,
+                            self._XL_CHART_TYPE.LINE_MARKERS_STACKED,
+                            self._XL_CHART_TYPE.LINE_STACKED
+                        ):
+                            if placeholder_position:
+                                chart_pos = (parent_left + shape.left, parent_top + shape.top)
+                                distance = ((chart_pos[0] - placeholder_position[0]) ** 2 +
+                                          (chart_pos[1] - placeholder_position[1]) ** 2) ** 0.5
+
+                                if distance < min_distance:
+                                    min_distance = distance
+                                    chart = temp_chart
+                                    chart_shape = shape
+                                    logger.info(f"Found line chart at distance {distance} from placeholder")
+                            else:
+                                chart = temp_chart
+                                chart_shape = shape
+                                logger.info(f"Found line chart for P11_line (no placeholder)")
+                                return True
+                    except Exception as chart_error:
+                        logger.debug(f"Skipping chart shape with external link: {chart_error}")
+            except Exception as e:
+                logger.debug(f"Skipping shape due to error: {e}")
+
+            return False
+
+        # Search all shapes, including those inside groups
+        for shape in slide.shapes:
+            if shape.shape_type == 6:  # GROUP
+                try:
+                    for sub_shape in shape.shapes:
+                        if check_shape_for_line_chart(sub_shape, shape.left, shape.top):
+                            break
+                except Exception as e:
+                    logger.debug(f"Error searching group shape: {e}")
+            else:
+                if check_shape_for_line_chart(shape):
+                    break
+
+        # Update chart if found
+        if chart_shape and chart:
+            try:
+                # Create chart data object
+                chart_data_obj = self._CategoryChartData()
+                chart_data_obj.categories = months
+
+                # Add all series
+                for series_info in series_list:
+                    series_name = series_info.get('name', '数量')
+                    series_values = series_info.get('values', [])
+                    chart_data_obj.add_series(series_name, series_values)
+
+                # Replace chart data
+                try:
+                    chart.replace_data(chart_data_obj)
+                except Exception as replace_error:
+                    logger.warning(f"Cannot replace external chart data: {replace_error}")
+                    if len(chart.plots) == 0 or len(chart.plots[0].series) < len(series_list):
+                        raise Exception(f"Chart does not have {len(series_list)} series to update")
+
+                # Style line series - 保留模板原始颜色
+                plot = chart.plots[0]
+                for series in plot.series:
+                    # 不修改线条颜色，使用模板原始颜色
+                    # 不修改线宽，使用模板原始设置
+
+                    # Add markers
+                    series.marker.style = 2  # Circle marker
+                    series.marker.size = 6
+
+                    # Add data labels
+                    series.has_data_labels = True
+                    data_labels = series.data_labels
+                    data_labels.position = self._XL_LABEL_POSITION.ABOVE
+                    data_labels.show_value = True
+                    data_labels.show_category_name = False
+                    data_labels.font.size = self._Pt(9)
+                    data_labels.font.name = "微软雅黑"
+                    data_labels.font.color.rgb = self._RGBColor(51, 51, 51)
+                    data_labels.number_format = '0.00'
+
+                # Update legend
+                if chart.has_legend:
+                    chart.legend.position = self._XL_LEGEND_POSITION.TOP
+                    chart.legend.include_in_layout = False
+                    chart.legend.font.size = self._Pt(10)
+                    chart.legend.font.name = "微软雅黑"
+                    chart.legend.font.color.rgb = self._RGBColor(51, 51, 51)
+
+                # Style axes
+                category_axis = chart.category_axis
+                category_axis.tick_labels.font.size = self._Pt(8)  # 横坐标字号更小
+                category_axis.tick_labels.font.name = "微软雅黑"
+                category_axis.tick_labels.font.color.rgb = self._RGBColor(51, 51, 51)
+                category_axis.has_major_gridlines = False
+
+                value_axis = chart.value_axis
+                value_axis.tick_labels.font.size = self._Pt(10)
+                value_axis.tick_labels.font.name = "微软雅黑"
+                value_axis.tick_labels.font.color.rgb = self._RGBColor(102, 102, 102)
+                value_axis.has_major_gridlines = False  # 不要网格横线
+                value_axis.minimum_scale = 0
+
+                # 保留原始轴线颜色，不做修改
+
+                logger.info(f"Updated existing P11_line chart with {len(months)} months and {len(series_list)} series")
+
+            except Exception as e:
+                logger.error(f"Failed to update P11_line chart: {e}")
+        else:
+            logger.warning("No existing chart found in slide for P11_line")
+
+        # Remove the placeholder text box
+        if placeholder_shape_to_remove:
+            try:
+                sp = placeholder_shape_to_remove.element
+                sp.getparent().remove(sp)
+                logger.info(f"Successfully removed placeholder text box for P11_line")
+            except Exception as e:
+                logger.error(f"Failed to remove placeholder: {e}")
+
     def _render_p16_combo(
         self,
         slide,
@@ -1615,7 +1808,7 @@ class PPTGeneratorV2:
             slide: pptx slide object
             token: placeholder token name
             value: chart data (dict or special format)
-            chart_type: specific chart type (e.g., 'bar_chart', 'pie_chart', 'P11_bar')
+            chart_type: specific chart type (e.g., 'P11_bar')
 
         Returns:
             True if chart was rendered, False otherwise
@@ -1629,12 +1822,7 @@ class PPTGeneratorV2:
 
         if renderer:
             try:
-                # For legacy types (bar_chart, pie_chart), pass position separately
-                if chart_type in ('bar_chart', 'pie_chart'):
-                    renderer(slide, value, value.get('position'))
-                else:
-                    # For new specific chart types (P11_bar, P13_pie), pass token for positioning
-                    renderer(slide, value, token)
+                renderer(slide, value, token)
                 return True
             except Exception as e:
                 logger.error(f"Failed to render {chart_type} for {token}: {e}")

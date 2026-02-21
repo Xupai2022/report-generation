@@ -8,7 +8,7 @@
 - 🔄 **自动重试机制**：处理网络错误和速率限制
 - 📊 **多模板支持**：管理层和技术层两种报告模板
 - 🎨 **实时预览**：支持PPT幻灯片预览
-- 🔍 **数据验证**：自动验证生成内容的Schema和事实准确性
+- 🔍 **数据校验（可选）**：按需对生成内容做质量检查与提示
 - 📝 **审计日志**：完整的操作日志记录
 
 ## 📋 系统要求
@@ -142,7 +142,7 @@ Content-Type: application/json
 ### 4. 预览报告
 
 ```bash
-GET http://localhost:8000/preview?job_id=tenant_acme_2025-11:mss_management_light_v1
+GET http://localhost:8000/api/v1/reports/tenant_acme_2025-11%3Amss_management_light_v1/preview?regenerate_if_missing=true
 ```
 
 ### 5. 下载PPTX
@@ -196,7 +196,7 @@ mss_ai_ppt_sample_assets/backend/
 │   ├── llm_orchestrator.py    # OpenAI集成（核心AI逻辑）
 │   ├── ppt_generator.py       # PPT生成器
 │   ├── preview_generator.py   # 预览生成器
-│   ├── validator.py           # 数据验证器
+│   ├── (removed)              # 数据验证器（已移除）
 │   └── audit_logger.py        # 审计日志
 ├── models/
 │   ├── slidespec.py           # 幻灯片规范模型
@@ -213,7 +213,7 @@ mss_ai_ppt_sample_assets/backend/
 2. **Prompt构建** (`llm_orchestrator.py`): 根据模板和数据构建提示词
 3. **OpenAI调用**: 调用GPT模型生成结构化内容
 4. **结果解析**: 解析JSON响应为SlideSpec对象
-5. **数据验证** (`validator.py`): 验证Schema和事实准确性
+5. **数据校验（可选）**：可按需对生成内容做提示（默认不做强校验）
 6. **PPT渲染** (`ppt_generator.py`): 将内容填充到模板生成最终PPT
 
 ### 错误处理

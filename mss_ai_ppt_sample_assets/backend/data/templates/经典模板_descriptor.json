@@ -1,0 +1,931 @@
+{
+  "template_id": "mss_classic_ops",
+  "name": "MSS运营服务总结（经典版）",
+  "version": "1.0.0",
+  "pptx_file": "经典模板.pptx",
+  "language": "zh-CN",
+  "style": {
+    "theme": "sangfor_classic",
+    "primaryColor": "#0F5ABF",
+    "accentColor": "#FF6B35",
+    "backgroundColor": "#FFFFFF"
+  },
+  "slides": [
+    {
+      "slide_no": 1,
+      "slide_key": "cover",
+      "title": "封面",
+      "placeholders": [
+        {
+          "token": "PERIOD_start",
+          "type": "text",
+          "ai_generate": false,
+          "source": "period.start",
+          "default": "直接取数失败"
+        },
+        {
+          "token": "PERIOD_end",
+          "type": "text",
+          "ai_generate": false,
+          "source": "period.end",
+          "default": "直接取数失败"
+        }
+      ]
+    },
+    {
+      "slide_no": 2,
+      "slide_key": "contents",
+      "title": "目录",
+      "placeholders": []
+    },
+    {
+      "slide_no": 3,
+      "slide_key": "chapter_0",
+      "title": "项目背景回顾-封面",
+      "placeholders": []
+    },
+    {
+      "slide_no": 4,
+      "slide_key": "background",
+      "title": "背景",
+      "placeholders": []
+    },
+    {
+      "slide_no": 5,
+      "slide_key": "Architecture",
+      "title": "安全运营技术架构",
+      "placeholders": [
+        {
+          "token": "AF_count",
+          "type": "text",
+          "ai_generate": false,
+          "source": "count.af",
+          "default": "直接取数失败"
+        },
+        {
+          "token": "STA_count",
+          "type": "text",
+          "ai_generate": false,
+          "source": "count.sta",
+          "default": "直接取数失败"
+        },
+        {
+          "token": "EDR_count",
+          "type": "text",
+          "ai_generate": false,
+          "source": "count.edr",
+          "default": "直接取数失败"
+        },
+        {
+          "token": "TSS_count",
+          "type": "text",
+          "ai_generate": false,
+          "source": "count.tss",
+          "default": "直接取数失败"
+        }
+      ]
+    },
+    {
+      "slide_no": 6,
+      "slide_key": "chapter_1",
+      "title": "目标达成情况-封面",
+      "placeholders": []
+    },
+    {
+      "slide_no": 7,
+      "slide_key": "deliverables",
+      "title": "交付物",
+      "placeholders": [
+        {
+          "token": "kickoff_ppt",
+          "type": "text",
+          "ai_generate": false,
+          "source": "deliverables.ppt",
+          "default": "直接取数失败"
+        },
+        {
+          "token": "first_analysis",
+          "type": "text",
+          "ai_generate": false,
+          "source": "deliverables.analysis",
+          "default": "直接取数失败"
+        },
+        {
+          "token": "vuln_evidence",
+          "type": "text",
+          "ai_generate": false,
+          "source": "deliverables.evidence",
+          "default": "直接取数失败"
+        },
+        {
+          "token": "vuln_list",
+          "type": "text",
+          "ai_generate": false,
+          "source": "deliverables.vuln",
+          "default": "直接取数失败"
+        },
+        {
+          "token": "asset_inventory",
+          "type": "text",
+          "ai_generate": false,
+          "source": "deliverables.asset",
+          "default": "直接取数失败"
+        },
+        {
+          "token": "incident_tracking",
+          "type": "text",
+          "ai_generate": false,
+          "source": "deliverables.tracking",
+          "default": "直接取数失败"
+        },
+        {
+          "token": "incident_response",
+          "type": "text",
+          "ai_generate": false,
+          "source": "deliverables.response",
+          "default": "直接取数失败"
+        },
+        {
+          "token": "sec_ops_weekly",
+          "type": "text",
+          "ai_generate": false,
+          "source": "deliverables.weekly",
+          "default": "直接取数失败"
+        },
+        {
+          "token": "analysis_monthly",
+          "type": "text",
+          "ai_generate": false,
+          "source": "deliverables.monthly",
+          "default": "直接取数失败"
+        },
+        {
+          "token": "nationalday",
+          "type": "text",
+          "ai_generate": false,
+          "source": "deliverables.nationalday",
+          "default": "直接取数失败"
+        },
+        {
+          "token": "springfestival",
+          "type": "text",
+          "ai_generate": false,
+          "source": "deliverables.springfestival",
+          "default": "直接取数失败"
+        },
+        {
+          "token": "mayday",
+          "type": "text",
+          "ai_generate": false,
+          "source": "deliverables.mayday",
+          "default": "直接取数失败"
+        },
+        {
+          "token": "biweekly_threat",
+          "type": "text",
+          "ai_generate": false,
+          "source": "deliverables.biweekly",
+          "default": "直接取数失败"
+        }
+      ]
+    },
+    {
+      "slide_no": 8,
+      "slide_key": "coverage_summary",
+      "title": "服务覆盖总览",
+      "placeholders": [
+        {
+          "token": "AF_coverage",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成AF应用防火墙覆盖数量。从coverage.af获取。",
+          "default": "0"
+        },
+        {
+          "token": "aes_coverage",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成AES终端防护覆盖数量。从coverage.aes获取。",
+          "default": "0"
+        },
+        {
+          "token": "probe_coverage",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成探针覆盖数量。从coverage.probe获取。",
+          "default": "0"
+        },
+        {
+          "token": "alert_manual",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成人工处置告警数量。从alerts.manual_handling获取。",
+          "default": "0"
+        },
+        {
+          "token": "alert_auto",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成自动处置告警数量。从alerts.auto_handling获取。",
+          "default": "0"
+        },
+        {
+          "token": "mss_risk",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成MSS检测出的风险漏洞数量。从vulnerabilities.mss_detected获取。",
+          "default": "0"
+        },
+        {
+          "token": "nonmss_risk",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成非MSS检测出的风险漏洞数量。从vulnerabilities.non_mss_detected获取。",
+          "default": "0"
+        },
+        {
+          "token": "alert_inner",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成内网安全告警总数。从alerts.inner_network获取。",
+          "default": "0"
+        },
+        {
+          "token": "incident_inner",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成内网安全事件总数。从incidents.inner_network获取。",
+          "default": "0"
+        },
+        {
+          "token": "handling_inner",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成内网告警/事件处理率。从handling_rate.inner_network获取，格式为百分比。",
+          "default": "100%"
+        },
+        {
+          "token": "response_inner",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成内网平均响应时间。从response_time.inner_network获取，单位分钟。",
+          "default": "30"
+        },
+        {
+          "token": "alert_outer",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成外网安全告警总数。从alerts.outer_network获取。",
+          "default": "0"
+        },
+        {
+          "token": "incident_outer",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成外网安全事件总数。从incidents.outer_network获取。",
+          "default": "0"
+        },
+        {
+          "token": "handling_outer",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成外网告警/事件处理率。从handling_rate.outer_network获取，格式为百分比。",
+          "default": "100%"
+        },
+        {
+          "token": "response_outer",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成外网平均响应时间。从response_time.outer_network获取，单位分钟。",
+          "default": "30"
+        },
+        {
+          "token": "business_system",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成业务系统数量。从assets.business_systems获取。",
+          "default": "0"
+        },
+        {
+          "token": "server_asset",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成服务器数量。从assets.servers获取。",
+          "default": "0"
+        },
+        {
+          "token": "pc_asset",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成PC终端数量。从assets.pcs获取。",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "slide_no": 9,
+      "slide_key": "service_highlights",
+      "title": "服务工作亮点",
+      "placeholders": [
+        {
+          "token": "surface",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成暴露面扫描次数。从scanning.surface_scans获取。",
+          "default": "0"
+        },
+        {
+          "token": "asset",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成资产漏洞扫描次数。从scanning.asset_vuln_scans获取。",
+          "default": "0"
+        },
+        {
+          "token": "server",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成服务器扫描数量。从scanning.servers_scanned获取。",
+          "default": "0"
+        },
+        {
+          "token": "pc",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成PC终端扫描数量。从scanning.pcs_scanned获取。",
+          "default": "0"
+        },
+        {
+          "token": "vuln_high",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成高危及以上漏洞数量。从vulnerabilities.high_and_above获取。",
+          "default": "0"
+        },
+        {
+          "token": "surface_risk",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成暴露面风险数量。从exposure.risk_count获取。",
+          "default": "0"
+        },
+        {
+          "token": "incident_closed",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成闭环事件工单数量。从incidents.closed_tickets获取。",
+          "default": "0"
+        },
+        {
+          "token": "vuln_closed",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成闭环漏洞工单数量。从vulnerabilities.closed_tickets获取。",
+          "default": "0"
+        },
+        {
+          "token": "weekly",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成运营周报交付数量。从deliverables.weekly_reports获取。",
+          "default": "0"
+        },
+        {
+          "token": "monthly",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成运营月报交付数量。从deliverables.monthly_reports获取。",
+          "default": "0"
+        },
+        {
+          "token": "af_block",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成AF边界防火墙阻断外部攻击数量。从defense.af_blocks获取。",
+          "default": "0"
+        },
+        {
+          "token": "edr_risk",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成EDR发现终端安全风险数量。从defense.edr_risks获取。",
+          "default": "0"
+        },
+        {
+          "token": "policy_check",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成策略检查与优化次数。从operations.policy_checks获取。",
+          "default": "0"
+        },
+        {
+          "token": "vuln_protect",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成高危及以上漏洞防护数量。从defense.vuln_protections获取。",
+          "default": "0"
+        },
+        {
+          "token": "xdr_log",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成XDR检测的安全日志条数。从xdr.log_count获取。",
+          "default": "0"
+        },
+        {
+          "token": "xdr_alert",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成XDR聚合分析识别的安全告警数量。从xdr.alert_count获取。",
+          "default": "0"
+        },
+        {
+          "token": "xdr_incident",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成XDR AI智能识别的高可信度安全事件数量。从xdr.incident_count获取。",
+          "default": "0"
+        },
+        {
+          "token": "mss_push",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成安全专家人工识别并推送的高可信事件数量。从mss_ops.expert_incidents获取。",
+          "default": "0"
+        },
+        {
+          "token": "xdr_auto",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成XDR平台与本地AI自动闭环事件数量。从response.xdr_auto_closed获取。",
+          "default": "0"
+        },
+        {
+          "token": "mss_handle",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成安全专家远程协助闭环事件数量。从response.mss_remote_handled获取。",
+          "default": "0"
+        },
+        {
+          "token": "emergency_handle",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成安全专家现场应急响应闭环事件数量。从response.emergency_handled获取。",
+          "default": "0"
+        },
+        {
+          "token": "incident_contain",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成安全事件闭环率。从response.incident_closure_rate获取，格式为百分比。",
+          "default": "100%"
+        }
+      ]
+    },
+    {
+      "slide_no": 10,
+      "slide_key": "chapter2",
+      "title": "第二章：常态化运营阶段",
+      "placeholders": []
+    },
+    {
+      "slide_no": 11,
+      "slide_key": "section2_1",
+      "title": "2.1 资产梳理",
+      "placeholders": []
+    },
+    {
+      "slide_no": 12,
+      "slide_key": "section2_2",
+      "title": "2.2 脆弱性管理",
+      "placeholders": []
+    },
+    {
+      "slide_no": 13,
+      "slide_key": "asset_management",
+      "title": "资产安全管理",
+      "placeholders": [
+        {
+          "token": "asset_improve1",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成资产安全改进措施1。从asset_improvements[0]获取。",
+          "max_length": 100
+        },
+        {
+          "token": "asset_improve2",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成资产安全改进措施2。从asset_improvements[1]获取。",
+          "max_length": 100
+        },
+        {
+          "token": "asset_improve3",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成资产安全改进措施3。从asset_improvements[2]获取。",
+          "max_length": 100
+        },
+        {
+          "token": "asset_summary",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "基于资产管理数据，生成资产安全管理工作总结。包括资产覆盖情况、安全状况评估、主要发现和改进方向。",
+          "max_length": 500
+        },
+        {
+          "token": "intranet_server",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成内网服务器/网络设备资产数量。从assets.intranet.servers获取。",
+          "default": "0"
+        },
+        {
+          "token": "intranet_network",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成内网网络设备数量。从assets.intranet.network_devices获取。",
+          "default": "0"
+        },
+        {
+          "token": "intranet_iot",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成内网IOT/其他设备数量。从assets.intranet.iot_devices获取。",
+          "default": "0"
+        },
+        {
+          "token": "intranet_mss",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成内网MSS纳管资产数量。从assets.intranet.mss_managed获取。",
+          "default": "0"
+        },
+        {
+          "token": "rootdomain_internet",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成外网根域名数量。从assets.internet.root_domains获取。",
+          "default": "0"
+        },
+        {
+          "token": "subdomain_internet",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成外网子域名数量。从assets.internet.subdomains获取。",
+          "default": "0"
+        },
+        {
+          "token": "web_asset",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成外网WEB资产数量。从assets.internet.web_assets获取。",
+          "default": "0"
+        },
+        {
+          "token": "nonweb_asset",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成外网非WEB资产数量。从assets.internet.non_web_assets获取。",
+          "default": "0"
+        },
+        {
+          "token": "login_entry",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成外网登录入口数量。从assets.internet.login_entries获取。",
+          "default": "0"
+        },
+        {
+          "token": "pc_total",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成PC终端总数。从assets.pc_total获取。",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "slide_no": 14,
+      "slide_key": "vulnerability_management",
+      "title": "脆弱性管理总结",
+      "placeholders": [
+        {
+          "token": "vuln_summary",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "基于漏洞管理数据，生成脆弱性管理工作总结。包括扫描次数、发现漏洞数量、修复进度、重点漏洞类型分析等。",
+          "max_length": 500
+        }
+      ]
+    },
+    {
+      "slide_no": 15,
+      "slide_key": "threat_ops",
+      "title": "威胁运营",
+      "placeholders": [
+        {
+          "token": "xdr_attack",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成XDR采集内外部攻击日志条数。从threat_ops.xdr_attack_logs获取。",
+          "default": "0"
+        },
+        {
+          "token": "policy_check",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成策略有效性检测次数。从threat_ops.policy_checks获取。",
+          "default": "0"
+        },
+        {
+          "token": "threat_alert",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成实时威胁告警数量。从threat_ops.alerts获取。",
+          "default": "0"
+        },
+        {
+          "token": "mss_ticket",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成威胁工单数量。从threat_ops.tickets获取。",
+          "default": "0"
+        },
+        {
+          "token": "ticket_response",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成工单平均响应时间。从threat_ops.avg_response_time获取，单位分钟。",
+          "default": "30"
+        },
+        {
+          "token": "policy_optimized",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成策略优化有效修改次数。从threat_ops.policy_optimizations获取。",
+          "default": "0"
+        },
+        {
+          "token": "threat_intel",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成威胁情报查杀报告数量。从threat_ops.threat_intel_reports获取。",
+          "default": "0"
+        },
+        {
+          "token": "threat_asset",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成已影响资产需修复及防护数量。从threat_ops.affected_assets获取。",
+          "default": "0"
+        },
+        {
+          "token": "threat_improve1",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成威胁运营改进措施1。从threat_improvements[0]获取。",
+          "max_length": 100
+        },
+        {
+          "token": "threat_improve2",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成威胁运营改进措施2。从threat_improvements[1]获取。",
+          "max_length": 100
+        },
+        {
+          "token": "threat_improve3",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成威胁运营改进措施3。从threat_improvements[2]获取。",
+          "max_length": 100
+        },
+        {
+          "token": "threat_summary",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "基于威胁运营数据，生成威胁运营工作总结。包括威胁检测覆盖、告警处置效率、主要威胁类型、防护效果等。",
+          "max_length": 500
+        }
+      ]
+    },
+    {
+      "slide_no": 16,
+      "slide_key": "special_duty",
+      "title": "重保值守",
+      "placeholders": [
+        {
+          "token": "duty_summary",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "基于重保值守数据，生成重保值守工作总结。包括值守时间、保障期间的安全态势、应急响应情况、重点防护措施等。",
+          "max_length": 500
+        }
+      ]
+    },
+    {
+      "slide_no": 17,
+      "slide_key": "platform_ops",
+      "title": "平台运营",
+      "placeholders": [
+        {
+          "token": "fw_attack",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成防火墙阻断攻击数量。从platform_ops.fw_attacks获取。",
+          "default": "0"
+        },
+        {
+          "token": "aes_risk",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成AES检测终端风险数量。从platform_ops.aes_risks获取。",
+          "default": "0"
+        },
+        {
+          "token": "xdr_log",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成XDR日志采集量。从platform_ops.xdr_logs获取。",
+          "default": "0"
+        },
+        {
+          "token": "platform_improve1",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成平台运营改进措施1。从platform_improvements[0]获取。",
+          "max_length": 100
+        },
+        {
+          "token": "platform_improve2",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成平台运营改进措施2。从platform_improvements[1]获取。",
+          "max_length": 100
+        },
+        {
+          "token": "platform_improve3",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成平台运营改进措施3。从platform_improvements[2]获取。",
+          "max_length": 100
+        },
+        {
+          "token": "component_auto",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成组件自动化处理比例或数量。从platform_ops.component_automation获取。",
+          "default": "0"
+        },
+        {
+          "token": "fw_coverage",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成防火墙覆盖率。从platform_ops.fw_coverage获取，格式为百分比。",
+          "default": "0%"
+        },
+        {
+          "token": "server_coverage",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成服务器覆盖率。从platform_ops.server_coverage获取，格式为百分比。",
+          "default": "0%"
+        },
+        {
+          "token": "alert_aggregate",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成告警聚合数量。从platform_ops.alert_aggregations获取。",
+          "default": "0"
+        },
+        {
+          "token": "component_offline",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成检测到的组件离线异常数量。从platform_ops.component_offline获取。",
+          "default": "0"
+        },
+        {
+          "token": "component_log",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成检测到的组件日志中断异常数量。从platform_ops.component_log_issues获取。",
+          "default": "0"
+        },
+        {
+          "token": "component_policy",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成检测到的组件策略同步异常数量。从platform_ops.component_policy_issues获取。",
+          "default": "0"
+        },
+        {
+          "token": "incident_intel",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成威胁情报事件数量。从platform_ops.incident_intel获取。",
+          "default": "0"
+        },
+        {
+          "token": "xdr_alert",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成XDR平台每日告警数量。从platform_ops.xdr_daily_alerts获取。",
+          "default": "0"
+        },
+        {
+          "token": "xdr_incident",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成XDR平台每日事件数量。从platform_ops.xdr_daily_incidents获取。",
+          "default": "0"
+        },
+        {
+          "token": "agent_install",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成已安装Agent数量。从platform_ops.agent_installed获取。",
+          "default": "0"
+        },
+        {
+          "token": "asset_total",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成资产总数。从assets.total获取。",
+          "default": "0"
+        },
+        {
+          "token": "fw_auto",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成防火墙自动处置数量。从platform_ops.fw_auto_actions获取。",
+          "default": "0"
+        },
+        {
+          "token": "host_handle",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成主机处置数量。从platform_ops.host_actions获取。",
+          "default": "0"
+        },
+        {
+          "token": "aes_trust",
+          "type": "text",
+          "ai_generate": true,
+          "ai_instruction": "生成AES业务白名单数量。从platform_ops.aes_whitelist获取。",
+          "default": "0"
+        }
+      ]
+    },
+    {
+      "slide_no": 18,
+      "slide_key": "chapter3",
+      "title": "第三章：服务价值体现",
+      "placeholders": []
+    },
+    {
+      "slide_no": 19,
+      "slide_key": "value1",
+      "title": "价值1：提升安全运营效率",
+      "placeholders": []
+    },
+    {
+      "slide_no": 20,
+      "slide_key": "value2",
+      "title": "价值2：降低安全风险",
+      "placeholders": []
+    },
+    {
+      "slide_no": 21,
+      "slide_key": "value3",
+      "title": "价值3：增强安全能力",
+      "placeholders": []
+    },
+    {
+      "slide_no": 22,
+      "slide_key": "value4",
+      "title": "价值4：优化资源配置",
+      "placeholders": []
+    },
+    {
+      "slide_no": 23,
+      "slide_key": "chapter4",
+      "title": "第四章：后续工作计划",
+      "placeholders": []
+    },
+    {
+      "slide_no": 24,
+      "slide_key": "future_plan",
+      "title": "后续工作计划",
+      "placeholders": []
+    },
+    {
+      "slide_no": 25,
+      "slide_key": "thanks",
+      "title": "致谢",
+      "placeholders": []
+    }
+  ]
+}

@@ -107,7 +107,7 @@ class WebSocketManager:
         """
         client_id = self.session_clients.get(session_id)
         if not client_id:
-            logger.debug(f"No client registered for session {session_id}")
+            logger.debug(f"No client registered for session {session_id}. Registered sessions: {list(self.session_clients.keys())}")
             return
 
         payload = {
@@ -118,6 +118,7 @@ class WebSocketManager:
             "details": details or {}
         }
 
+        logger.info(f"Sending progress update: session={session_id}, client={client_id}, progress={progress}%, message={message}")
         await self.send_personal_message(payload, client_id)
 
     async def send_completion(

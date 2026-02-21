@@ -428,7 +428,7 @@ GET /templates          # 复数
 GET /preview            # 单数（应为 /previews）
 
 # ❌ 不一致的查询参数
-GET /preview?job_id=xxx&regenerate_if_missing=true
+GET /api/v1/reports/{job_id}/preview?regenerate_if_missing=true
 GET /download?job_id=xxx&regenerate_if_missing=true
 # 应统一为 /reports/{job_id}/preview
 
@@ -455,7 +455,7 @@ POST   /api/v1/inputs/excel              # Excel上传
 
 # 系统管理
 GET    /api/v1/health
-DELETE /api/v1/sessions?max_age_hours=24
+DELETE /api/v1/sessions?max_age_hours=168
 ```
 
 ### 4.3 Webhook支持缺失 ❌

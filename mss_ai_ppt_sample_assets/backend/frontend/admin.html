@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - MSS AI PPT</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --slate-50: #f8fafc; --slate-100: #f1f5f9; --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1; --slate-400: #94a3b8; --slate-500: #64748b;
+            --slate-600: #475569; --slate-700: #334155; --slate-800: #1e293b;
+            --slate-900: #0f172a; --brand-500: #6366f1; --brand-600: #4f46e5;
+            --brand-700: #4338ca; --success-bg: #d1fae5; --success-text: #065f46;
+            --danger-bg: #fee; --danger-text: #c33; --warning-bg: #fef3c7;
+            --warning-text: #92400e;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--slate-50); color: var(--slate-900);
+        }
+        .header {
+            background: white; border-bottom: 1px solid var(--slate-200);
+            padding: 16px 24px; display: flex; justify-content: space-between;
+            align-items: center;
+        }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .logo { font-size: 20px; font-weight: 700; color: var(--brand-600); }
+        .header-stats {
+            display: flex; gap: 24px; font-size: 13px; color: var(--slate-600);
+        }
+        .stat-item strong { color: var(--slate-900); margin-right: 4px; }
+        .btn-logout {
+            padding: 8px 16px; font-size: 14px; background: var(--slate-100);
+            border: 1px solid var(--slate-300); border-radius: 6px; cursor: pointer;
+        }
+        .btn-logout:hover { background: var(--slate-200); }
+        .toolbar {
+            background: white; padding: 16px 24px; border-bottom: 1px solid var(--slate-200);
+            display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+        }
+        .search-box {
+            flex: 1; min-width: 300px; padding: 8px 12px;
+            border: 1px solid var(--slate-300); border-radius: 6px; font-size: 14px;
+        }
+        select, input[type="date"] {
+            padding: 8px 12px; border: 1px solid var(--slate-300);
+            border-radius: 6px; font-size: 14px; background: white;
+            cursor: pointer;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+        }
+        .btn {
+            padding: 8px 16px; font-size: 14px; border-radius: 6px;
+            border: none; cursor: pointer;
+        }
+        .btn-primary { background: var(--brand-600); color: white; }
+        .btn-primary:hover { background: var(--brand-700); }
+        .btn-danger { background: #dc2626; color: white; }
+        .btn-danger:hover { background: #b91c1c; }
+        .container { display: flex; height: calc(100vh - 120px); }
+        .sidebar {
+            width: 25%; background: white; border-right: 1px solid var(--slate-200);
+            overflow-y: auto;
+        }
+        .main-panel { flex: 1; overflow-y: auto; padding: 24px; }
+        .stats-sidebar {
+            width: 280px; background: white; border-left: 1px solid var(--slate-200);
+            padding: 24px; overflow-y: auto;
+        }
+        .job-card {
+            padding: 16px; border-bottom: 1px solid var(--slate-200);
+            cursor: pointer; display: flex; gap: 12px; align-items: start;
+        }
+        .job-card:hover { background: var(--slate-50); }
+        .job-card.active {
+            background: #eef2ff; border-left: 3px solid var(--brand-600);
+        }
+        .job-checkbox { margin-top: 4px; }
+        .job-thumbnail {
+            width: 80px; height: 60px; background: var(--slate-100);
+            border-radius: 4px; flex-shrink: 0; overflow: hidden;
+        }
+        .job-thumbnail img { width: 100%; height: 100%; object-fit: cover; }
+        .job-info { flex: 1; min-width: 0; }
+        .job-id {
+            font-size: 13px; color: var(--slate-600); margin-bottom: 4px;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .job-status {
+            display: inline-block; padding: 2px 8px; border-radius: 4px;
+            font-size: 12px; margin-bottom: 4px;
+        }
+        .status-completed { background: var(--success-bg); color: var(--success-text); }
+        .status-failed { background: var(--danger-bg); color: var(--danger-text); }
+        .status-pending { background: var(--warning-bg); color: var(--warning-text); }
+        .job-time { font-size: 12px; color: var(--slate-500); }
+        .rating-indicator { font-size: 16px; opacity: 0.3; }
+        .rating-liked { opacity: 1; }
+        .rating-disliked { opacity: 1; }
+        .detail-section {
+            background: white; padding: 24px; border-radius: 8px; margin-bottom: 24px;
+        }
+        .detail-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
+        .preview-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .preview-item img {
+            width: 100%; border: 1px solid var(--slate-200); border-radius: 4px;
+        }
+        .metadata-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .metadata-item { display: flex; gap: 8px; }
+        .metadata-label {
+            font-weight: 500; color: var(--slate-600); min-width: 100px;
+        }
+        .metadata-value { color: var(--slate-900); }
+        .rating-widget-disabled { opacity: 0.5; pointer-events: none; }
+        .rating-widget button {
+            padding: 8px 16px; margin-right: 8px; border: 1px solid var(--slate-300);
+            background: white; border-radius: 6px; cursor: not-allowed;
+        }
+        .rating-widget textarea {
+            width: 100%; padding: 8px; border: 1px solid var(--slate-300);
+            border-radius: 6px; margin: 8px 0; resize: vertical;
+        }
+        .empty-state {
+            text-align: center; padding: 48px; color: var(--slate-400);
+        }
+        .stats-card {
+            background: var(--slate-50); padding: 16px; border-radius: 6px;
+            margin-bottom: 16px;
+        }
+        .stats-card h4 {
+            font-size: 14px; color: var(--slate-600); margin-bottom: 8px;
+        }
+        .stats-card .value {
+            font-size: 24px; font-weight: 700; color: var(--slate-900);
+        }
+        .toast {
+            position: fixed; top: 80px; right: 24px; background: white;
+            padding: 16px 24px; border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+        .toast.success { border-left: 4px solid #10b981; }
+        .toast.error { border-left: 4px solid #ef4444; }
+        @keyframes slideIn {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .rating-display {
+            padding: 16px;
+            background: var(--slate-50);
+            border-radius: 6px;
+        }
+        .rating-value {
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .rating-date {
+            font-size: 13px;
+            font-weight: normal;
+            color: var(--slate-500);
+        }
+        .rating-comment {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--slate-200);
+        }
+        .rating-comment strong {
+            font-size: 14px;
+            color: var(--slate-600);
+            display: block;
+            margin-bottom: 8px;
+        }
+        .rating-comment p {
+            font-size: 14px;
+            color: var(--slate-700);
+            line-height: 1.6;
+            margin: 0;
+        }
+        .rating-empty {
+            padding: 16px;
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <div class="logo">MSS AI PPT 管理后台</div>
+            <div class="header-stats" id="headerStats">
+                <div class="stat-item"><strong id="totalJobs">0</strong> 个任务</div>
+                <div class="stat-item">成功率 <strong id="successRate">0%</strong></div>
+                <div class="stat-item">👍 <strong id="headerLiked">0</strong></div>
+                <div class="stat-item">👎 <strong id="headerDisliked">0</strong></div>
+            </div>
+        </div>
+        <button class="btn-logout" onclick="logout()">登出</button>
+    </div>
+
+    <div class="toolbar">
+        <input type="text" class="search-box" id="searchBox" placeholder="搜索任务ID、输入源、模板...">
+        <select id="ratingFilter">
+            <option value="">评分：全部</option>
+            <option value="liked">点赞</option>
+            <option value="disliked">点踩</option>
+            <option value="unrated">未评分</option>
+        </select>
+        <select id="statusFilter">
+            <option value="">状态：全部</option>
+            <option value="completed">已完成</option>
+            <option value="failed">失败</option>
+            <option value="pending">等待中</option>
+        </select>
+        <input type="date" id="dateFrom" placeholder="开始日期">
+        <input type="date" id="dateTo" placeholder="结束日期">
+        <button class="btn btn-primary" onclick="loadJobs()">刷新</button>
+        <button class="btn btn-danger" onclick="bulkDelete()" id="bulkDeleteBtn" style="display:none;">删除选中</button>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <div id="jobList"></div>
+        </div>
+        <div class="main-panel" id="mainPanel">
+            <div class="empty-state">请从左侧选择一个任务查看详情</div>
+        </div>
+        <div class="stats-sidebar" id="statsSidebar">
+            <h3 style="margin-bottom: 16px;">统计信息</h3>
+            <div class="stats-card">
+                <h4>总任务数</h4>
+                <div class="value" id="statTotal">0</div>
+            </div>
+            <div class="stats-card">
+                <h4>成功率</h4>
+                <div class="value" id="statSuccess">0%</div>
+            </div>
+            <div class="stats-card">
+                <h4>平均耗时</h4>
+                <div class="value" id="statDuration">--</div>
+            </div>
+            <div class="stats-card">
+                <h4>用户点赞</h4>
+                <div class="value" id="statLiked" style="font-size: 20px;">👍 0</div>
+            </div>
+            <div class="stats-card">
+                <h4>用户点踩</h4>
+                <div class="value" id="statDisliked" style="font-size: 20px;">👎 0</div>
+            </div>
+            <div class="stats-card">
+                <h4>未评分</h4>
+                <div class="value" id="statUnrated">⭐ 0</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Helper function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        let state = {
+            jobs: [],
+            selectedJobId: null,
+            page: 1,
+            total: 0,
+            selectedJobs: new Set(),
+            stats: null
+        };
+
+        async function api(path, opts = {}) {
+            const res = await fetch(path, {
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                ...opts
+            });
+            if (res.status === 401) {
+                window.location.href = '/ui/login.html';
+                return;
+            }
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.error?.message || res.statusText);
+            }
+            return await res.json();
+        }
+
+        async function checkAuth() {
+            try {
+                const data = await api('/api/v1/admin/verify');
+                if (!data.data?.authenticated) {
+                    window.location.href = '/ui/login.html';
+                }
+            } catch {
+                window.location.href = '/ui/login.html';
+            }
+        }
+
+        async function logout() {
+            await api('/api/v1/admin/logout', { method: 'POST' });
+            window.location.href = '/ui/login.html';
+        }
+
+        async function loadJobs() {
+            const search = document.getElementById('searchBox').value;
+            const rating = document.getElementById('ratingFilter').value;
+            const status = document.getElementById('statusFilter').value;
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+
+            const params = new URLSearchParams({
+                page: state.page,
+                limit: 50
+            });
+
+            if (search) params.append('search', search);
+            if (rating) params.append('rating', rating);
+            if (status) params.append('status', status);
+            if (dateFrom) params.append('date_from', dateFrom + 'T00:00:00Z');
+            if (dateTo) params.append('date_to', dateTo + 'T23:59:59Z');
+
+            try {
+                const data = await api('/api/v1/admin/jobs?' + params);
+                state.jobs = data.data.jobs;
+                state.total = data.data.total;
+                renderJobList();
+            } catch (e) {
+                showToast('加载失败: ' + e.message, 'error');
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const data = await api('/api/v1/admin/statistics');
+                state.stats = data.data;
+
+                // Header stats
+                document.getElementById('totalJobs').textContent = data.data.total_jobs;
+                document.getElementById('successRate').textContent =
+                    (data.data.success_rate * 100).toFixed(1) + '%';
+
+                // Rating stats in header
+                const byRating = data.data.by_rating || {};
+                document.getElementById('headerLiked').textContent = byRating.liked || 0;
+                document.getElementById('headerDisliked').textContent = byRating.disliked || 0;
+
+                // Sidebar stats
+                document.getElementById('statTotal').textContent = data.data.total_jobs;
+                document.getElementById('statSuccess').textContent =
+                    (data.data.success_rate * 100).toFixed(1) + '%';
+                const avgDur = data.data.avg_generation_time_ms;
+                document.getElementById('statDuration').textContent =
+                    avgDur ? (avgDur / 1000).toFixed(1) + 's' : '--';
+
+                // Update rating statistics in sidebar
+                document.getElementById('statLiked').textContent =
+                    '👍 ' + (byRating.liked || 0);
+                document.getElementById('statDisliked').textContent =
+                    '👎 ' + (byRating.disliked || 0);
+                document.getElementById('statUnrated').textContent =
+                    '⭐ ' + (byRating.unrated || 0);
+            } catch (e) {
+                console.error('Failed to load stats:', e);
+            }
+        }
+
+        function renderJobList() {
+            const html = state.jobs.map(job => {
+                const statusClass = `status-${job.status}`;
+                const ratingIcon = job.rating?.rating === 'liked' ? '👍' :
+                                   job.rating?.rating === 'disliked' ? '👎' : '⭐';
+                const ratingClass = job.rating?.rating === 'liked' ? 'rating-liked' :
+                                   job.rating?.rating === 'disliked' ? 'rating-disliked' : '';
+                const thumbnail = job.preview_thumbnail || '';
+                const isActive = job.job_id === state.selectedJobId ? 'active' : '';
+                const isChecked = state.selectedJobs.has(job.job_id) ? 'checked' : '';
+                const time = new Date(job.created_at).toLocaleString('zh-CN');
+
+                return `<div class="job-card ${isActive}" onclick="selectJob('${job.job_id}')">
+                    <input type="checkbox" class="job-checkbox" ${isChecked}
+                           onclick="event.stopPropagation(); toggleSelection('${job.job_id}')">
+                    <div class="job-thumbnail">
+                        ${thumbnail ? `<img src="${thumbnail}">` : ''}
+                    </div>
+                    <div class="job-info">
+                        <div class="job-id">${job.job_id}</div>
+                        <div>
+                            <span class="job-status ${statusClass}">${job.status}</span>
+                            <span class="rating-indicator ${ratingClass}">${ratingIcon}</span>
+                        </div>
+                        <div class="job-time">${time}</div>
+                    </div>
+                </div>`;
+            }).join('');
+
+            document.getElementById('jobList').innerHTML =
+                html || '<div class="empty-state">暂无任务</div>';
+
+            document.getElementById('bulkDeleteBtn').style.display =
+                state.selectedJobs.size > 0 ? 'block' : 'none';
+        }
+
+        function toggleSelection(jobId) {
+            if (state.selectedJobs.has(jobId)) {
+                state.selectedJobs.delete(jobId);
+            } else {
+                state.selectedJobs.add(jobId);
+            }
+            renderJobList();
+        }
+
+        async function selectJob(jobId) {
+            state.selectedJobId = jobId;
+            renderJobList();
+
+            try {
+                const data = await api('/api/v1/admin/jobs/' + jobId.replace(':', '_'));
+                renderJobDetails(data.data);
+            } catch (e) {
+                showToast('加载详情失败: ' + e.message, 'error');
+            }
+        }
+
+        function renderJobDetails(details) {
+            const job = details.job;
+            const previews = details.preview_urls.map(url =>
+                `<div class="preview-item"><img src="${url}"></div>`
+            ).join('');
+
+            const duration = job.metadata?.generation_duration_ms ?
+                (job.metadata.generation_duration_ms / 1000).toFixed(1) + 's' : '--';
+            const aiModel = job.metadata?.ai_model || '--';
+            const warnings = job.metadata?.warnings?.length || 0;
+
+            const html = `
+                <div class="detail-section">
+                    <div class="detail-title">预览</div>
+                    <div class="preview-grid">
+                        ${previews || '<div class="empty-state">无预览</div>'}
+                    </div>
+                </div>
+                <div class="detail-section">
+                    <div class="detail-title">任务信息</div>
+                    <div class="metadata-grid">
+                        <div class="metadata-item">
+                            <span class="metadata-label">任务ID:</span>
+                            <span class="metadata-value">${job.job_id}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <span class="metadata-label">模板:</span>
+                            <span class="metadata-value">${job.template_id}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <span class="metadata-label">输入源:</span>
+                            <span class="metadata-value">${job.input_id}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <span class="metadata-label">状态:</span>
+                            <span class="metadata-value">${job.status}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <span class="metadata-label">生成时间:</span>
+                            <span class="metadata-value">${new Date(job.created_at).toLocaleString('zh-CN')}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <span class="metadata-label">耗时:</span>
+                            <span class="metadata-value">${duration}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <span class="metadata-label">AI模型:</span>
+                            <span class="metadata-value">${aiModel}</span>
+                        </div>
+                        <div class="metadata-item">
+                            <span class="metadata-label">警告:</span>
+                            <span class="metadata-value">${warnings}</span>
+                        </div>
+                    </div>
+                </div>
+                ${details.job.rating ? `
+                <div class="detail-section">
+                    <div class="detail-title">用户评分</div>
+                    <div class="rating-display">
+                        <div class="rating-value">
+                            ${details.job.rating.rating === 'liked' ? '👍 满意' : '👎 不满意'}
+                            <span class="rating-date">
+                                ${new Date(details.job.rating.rated_at).toLocaleString('zh-CN')}
+                            </span>
+                        </div>
+                        ${details.job.rating.comment ? `
+                        <div class="rating-comment">
+                            <strong>用户反馈：</strong>
+                            <p>${escapeHtml(details.job.rating.comment)}</p>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+                ` : `
+                <div class="detail-section">
+                    <div class="detail-title">用户评分</div>
+                    <div class="rating-empty">
+                        <span style="color: var(--slate-400);">用户尚未评分</span>
+                    </div>
+                </div>
+                `}
+            `;
+
+            document.getElementById('mainPanel').innerHTML = html;
+        }
+
+        async function bulkDelete() {
+            if (state.selectedJobs.size === 0) return;
+
+            if (!confirm(`确认删除选中的 ${state.selectedJobs.size} 个任务？`)) return;
+
+            try {
+                await api('/api/v1/admin/jobs', {
+                    method: 'DELETE',
+                    body: JSON.stringify({ job_ids: Array.from(state.selectedJobs) })
+                });
+                showToast(`成功删除 ${state.selectedJobs.size} 个任务`, 'success');
+                state.selectedJobs.clear();
+                await loadJobs();
+                await loadStats();
+            } catch (e) {
+                showToast('删除失败: ' + e.message, 'error');
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        document.getElementById('searchBox').addEventListener('input',
+            debounce(() => { state.page = 1; loadJobs(); }, 500));
+        document.getElementById('ratingFilter').addEventListener('change',
+            () => { state.page = 1; loadJobs(); });
+        document.getElementById('statusFilter').addEventListener('change',
+            () => { state.page = 1; loadJobs(); });
+        document.getElementById('dateFrom').addEventListener('change',
+            () => { state.page = 1; loadJobs(); });
+        document.getElementById('dateTo').addEventListener('change',
+            () => { state.page = 1; loadJobs(); });
+
+        checkAuth().then(() => {
+            loadJobs();
+            loadStats();
+        });
+    </script>
+</body>
+</html>

@@ -38,30 +38,33 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
             # Process request
             start_time = time.time()
 
-            # Log incoming request
-            logger.info(
-                f"Incoming request: {request.method} {request.url.path}",
-                extra={
-                    "request_method": request.method,
-                    "request_path": request.url.path,
-                    "request_query": str(request.url.query),
-                    "client_ip": request.client.host if request.client else "unknown"
-                }
-            )
-
             response = await call_next(request)
 
             # Calculate duration
             duration_ms = (time.time() - start_time) * 1000
 
-            # Log response
-            logger.info(
-                f"Request completed: {response.status_code} in {duration_ms:.2f}ms",
-                extra={
-                    "status_code": response.status_code,
-                    "duration_ms": duration_ms
-                }
-            )
+            # Log request completion
+            # Use WARNING for slow requests (>1s), DEBUG for normal requests
+            if duration_ms > 1000:
+                logger.warning(
+                    f"Slow request: {request.method} {request.url.path} - {response.status_code} in {duration_ms:.0f}ms",
+                    extra={
+                        "request_method": request.method,
+                        "request_path": request.url.path,
+                        "status_code": response.status_code,
+                        "duration_ms": duration_ms
+                    }
+                )
+            else:
+                logger.debug(
+                    f"{request.method} {request.url.path} - {response.status_code} ({duration_ms:.2f}ms)",
+                    extra={
+                        "request_method": request.method,
+                        "request_path": request.url.path,
+                        "status_code": response.status_code,
+                        "duration_ms": duration_ms
+                    }
+                )
 
             # Add request ID to response headers
             response.headers["X-Request-ID"] = request_id

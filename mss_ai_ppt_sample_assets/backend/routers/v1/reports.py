@@ -67,7 +67,7 @@ async def _process_report_async(job_id: str, input_id: str, template_id: str, us
             await _do_generation(job, input_id, template_id, use_mock)
 
     except Exception as e:
-        logger.exception(f"✗ Job {job_id} failed: {e}")
+        logger.exception(f"Job {job_id} failed: {e}")
         job_manager.fail_job(job_id, str(e))
 
         # Send WebSocket failure notification
@@ -93,19 +93,23 @@ async def _do_generation(job, input_id: str, template_id: str, use_mock: bool):
             job.session_id, 10, "正在加载模板和数据..."
         )
 
-    # Run synchronous generation in thread pool
+    # Get the current event loop to pass to synchronous code
     loop = asyncio.get_running_loop()
+
+    # Run synchronous generation in thread pool, passing the loop
     result = await loop.run_in_executor(
         None,
         lambda: service.generate(
             input_id,
             template_id,
             use_mock=use_mock,
-            session_id=job.session_id
+            session_id=job.session_id,
+            ws_manager=ws_manager,
+            event_loop=loop  # Pass the main event loop
         )
     )
 
-    logger.info(f"✓ Generation successful: {job_id}")
+    logger.info(f"Generation successful: {job_id}")
 
     # Mark job as completed
     job_manager.complete_job(job_id, result)
@@ -154,7 +158,7 @@ async def _do_generation(job, input_id: str, template_id: str, use_mock: bool):
                         "data": {
                             "job_id": "abc123_20260202110000:mss_executive_v2",
                             "status": "running",
-                            "message": "作业已启动，请通过 GET /api/v1/jobs/{job_id}/status 查询进度"
+                            "message": "正在生成报告,请稍候..."
                         }
                     }
                 }
@@ -190,7 +194,8 @@ async def create_report(request: Request, req: CreateReportRequest):
 
     logger.info(
         f"=== POST /api/v1/reports: client_ip={client_ip}, input_id={req.input_id}, "
-        f"template_id={req.template_id}, use_mock={req.use_mock}, idempotency_key={req.idempotency_key} ==="
+        f"template_id={req.template_id}, use_mock={req.use_mock}, idempotency_key={req.idempotency_key}, "
+        f"client_id={req.client_id}, session_id={req.session_id} ==="
     )
 
     if not job_manager:
@@ -208,10 +213,13 @@ async def create_report(request: Request, req: CreateReportRequest):
         # Register WebSocket if provided
         if ws_manager and req.client_id:
             ws_manager.register_session(job.session_id, req.client_id)
+            logger.info(f"Registered WebSocket: session={job.session_id}, client={req.client_id}")
+        else:
+            logger.warning(f"WebSocket NOT registered: ws_manager={ws_manager is not None}, client_id={req.client_id}")
 
         # If job already completed, return cached result
         if job.status == JobStatus.COMPLETED:
-            logger.info(f"✓ Job already completed (idempotency): {job.job_id}")
+            logger.info(f"Job already completed (idempotency): {job.job_id}")
             return SuccessResponse(data={
                 "job_id": job.job_id,
                 "status": "completed",
@@ -224,11 +232,17 @@ async def create_report(request: Request, req: CreateReportRequest):
         # If job is running, return current progress
         if job.status == JobStatus.RUNNING:
             logger.info(f"Job already running: {job.job_id}")
+            # Format message based on progress
+            if job.progress > 0:
+                message = f"作业正在处理中 ({job.progress}%)"
+            else:
+                message = "作业正在处理中，请稍候..."
+
             return SuccessResponse(data={
                 "job_id": job.job_id,
                 "status": "running",
                 "progress": job.progress,
-                "message": f"作业正在处理中 ({job.progress}%)",
+                "message": message,
                 "check_status_url": f"/api/v1/jobs/{job.job_id}/status"
             })
 
@@ -247,23 +261,23 @@ async def create_report(request: Request, req: CreateReportRequest):
             _process_report_async(job.job_id, req.input_id, req.template_id, req.use_mock)
         )
 
-        logger.info(f"✓ Job created and processing started: {job.job_id}")
+        logger.info(f"Job created and processing started: {job.job_id}")
         return SuccessResponse(data={
             "job_id": job.job_id,
             "session_id": job.session_id,
             "status": "running",
-            "message": "作业已启动，请通过 GET /api/v1/jobs/{job_id}/status 查询进度",
+            "message": "正在生成报告,请稍候...",
             "check_status_url": f"/api/v1/jobs/{job.job_id}/status"
         })
 
     except InputNotFoundError as e:
-        logger.error(f"✗ Input not found: {e}")
+        logger.error(f"Input not found: {e}")
         raise HTTPException(status_code=404, detail=str(e))
     except TemplateNotFoundError as e:
-        logger.error(f"✗ Template not found: {e}")
+        logger.error(f"Template not found: {e}")
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        logger.exception(f"✗ Failed to create job: {e}")
+        logger.exception(f"Failed to create job: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -293,20 +307,20 @@ async def download_report(
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         download_name = f"{ts}_{report_path.name}"
 
-        logger.info(f"✓ Downloading report: {report_id}")
+        logger.info(f"Downloading report: {report_id}")
         return FileResponse(
             path=report_path,
             media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
             filename=download_name,
         )
     except SlideSpecNotFoundError as e:
-        logger.error(f"✗ Report not found: {e}")
+        logger.error(f"Report not found: {e}")
         raise HTTPException(status_code=404, detail=str(e))
     except ValueError as e:
-        logger.error(f"✗ Invalid request: {e}")
+        logger.error(f"Invalid request: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.exception(f"✗ Download failed: {e}")
+        logger.exception(f"Download failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -341,20 +355,20 @@ async def download_report_pdf(
         base_name = pdf_path.stem.replace(".pdf", "")
         download_name = f"{ts}_{base_name}.pdf"
 
-        logger.info(f"✓ Downloading PDF: {report_id}")
+        logger.info(f"Downloading PDF: {report_id}")
         return FileResponse(
             path=pdf_path,
             media_type="application/pdf",
             filename=download_name,
         )
     except SlideSpecNotFoundError as e:
-        logger.error(f"✗ Report not found for PDF: {e}")
+        logger.error(f"Report not found for PDF: {e}")
         raise HTTPException(status_code=404, detail=str(e))
     except ValueError as e:
-        logger.error(f"✗ Invalid request: {e}")
+        logger.error(f"Invalid request: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.exception(f"✗ PDF download failed: {e}")
+        logger.exception(f"PDF download failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -389,18 +403,23 @@ async def download_report_pdf(
 )
 async def preview_report(
     report_id: str,
-    regenerate_if_missing: bool = True
+    regenerate_if_missing: bool = True,
+    force_regenerate: bool = False,
 ):
     """Get report preview images."""
     try:
-        result = service.preview(report_id, regenerate_if_missing=regenerate_if_missing)
-        logger.info(f"✓ Preview generated for: {report_id}")
+        result = service.preview(
+            report_id,
+            regenerate_if_missing=regenerate_if_missing,
+            force_regenerate=force_regenerate,
+        )
+        logger.info(f"Preview generated for: {report_id}")
         return SuccessResponse(data=result)
     except SlideSpecNotFoundError as e:
-        logger.error(f"✗ Report not found: {e}")
+        logger.error(f"Report not found: {e}")
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        logger.exception(f"✗ Preview generation failed: {e}")
+        logger.exception(f"Preview generation failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -446,14 +465,14 @@ async def update_slides(report_id: str, req: UpdateSlidesRequest):
             slides=slides_data
         )
 
-        logger.info(f"✓ Updated {len(req.slides)} slides in report: {report_id}")
+        logger.info(f"Updated {len(req.slides)} slides in report: {report_id}")
         return SuccessResponse(data=result)
     except SlideSpecNotFoundError as e:
-        logger.error(f"✗ Report not found: {e}")
+        logger.error(f"Report not found: {e}")
         raise HTTPException(status_code=404, detail=str(e))
     except ValueError as e:
-        logger.error(f"✗ Invalid request: {e}")
+        logger.error(f"Invalid request: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.exception(f"✗ Slide update failed: {e}")
+        logger.exception(f"Slide update failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -77,7 +77,7 @@ async def health():
 
         return SuccessResponse(data=health_data)
     except Exception as e:
-        logger.exception(f"✗ Health check failed: {e}")
+        logger.exception(f"Health check failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -146,7 +146,7 @@ async def health_detailed():
         health_result = await health_checker.check_all()
         return SuccessResponse(data=health_result)
     except Exception as e:
-        logger.exception(f"✗ Detailed health check failed: {e}")
+        logger.exception(f"Detailed health check failed: {e}")
         raise HTTPException(status_code=503, detail=str(e))
 
 
@@ -212,12 +212,12 @@ async def logs(limit: int = 100, level: Optional[str] = None):
             level_upper = level.upper()
             lines = [line for line in lines if level_upper in line]
 
-        logger.info(f"✓ Retrieved {len(lines)} log lines (limit={limit}, level={level})")
+        logger.info(f"Retrieved {len(lines)} log lines (limit={limit}, level={level})")
         return SuccessResponse(data={
             "lines": lines,
             "count": len(lines),
             "limit": limit
         })
     except Exception as e:
-        logger.exception(f"✗ Failed to read logs: {e}")
+        logger.exception(f"Failed to read logs: {e}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -1,7 +1,7 @@
 """Unified request models for API endpoints."""
 
-from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any
+from pydantic import BaseModel, Field, validator
+from typing import Optional, List, Dict, Any, Literal
 
 
 class CreateReportRequest(BaseModel):
@@ -61,5 +61,35 @@ class UpdateSlidesRequest(BaseModel):
                         "new_content": {"SUMMARY_TEXT": "New summary"}
                     }
                 ]
+            }
+        }
+
+
+class SubmitRatingRequest(BaseModel):
+    """User rating submission request."""
+    rating: Literal["liked", "disliked"] = Field(
+        ...,
+        description="Rating value: 'liked' (thumbs up) or 'disliked' (thumbs down)"
+    )
+    comment: Optional[str] = Field(
+        None,
+        max_length=500,
+        description="Comment explaining the rating (required for disliked)"
+    )
+
+    @validator('comment')
+    def validate_comment_for_disliked(cls, v, values):
+        """Validate that disliked ratings have a comment."""
+        rating = values.get('rating')
+        if rating == 'disliked':
+            if not v or len(v.strip()) < 10:
+                raise ValueError('Comment is required for thumbs down (minimum 10 characters)')
+        return v
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "rating": "disliked",
+                "comment": "The chart colors are hard to read and data formatting needs improvement."
             }
         }

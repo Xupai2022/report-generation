@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 from typing import Optional, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 
 from mss_ai_ppt_sample_assets.backend.models.job_state import JobState, JobStatus
 from mss_ai_ppt_sample_assets.backend.modules.job_store import JobStore
@@ -77,8 +77,8 @@ class JobManager:
             status=JobStatus.PENDING,
             idempotency_key=idempotency_key,
             max_retries=max_retries,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
         )
 
         created_job = self.store.create_job(job_state)
@@ -94,7 +94,7 @@ class JobManager:
         try:
             self.store.update_job(job_id, {
                 "status": JobStatus.RUNNING,
-                "started_at": datetime.utcnow()
+                "started_at": datetime.now(timezone.utc)
             })
             self.logger.info(f"Job started: {job_id}")
         except Exception as e:
@@ -108,19 +108,33 @@ class JobManager:
             result: Generation result dictionary with paths and metadata
         """
         try:
+            # Calculate generation duration
+            job = self.store.get_job(job_id)
+            generation_duration_ms = None
+            if job and job.started_at:
+                duration = datetime.now(timezone.utc) - job.started_at
+                generation_duration_ms = int(duration.total_seconds() * 1000)
+
+            # Get AI model from config
+            from mss_ai_ppt_sample_assets.backend.config import settings
+            ai_model = settings.openai_model if settings.enable_llm else "mock"
+
+            # Update job state
             self.store.update_job(job_id, {
                 "status": JobStatus.COMPLETED,
-                "completed_at": datetime.utcnow(),
+                "completed_at": datetime.now(timezone.utc),
                 "progress": 100,
                 "message": "完成",
                 "report_path": result.get("report_path"),
                 "slidespec_path": result.get("slidespec_path"),
                 "metadata": {
                     "warnings": result.get("warnings", []),
-                    "version": result.get("version", "v2")
+                    "version": result.get("version", "v2"),
+                    "generation_duration_ms": generation_duration_ms,
+                    "ai_model": ai_model
                 }
             })
-            self.logger.info(f"Job completed: {job_id}")
+            self.logger.info(f"Job completed: {job_id} (duration: {generation_duration_ms}ms)")
         except Exception as e:
             self.logger.error(f"Failed to mark job as completed: {e}")
 
@@ -139,7 +153,7 @@ class JobManager:
 
             self.store.update_job(job_id, {
                 "status": JobStatus.FAILED,
-                "completed_at": datetime.utcnow(),
+                "completed_at": datetime.now(timezone.utc),
                 "last_error": error,
                 "retry_count": job.retry_count + 1
             })
@@ -156,7 +170,7 @@ class JobManager:
         try:
             self.store.update_job(job_id, {
                 "status": JobStatus.CANCELLED,
-                "completed_at": datetime.utcnow()
+                "completed_at": datetime.now(timezone.utc)
             })
             self.logger.info(f"Job cancelled: {job_id}")
         except Exception as e:

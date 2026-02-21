@@ -149,7 +149,7 @@ class SessionManager:
         session_dir = self.get_session_dir(session_id)
         return session_dir / original_filename
 
-    def cleanup_old_sessions(self, max_age_hours: int = 24) -> int:
+    def cleanup_old_sessions(self, max_age_hours: int = 168) -> int:
         """Clean up session directories older than specified age.
 
         Args:

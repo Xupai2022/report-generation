@@ -1,5 +1,6 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.sessions import SessionMiddleware
 from pathlib import Path
 import logging
 import asyncio
@@ -37,39 +38,56 @@ app = FastAPI(
 app.add_middleware(ErrorLoggingMiddleware)
 app.add_middleware(RequestIdMiddleware)
 
-logger.info("Initializing MSS AI PPT Backend...")
-logger.info(f"LLM Enabled: {config.settings.enable_llm}")
-logger.info(f"OpenAI Model: {config.settings.openai_model}")
-logger.info(f"OpenAI Base URL: {config.settings.openai_base_url}")
-logger.info(f"Log Level: {config.settings.log_level}")
-logger.info(f"Log Rotation: {config.settings.log_max_bytes / (1024*1024):.1f}MB x {config.settings.log_backup_count} files")
+# Add session middleware for admin authentication
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=config.settings.admin_session_secret,
+    session_cookie="admin_session",
+    max_age=config.settings.admin_session_max_age,
+    same_site="lax",
+    https_only=False  # Set to True in production with HTTPS
+)
 
 # Configuration
 MAX_CONCURRENT_LLM_REQUESTS = 5
 llm_semaphore = asyncio.Semaphore(MAX_CONCURRENT_LLM_REQUESTS)
-logger.info(f"LLM Concurrency Limiter: max {MAX_CONCURRENT_LLM_REQUESTS} concurrent requests")
+
+# Compact startup log with key configuration
+logger.info(
+    f"MSS AI PPT Backend | "
+    f"LLM: {config.settings.openai_model} ({config.settings.openai_base_url}) | "
+    f"Concurrency: {MAX_CONCURRENT_LLM_REQUESTS} | "
+    f"Log: {config.settings.log_level} "
+    f"({config.settings.log_max_bytes / (1024*1024):.0f}MB x {config.settings.log_backup_count})"
+)
 
 # Services
 service = ReportService()
 ws_manager = WebSocketManager()
-logger.info("WebSocket Manager initialized")
 
 # Job management
 job_store = JobStore(config.JOBS_DIR)
 job_manager = JobManager(job_store, service)
-logger.info(f"Job Manager initialized (retention: {config.settings.job_retention_days} days, max retries: {config.settings.job_max_retries})")
+
+logger.info(f"Services initialized | Job retention: {config.settings.job_retention_days}d | Max retries: {config.settings.job_max_retries}")
 
 app.mount("/static/previews", StaticFiles(directory=config.PREVIEWS_DIR), name="previews")
 
+# Expose outputs directory (sessions/reports/jobs, etc.) for development/admin use.
+# In production, prefer downloading via authenticated endpoints.
+app.mount(config.OUTPUTS_URL_PREFIX, StaticFiles(directory=config.OUTPUTS_DIR), name="outputs")
+
 # Register v1 API router
 app.include_router(v1_router)
-logger.info("✓ Registered v1 API routes at /api/v1")
 
 # Initialize dependencies for reports router (WebSocket and semaphore)
-from mss_ai_ppt_sample_assets.backend.routers.v1 import reports, jobs
+from mss_ai_ppt_sample_assets.backend.routers.v1 import reports, jobs, admin, ratings
 reports.init_dependencies(ws_manager, llm_semaphore, MAX_CONCURRENT_LLM_REQUESTS, job_manager)
 jobs.init_dependencies(job_manager)
-logger.info("✓ Initialized WebSocket support and JobManager for v1 API")
+admin.init_dependencies(job_store)
+ratings.init_dependencies(job_store)
+
+logger.info("API routes registered | WebSocket, JobManager, AdminService, RatingService initialized")
 
 # 简单的前端静态页面（无需 npm），挂载在 /ui
 FRONTEND_DIR = Path(__file__).parent / "frontend"
@@ -80,7 +98,6 @@ if FRONTEND_DIR.exists():
 I18N_DIR = FRONTEND_DIR / "i18n"
 if I18N_DIR.exists():
     app.mount("/i18n", StaticFiles(directory=I18N_DIR), name="i18n")
-    logger.info("✓ Mounted i18n translation files at /i18n")
 
 
 # ==================== WebSocket Endpoint ====================
@@ -102,6 +119,13 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
 
 @app.get("/")
 def root():
+    """Redirect root to the frontend UI."""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/ui/index.html")
+
+
+@app.get("/api")
+def api_root():
     """API root endpoint with service information."""
     return {
         "message": "MSS AI PPT API v1.0",
@@ -127,25 +151,26 @@ def root():
 async def startup_cleanup():
     """Clean up old sessions, stale locks, and old jobs when server starts."""
     try:
-        # Clean up old sessions (older than 24 hours)
-        cleaned_count = service.cleanup_old_sessions(max_age_hours=24)
+        # Clean up old sessions (older than configured retention period)
+        cleaned_count = service.cleanup_old_sessions(
+            max_age_hours=config.settings.session_retention_days * 24
+        )
         if cleaned_count > 0:
-            logger.info(f"🧹 Startup cleanup: removed {cleaned_count} old sessions")
+            logger.info(f"Startup cleanup: removed {cleaned_count} old sessions")
 
         # Clean up stale lock files (older than 5 minutes)
         # These locks may be left behind by crashed processes
         from mss_ai_ppt_sample_assets.backend.modules.file_lock import cleanup_stale_locks
-        outputs_dir = Path(__file__).parent / "outputs"
-        cleanup_stale_locks(outputs_dir, max_age_seconds=300)  # 5 minutes
-        logger.info("🔓 Startup cleanup: stale locks cleaned")
+        cleanup_stale_locks(config.OUTPUTS_DIR, max_age_seconds=300)  # 5 minutes
+        logger.info("Startup cleanup: stale locks cleaned")
 
         # Clean up old jobs (older than configured retention period)
         job_cleaned_count = job_store.cleanup_old_jobs(days=config.settings.job_retention_days)
         if job_cleaned_count > 0:
-            logger.info(f"🗑️  Startup cleanup: removed {job_cleaned_count} old jobs")
+            logger.info(f"Startup cleanup: removed {job_cleaned_count} old jobs")
 
     except Exception as e:
-        logger.warning(f"⚠️ Startup cleanup failed: {e}")
+        logger.warning(f"Startup cleanup failed: {e}")
 
 
 if __name__ == "__main__":

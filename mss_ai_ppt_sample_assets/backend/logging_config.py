@@ -53,6 +53,23 @@ class SensitiveDataFilter(logging.Filter):
         return True
 
 
+class CompactFormatter(logging.Formatter):
+    """Formatter with compact module names for better readability.
+
+    Transforms:
+        mss_ai_ppt_sample_assets.backend.app -> backend.app
+        mss_ai_ppt_sample_assets.backend.routers.v1.reports -> v1.reports
+    """
+
+    def format(self, record):
+        # Shorten module name to last 2 segments for better readability
+        parts = record.name.split('.')
+        if len(parts) > 2:
+            # Keep last 2 parts (e.g., backend.app, v1.reports)
+            record.name = '.'.join(parts[-2:])
+        return super().format(record)
+
+
 class SafeStreamHandler(logging.StreamHandler):
     """Stream handler that won't crash on UnicodeEncodeError (common on Windows GBK consoles)."""
 
@@ -95,13 +112,13 @@ def setup_logging(
         log_dir = config.LOGS_DIR
     log_dir.mkdir(parents=True, exist_ok=True)
 
-    # Create formatters
-    detailed_formatter = logging.Formatter(
+    # Create formatters with compact module names
+    detailed_formatter = CompactFormatter(
         fmt='%(asctime)s - [%(request_id)s] - %(name)s - %(levelname)s - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     )
 
-    console_formatter = logging.Formatter(
+    console_formatter = CompactFormatter(
         fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         datefmt='%H:%M:%S'
     )

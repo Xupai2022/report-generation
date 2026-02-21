@@ -22,7 +22,7 @@ service = ReportService()
     Clean up old session directories to free disk space.
 
     ## Query Parameters
-    - `max_age_hours`: Maximum age in hours before cleanup (default: 24)
+    - `max_age_hours`: Maximum age in hours before cleanup (default: 168 / 7 days)
 
     ## Processing
     - Scans session directories in outputs/sessions/
@@ -45,7 +45,7 @@ service = ReportService()
                     "example": {
                         "data": {
                             "cleaned_count": 15,
-                            "max_age_hours": 24
+                            "max_age_hours": 168
                         }
                     }
                 }
@@ -53,18 +53,18 @@ service = ReportService()
         }
     }
 )
-async def cleanup_sessions(max_age_hours: int = 24):
+async def cleanup_sessions(max_age_hours: int = 168):
     """Clean up old session directories."""
     try:
         cleaned_count = service.cleanup_old_sessions(max_age_hours)
-        logger.info(f"✓ Cleaned up {cleaned_count} old sessions (max_age_hours={max_age_hours})")
+        logger.info(f"Cleaned up {cleaned_count} old sessions (max_age_hours={max_age_hours})")
 
         return SuccessResponse(data={
             "cleaned_count": cleaned_count,
             "max_age_hours": max_age_hours
         })
     except Exception as e:
-        logger.exception(f"✗ Cleanup failed: {e}")
+        logger.exception(f"Cleanup failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -116,15 +116,15 @@ async def delete_session(session_id: str):
         # Delete session directory
         shutil.rmtree(session_dir)
 
-        logger.info(f"✓ Deleted session: {session_id}")
+        logger.info(f"Deleted session: {session_id}")
         return SuccessResponse(data={
             "deleted": True,
             "session_id": session_id
         })
 
     except SessionNotFoundError as e:
-        logger.error(f"✗ Session not found: {e}")
+        logger.error(f"Session not found: {e}")
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
-        logger.exception(f"✗ Failed to delete session: {e}")
+        logger.exception(f"Failed to delete session: {e}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -1,0 +1,422 @@
+{
+  "template_id": "mss_technical_v2",
+  "slides": [
+    {
+      "slide_no": 1,
+      "slide_key": "cover",
+      "placeholders": {
+        "VERSION_TAG": "技术详细版",
+        "abc": {
+          "position": {
+            "left": 1.0,
+            "top": 2.0,
+            "width": 8.0,
+            "height": 4.0
+          },
+          "categories": [
+            "W1",
+            "W2",
+            "W3",
+            "W4"
+          ],
+          "series": [
+            {
+              "name": "告警数量",
+              "values": [
+                2846,
+                3244,
+                3112,
+                3253
+              ]
+            }
+          ]
+        },
+        "P12_pie": {},
+        "REPORT_TITLE": "[REPORT_TITLE: AI生成内容占位]",
+        "CUSTOMER_LABEL": "[CUSTOMER_LABEL: AI生成内容占位]",
+        "PERIOD_LABEL": "[PERIOD_LABEL: AI生成内容占位]",
+        "CONFIDENTIALITY_LABEL": "[CONFIDENTIALITY_LABEL: AI生成内容占位]",
+        "GENERATED_AT_LABEL": "[GENERATED_AT_LABEL: AI生成内容占位]"
+      }
+    },
+    {
+      "slide_no": 2,
+      "slide_key": "security_dashboard",
+      "placeholders": {
+        "SLIDE_TITLE": "安全态势仪表盘",
+        "KPI_DASHBOARD": "",
+        "ASSESSMENT_TITLE": "技术评估",
+        "ASSET_DISTRIBUTION_CHART": {},
+        "P14_pie": {},
+        "TECHNICAL_ASSESSMENT": "[TECHNICAL_ASSESSMENT: Ai哦屁哦I生成内容占位]"
+      }
+    },
+    {
+      "slide_no": 3,
+      "slide_key": "alert_deep_analysis",
+      "placeholders": {
+        "SLIDE_TITLE": "告警深度分析",
+        "SEVERITY_TITLE": "严重程度分布",
+        "SEVERITY_BREAKDOWN": "",
+        "TOP_CATEGORIES_CHART": {
+          "position": {
+            "left": 0.85,
+            "top": 1.55,
+            "width": 11.9,
+            "height": 1.1
+          },
+          "categories": [
+            "Phishing",
+            "Brute Force",
+            "Cloud Misconfig",
+            "Malware",
+            "Data Exfil"
+          ],
+          "series": [
+            {
+              "name": "告警数量",
+              "values": [
+                1244,
+                1888,
+                1917,
+                671,
+                271
+              ]
+            }
+          ]
+        },
+        "TOP_RULES_TITLE": "Top告警规则",
+        "TOP_RULES_TABLE": {
+          "headers": [
+            "规则ID",
+            "规则名称",
+            "触发次数",
+            "误报率"
+          ],
+          "rows": [
+            [
+              "R-SSH-BRUTE-01",
+              "SSH 暴力破解",
+              971,
+              "8%"
+            ],
+            [
+              "R-O365-PHISH-02",
+              "O365 钓鱼邮件",
+              897,
+              "34%"
+            ],
+            [
+              "R-CLOUD-S3-OPEN",
+              "对象存储公开访问",
+              308,
+              "4%"
+            ]
+          ],
+          "position": {
+            "left": 0.85,
+            "top": 3.05,
+            "width": 5.65,
+            "height": 1.6
+          }
+        },
+        "RULES_ANALYSIS_TITLE": "规则分析",
+        "P15_line": {},
+        "FP_TITLE": "误报分析与调优建议",
+        "TOP_RULES_ANALYSIS": "[TOP_RULES_ANALYSIS: AI生成内容占位]",
+        "FALSE_POSITIVE_INSIGHT": "• [AI生成内容占位]\n• [请启用LLM以生成实际内容]"
+      }
+    },
+    {
+      "slide_no": 4,
+      "slide_key": "incident_timeline",
+      "placeholders": {
+        "SLIDE_TITLE": "事件时间线与处置轨迹",
+        "INCIDENTS_TABLE": {
+          "headers": [
+            "事件ID",
+            "事件标题",
+            "级别",
+            "检测时间",
+            "MTTD(分钟)",
+            "MTTR(分钟)",
+            "状态"
+          ],
+          "rows": [
+            [
+              "INC-20251201-001",
+              "云侧AccessKey泄露风险处置",
+              "high",
+              "2025-12-01T04:14:00Z",
+              57,
+              232,
+              "closed"
+            ],
+            [
+              "INC-20251201-002",
+              "邮件投递导致终端恶意软件执行",
+              "high",
+              "2025-12-01T08:17:00Z",
+              13,
+              336,
+              "closed"
+            ],
+            [
+              "INC-20251201-003",
+              "云侧AccessKey泄露风险处置",
+              "high",
+              "2025-12-01T02:35:00Z",
+              47,
+              365,
+              "closed"
+            ]
+          ],
+          "position": {
+            "left": 0.85,
+            "top": 1.55,
+            "width": 11.9,
+            "height": 2.35
+          }
+        },
+        "TIMELINE_TITLE": "事件时间线",
+        "TIMELINE_NARRATIVE": "",
+        "RESPONSE_TITLE": "响应效率",
+        "LESSONS_TITLE": "经验教训",
+        "P16_combo": {},
+        "RESPONSE_METRICS": "[RESPONSE_METRICS: AI生成内容占位]",
+        "LESSONS_LEARNED": "• [AI生成内容占位]\n• [请启用LLM以生成实际内容]"
+      }
+    },
+    {
+      "slide_no": 5,
+      "slide_key": "incident_details",
+      "placeholders": {
+        "SLIDE_TITLE": "高危事件详情分析",
+        "INCIDENT1_TITLE": "[INCIDENT1_TITLE: AI生成内容占位]",
+        "INCIDENT_DETAIL_1": "[INCIDENT_DETAIL_1: AI生成内容占位]",
+        "INCIDENT2_TITLE": "[INCIDENT2_TITLE: AI生成内容占位]",
+        "INCIDENT_DETAIL_2": "[INCIDENT_DETAIL_2: AI生成内容占位]",
+        "ATTACK_PATTERN_SUMMARY": "[ATTACK_PATTERN_SUMMARY: AI生成内容占位]"
+      }
+    },
+    {
+      "slide_no": 6,
+      "slide_key": "vulnerability_details",
+      "placeholders": {
+        "SLIDE_TITLE": "漏洞态势详情",
+        "VULN_PIE_CHART": {
+          "position": {
+            "left": 0.85,
+            "top": 1.55,
+            "width": 5.0,
+            "height": 1.55
+          },
+          "categories": [
+            "严重",
+            "高危",
+            "中危",
+            "低危"
+          ],
+          "values": [
+            4,
+            16,
+            80,
+            86
+          ]
+        },
+        "VULN_DIST_TITLE": "漏洞分布",
+        "VULN_DISTRIBUTION": "",
+        "CVE_TABLE_TITLE": "重点CVE列表",
+        "TOP_CVE_TABLE": {
+          "headers": [
+            "CVE编号",
+            "漏洞名称",
+            "严重程度",
+            "影响资产",
+            "修复状态"
+          ],
+          "rows": [
+            [
+              "CVE-2024-3094",
+              "XZ Utils 后门风险",
+              "critical",
+              0,
+              "patched"
+            ],
+            [
+              "CVE-2023-46604",
+              "ActiveMQ RCE",
+              "high",
+              1,
+              "in_progress"
+            ],
+            [
+              "CVE-2024-6387",
+              "OpenSSH regreSSHion",
+              "high",
+              10,
+              "patched"
+            ]
+          ],
+          "position": {
+            "left": 6.1,
+            "top": 1.55,
+            "width": 6.65,
+            "height": 1.55
+          }
+        },
+        "CVE_ANALYSIS_TITLE": "CVE技术分析",
+        "PATCH_TITLE": "补丁状态",
+        "CVE_TECHNICAL_ANALYSIS": "[CVE_TECHNICAL_ANALYSIS: AI生成内容占位]",
+        "PATCH_STATUS": "• [AI生成内容占位]\n• [请启用LLM以生成实际内容]"
+      }
+    },
+    {
+      "slide_no": 7,
+      "slide_key": "attack_surface",
+      "placeholders": {
+        "SLIDE_TITLE": "攻击面与暴露分析",
+        "EXPOSED_SERVICES_TITLE": "暴露服务",
+        "EXPOSED_SERVICES_TABLE": {
+          "headers": [
+            "服务类型",
+            "暴露资产数"
+          ],
+          "rows": [
+            [
+              "SSH(22)",
+              13
+            ],
+            [
+              "RDP(3389)",
+              4
+            ],
+            [
+              "Kibana(5601)",
+              1
+            ],
+            [
+              "Grafana(3000)",
+              0
+            ]
+          ],
+          "position": {
+            "left": 0.85,
+            "top": 1.55,
+            "width": 5.65,
+            "height": 1.5
+          }
+        },
+        "EXPOSURE_ANALYSIS_TITLE": "暴露分析",
+        "SURFACE_TREND_TITLE": "攻击面趋势",
+        "REMEDIATION_TITLE": "收敛建议",
+        "EXTERNAL_EXPOSURE": "[EXTERNAL_EXPOSURE: AI生成内容占位]",
+        "ATTACK_SURFACE_TREND": "[ATTACK_SURFACE_TREND: AI生成内容占位]",
+        "EXPOSURE_REMEDIATION": "• [AI生成内容占位]\n• [请启用LLM以生成实际内容]"
+      }
+    },
+    {
+      "slide_no": 8,
+      "slide_key": "cloud_security_details",
+      "placeholders": {
+        "SLIDE_TITLE": "云安全详细分析",
+        "CLOUD_RISKS_TABLE": {
+          "headers": [
+            "风险类型",
+            "数量",
+            "趋势"
+          ],
+          "rows": [
+            [
+              "安全组0.0.0.0/0暴露",
+              7,
+              "up"
+            ],
+            [
+              "对象存储公开访问",
+              2,
+              "flat"
+            ],
+            [
+              "未启用MFA的高权限账号",
+              1,
+              "down"
+            ]
+          ],
+          "position": {
+            "left": 0.85,
+            "top": 1.55,
+            "width": 11.9,
+            "height": 2.05
+          }
+        },
+        "CLOUD_MISCONFIG_TITLE": "云配置问题",
+        "CLOUD_MISCONFIG_DETAILS": "",
+        "IAM_TITLE": "IAM风险分析",
+        "COMPLIANCE_TITLE": "合规检查",
+        "IAM_RISK_ANALYSIS": "[IAM_RISK_ANALYSIS: AI生成内容占位]",
+        "CLOUD_COMPLIANCE": "• [AI生成内容占位]\n• [请启用LLM以生成实际内容]"
+      }
+    },
+    {
+      "slide_no": 9,
+      "slide_key": "technical_recommendations",
+      "placeholders": {
+        "SLIDE_TITLE": "技术整改建议",
+        "TECH_REC_TITLE": "整改方案",
+        "DETECTION_TITLE": "检测能力提升",
+        "HARDENING_TITLE": "安全加固清单",
+        "TECHNICAL_RECOMMENDATIONS": "• [AI生成内容占位]\n• [请启用LLM以生成实际内容]",
+        "DETECTION_IMPROVEMENTS": "[DETECTION_IMPROVEMENTS: AI生成内容占位]",
+        "HARDENING_CHECKLIST": "• [AI生成内容占位]\n• [请启用LLM以生成实际内容]"
+      }
+    },
+    {
+      "slide_no": 10,
+      "slide_key": "appendix_technical",
+      "placeholders": {
+        "SLIDE_TITLE": "附录：数据与证据索引",
+        "ASSETS_TABLE": {
+          "headers": [
+            "资产组ID",
+            "资产组名称",
+            "资产数量"
+          ],
+          "rows": [
+            [
+              "ag-core-prod",
+              "核心生产资产组",
+              217
+            ],
+            [
+              "ag-office",
+              "办公终端资产组",
+              740
+            ]
+          ],
+          "position": {
+            "left": 0.85,
+            "top": 5.15,
+            "width": 5.65,
+            "height": 0.2
+          }
+        },
+        "EVIDENCE_TITLE": "证据索引",
+        "FRESHNESS_TITLE": "数据时效",
+        "DATA_SCOPE_TITLE": "数据范围",
+        "VULN_NOTES_TITLE": "漏洞说明",
+        "EVIDENCE_NOTES_TITLE": "证据说明",
+        "ASSETS_TITLE": "资产范围",
+        "SERVICES_TITLE": "关键服务",
+        "TERMINOLOGY_TITLE": "术语表",
+        "EVIDENCE_INDEX": "[EVIDENCE_INDEX: AI生成内容占位]",
+        "DATA_FRESHNESS": "[DATA_FRESHNESS: AI生成内容占位]",
+        "DATA_SCOPE_NOTES": "[DATA_SCOPE_NOTES: AI生成内容占位]",
+        "VULN_NOTES": "[VULN_NOTES: AI生成内容占位]",
+        "EVIDENCE_NOTES": "[EVIDENCE_NOTES: AI生成内容占位]",
+        "KEY_SERVICES_LIST": "[KEY_SERVICES_LIST: AI生成内容占位]",
+        "TERMINOLOGY_TECHNICAL": "• [AI生成内容占位]\n• [请启用LLM以生成实际内容]"
+      }
+    }
+  ]
+}

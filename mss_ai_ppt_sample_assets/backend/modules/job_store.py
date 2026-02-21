@@ -20,7 +20,7 @@ import hashlib
 import logging
 from pathlib import Path
 from typing import Optional, List, Dict, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from mss_ai_ppt_sample_assets.backend.models.job_state import JobState, JobStatus
 from mss_ai_ppt_sample_assets.backend.modules.file_lock import FileLock
@@ -111,6 +111,20 @@ class JobStore:
         except Exception as e:
             logger.error(f"Failed to save index: {e}")
 
+    @staticmethod
+    def _json_default(value: Any):
+        if isinstance(value, datetime):
+            return value.isoformat()
+        return str(value)
+
+    @staticmethod
+    def _ensure_utc(value: Optional[datetime]) -> Optional[datetime]:
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value
+
     def _update_index(self, job_state: JobState):
         """Update index with job metadata.
 
@@ -122,8 +136,11 @@ class JobStore:
             "status": job_state.status,
             "created_at": job_state.created_at.isoformat(),
             "updated_at": job_state.updated_at.isoformat(),
+            "completed_at": job_state.completed_at.isoformat() if job_state.completed_at else None,
             "session_id": job_state.session_id,
-            "template_id": job_state.template_id
+            "template_id": job_state.template_id,
+            "input_id": job_state.input_id,
+            "rating": job_state.rating.rating if job_state.rating else None
         }
         self._save_index(index)
 
@@ -147,7 +164,13 @@ class JobStore:
         try:
             with FileLock(state_path, timeout=10.0):
                 with state_path.open("w", encoding="utf-8") as f:
-                    json.dump(job_state.dict(), f, ensure_ascii=False, indent=2, default=str)
+                    json.dump(
+                        job_state.dict(),
+                        f,
+                        ensure_ascii=False,
+                        indent=2,
+                        default=self._json_default,
+                    )
         except Exception as e:
             logger.error(f"Failed to create job {job_state.job_id}: {e}")
             raise
@@ -213,14 +236,20 @@ class JobStore:
             if hasattr(job, key):
                 setattr(job, key, value)
 
-        job.updated_at = datetime.utcnow()
+        job.updated_at = datetime.now(timezone.utc)
 
         # Save updated state
         state_path = self._get_state_path(job_id)
         try:
             with FileLock(state_path, timeout=10.0):
                 with state_path.open("w", encoding="utf-8") as f:
-                    json.dump(job.dict(), f, ensure_ascii=False, indent=2, default=str)
+                    json.dump(
+                        job.dict(),
+                        f,
+                        ensure_ascii=False,
+                        indent=2,
+                        default=self._json_default,
+                    )
         except Exception as e:
             logger.error(f"Failed to update job {job_id}: {e}")
             raise
@@ -359,7 +388,7 @@ class JobStore:
         Returns:
             Number of jobs cleaned up
         """
-        cutoff = datetime.utcnow() - timedelta(days=days)
+        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
         cleaned_count = 0
 
         index = self._load_index()
@@ -367,7 +396,11 @@ class JobStore:
 
         for job_id, meta in index.items():
             try:
-                created_at = datetime.fromisoformat(meta.get("created_at", ""))
+                created_at_str = meta.get("created_at", "")
+                if not created_at_str:
+                    continue
+                created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+                created_at = self._ensure_utc(created_at)
                 status = meta.get("status")
 
                 # Only clean up terminal states
@@ -385,3 +418,186 @@ class JobStore:
             logger.info(f"Cleaned up {cleaned_count} old jobs (older than {days} days)")
 
         return cleaned_count
+
+    def list_jobs_filtered(
+        self,
+        page: int = 1,
+        limit: int = 50,
+        status: Optional[JobStatus] = None,
+        rating: Optional[str] = None,  # "liked", "disliked", "unrated", or None for all
+        search: Optional[str] = None,
+        date_from: Optional[datetime] = None,
+        date_to: Optional[datetime] = None,
+        sort_by: str = "created_at",
+        sort_order: str = "desc"
+    ) -> tuple[List[JobState], int]:
+        """List jobs with filtering, searching, and pagination.
+
+        Args:
+            page: Page number (1-indexed)
+            limit: Jobs per page (max 100)
+            status: Filter by job status
+            rating: Filter by rating ("liked", "disliked", "unrated", or None for all)
+            search: Search in job_id, input_id, template_id
+            date_from: Filter jobs created after this date
+            date_to: Filter jobs created before this date
+            sort_by: Field to sort by ("created_at", "completed_at", "updated_at")
+            sort_order: Sort order ("asc" or "desc")
+
+        Returns:
+            Tuple of (job_list, total_count)
+        """
+        index = self._load_index()
+        filtered_jobs = []
+        date_from = self._ensure_utc(date_from)
+        date_to = self._ensure_utc(date_to)
+
+        # 1. Apply filters
+        for job_id, meta in index.items():
+            # Status filter
+            if status and meta.get("status") != status:
+                continue
+
+            # Rating filter
+            if rating:
+                job_rating = meta.get("rating")
+                if rating == "unrated":
+                    if job_rating is not None:
+                        continue
+                elif rating in ["liked", "disliked"]:
+                    if job_rating != rating:
+                        continue
+
+            # Search filter
+            if search:
+                search_lower = search.lower()
+                searchable_text = " ".join([
+                    job_id.lower(),
+                    meta.get("input_id", "").lower(),
+                    meta.get("template_id", "").lower()
+                ])
+                if search_lower not in searchable_text:
+                    continue
+
+            # Date range filter
+            try:
+                created_at_str = meta.get("created_at", "")
+                # Handle both formats: with and without 'Z' suffix
+                if created_at_str:
+                    if not created_at_str.endswith('Z') and '+' not in created_at_str:
+                        # Add 'Z' for UTC if missing
+                        created_at_str = created_at_str + 'Z'
+                    created_at = datetime.fromisoformat(created_at_str.replace('Z', '+00:00'))
+                    created_at = self._ensure_utc(created_at)
+
+                    if date_from and created_at < date_from:
+                        continue
+                    if date_to and created_at > date_to:
+                        continue
+            except (ValueError, TypeError) as e:
+                logger.warning(f"Invalid date format for job {job_id}: {e}")
+                continue
+
+            filtered_jobs.append((job_id, meta))
+
+        # 2. Sort
+        def get_sort_key(item):
+            _, meta = item
+            sort_value = meta.get(sort_by, "")
+            # Handle None values
+            if sort_value is None:
+                return "" if sort_order == "asc" else "9999-12-31"
+            return sort_value
+
+        filtered_jobs.sort(
+            key=get_sort_key,
+            reverse=(sort_order == "desc")
+        )
+
+        total_count = len(filtered_jobs)
+
+        # 3. Paginate
+        start_idx = (page - 1) * limit
+        end_idx = start_idx + limit
+        paginated_items = filtered_jobs[start_idx:end_idx]
+
+        # 4. Load full job objects
+        result_jobs = []
+        for job_id, _ in paginated_items:
+            job = self.get_job(job_id)
+            if job:
+                result_jobs.append(job)
+
+        return result_jobs, total_count
+
+    def update_rating(
+        self,
+        job_id: str,
+        rating: Optional[str],
+        comment: Optional[str] = None,
+        rated_by_session: Optional[str] = None,
+        rated_by_ip: Optional[str] = None
+    ) -> Optional[JobState]:
+        """Update job rating with session tracking.
+
+        Args:
+            job_id: Job identifier
+            rating: Rating value ("liked", "disliked", or None to clear rating)
+            comment: Optional comment
+            rated_by_session: Session ID of the rater
+            rated_by_ip: IP address of the rater
+
+        Returns:
+            Updated job state, or None if job not found
+
+        Raises:
+            ValueError: If job already rated by this session
+        """
+        job = self.get_job(job_id)
+        if not job:
+            logger.warning(f"Cannot update rating: job {job_id} not found")
+            return None
+
+        # Import here to avoid circular dependency
+        from mss_ai_ppt_sample_assets.backend.models.job_state import JobRating
+
+        # Check if already rated by this session (one rating per session enforcement)
+        if rated_by_session and job.rating and job.rating.rated_by_session == rated_by_session:
+            raise ValueError(f"Session {rated_by_session} has already rated job {job_id}")
+
+        # Create or update rating
+        if rating is None:
+            # Clear rating
+            job.rating = None
+        else:
+            job.rating = JobRating(
+                rating=rating,
+                rated_at=datetime.now(timezone.utc),
+                comment=comment,
+                rated_by_session=rated_by_session,
+                rated_by_ip=rated_by_ip
+            )
+
+        # Update job state
+        try:
+            updated_job = self.update_job(job_id, {"rating": job.rating})
+            logger.info(f"Updated rating for job {job_id}: {rating} by session {rated_by_session}")
+            return updated_job
+        except Exception as e:
+            logger.error(f"Failed to update rating for job {job_id}: {e}")
+            return None
+
+    def check_session_has_rated(self, job_id: str, session_id: str) -> bool:
+        """Check if a session has already rated a job.
+
+        Args:
+            job_id: Job identifier
+            session_id: Session identifier
+
+        Returns:
+            True if session has rated this job, False otherwise
+        """
+        job = self.get_job(job_id)
+        if not job or not job.rating:
+            return False
+        return job.rating.rated_by_session == session_id

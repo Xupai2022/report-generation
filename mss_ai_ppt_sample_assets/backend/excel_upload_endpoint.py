@@ -27,6 +27,8 @@ import logging
 from typing import Optional
 import openpyxl
 
+from mss_ai_ppt_sample_assets.backend import config
+
 logger = logging.getLogger(__name__)
 
 # 配置常量
@@ -141,7 +143,7 @@ def extract_excel_data(excel_path: str) -> dict:
         wb.close()
 
         logger.info(
-            f"✅ Excel parsed successfully: {len(data['top_alert_categories'])} categories, "
+            f"Excel parsed successfully: {len(data['top_alert_categories'])} categories, "
             f"{len(data['top_incidents'])} incidents"
         )
 
@@ -284,7 +286,7 @@ async def upload_excel(
     # 创建会话目录
     if sessions_dir is None:
         # 默认路径（需要根据实际项目调整）
-        sessions_dir = Path(__file__).parent / "outputs" / "sessions"
+        sessions_dir = config.SESSIONS_DIR
 
     session_dir = sessions_dir / session_id
     session_dir.mkdir(parents=True, exist_ok=True)
@@ -314,7 +316,7 @@ async def upload_excel(
 
                 f.write(chunk)
 
-        logger.info(f"✅ File saved: {file_path} ({file_size / 1024:.2f} KB)")
+        logger.info(f"File saved: {file_path} ({file_size / 1024:.2f} KB)")
 
         # 解析Excel数据
         try:
@@ -347,7 +349,7 @@ async def upload_excel(
         with json_path.open("w", encoding="utf-8") as f:
             json.dump(input_data, f, ensure_ascii=False, indent=2)
 
-        logger.info(f"✅ JSON saved: {json_path}")
+        logger.info(f"JSON saved: {json_path}")
 
         # 返回成功响应
         return JSONResponse({

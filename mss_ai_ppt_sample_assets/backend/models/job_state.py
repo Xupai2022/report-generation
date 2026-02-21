@@ -7,9 +7,9 @@ support for idempotency, retry logic, and progress monitoring.
 from __future__ import annotations
 
 from enum import Enum
-from datetime import datetime
-from typing import Optional, Dict, Any, List
-from pydantic import BaseModel, Field
+from datetime import datetime, timezone
+from typing import Optional, Dict, Any, List, Literal
+from pydantic import BaseModel, Field, validator
 
 
 class JobStatus(str, Enum):
@@ -20,6 +20,42 @@ class JobStatus(str, Enum):
     COMPLETED = "completed"  # Successfully completed
     FAILED = "failed"        # Failed with error
     CANCELLED = "cancelled"  # Cancelled by user
+
+
+class JobRating(BaseModel):
+    """Rating metadata for a job (for admin dashboard feedback)."""
+
+    rating: Optional[Literal["liked", "disliked"]] = Field(
+        None,
+        description="Rating value: 'liked', 'disliked', or None (unrated)"
+    )
+    rated_at: Optional[datetime] = Field(
+        None,
+        description="When the job was rated"
+    )
+    comment: Optional[str] = Field(
+        None,
+        max_length=500,
+        description="Optional comment explaining the rating"
+    )
+    rated_by_session: Optional[str] = Field(
+        None,
+        description="Session ID of the user who rated (for one-rating-per-session enforcement)"
+    )
+    rated_by_ip: Optional[str] = Field(
+        None,
+        max_length=45,
+        description="IP address of rater (optional, for analytics)"
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "rating": "liked",
+                "rated_at": "2026-02-03T10:30:00Z",
+                "comment": "生成的图表很清晰，内容准确"
+            }
+        }
 
 
 class JobState(BaseModel):
@@ -77,10 +113,16 @@ class JobState(BaseModel):
     slidespec_path: Optional[str] = Field(default=None, description="Path to slidespec JSON file")
     preview_urls: Optional[List[str]] = Field(default=None, description="Preview image URLs")
 
+    # Rating (for admin dashboard feedback)
+    rating: Optional[JobRating] = Field(
+        default=None,
+        description="Admin rating and feedback for this job"
+    )
+
     # Metadata
     metadata: Dict[str, Any] = Field(
         default_factory=dict,
-        description="Additional metadata (warnings, statistics, etc.)"
+        description="Additional metadata (warnings, statistics, generation_duration_ms, ai_model, etc.)"
     )
 
     class Config:
@@ -105,6 +147,26 @@ class JobState(BaseModel):
                 "metadata": {"warnings": []}
             }
         }
+
+    @validator("created_at", "started_at", "completed_at", "updated_at", pre=True)
+    def _coerce_datetime_to_utc(cls, value):
+        """Coerce timestamps to timezone-aware UTC datetimes.
+
+        Backward-compatible with previously persisted naive datetimes/strings
+        (interpreted as UTC).
+        """
+        if value is None:
+            return value
+
+        if isinstance(value, str):
+            # Support both "...Z" and naive ISO strings.
+            normalized = value.replace("Z", "+00:00") if value.endswith("Z") else value
+            value = datetime.fromisoformat(normalized)
+
+        if isinstance(value, datetime) and value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+
+        return value
 
     def is_terminal(self) -> bool:
         """Check if job is in a terminal state (completed, failed, or cancelled)."""

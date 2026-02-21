@@ -1,0 +1,22 @@
+{
+  "job_id": "92482897_20260203180102165968:mss_technical_v2",
+  "session_id": "92482897_20260203180102165968",
+  "template_id": "mss_technical_v2",
+  "input_id": "tenant_acme_2025-11",
+  "status": "running",
+  "progress": 0,
+  "message": "",
+  "created_at": "2026-02-03 10:01:02.177334",
+  "started_at": "2026-02-03 10:01:02.189127",
+  "completed_at": null,
+  "updated_at": "2026-02-03 10:01:02.191716",
+  "idempotency_key": null,
+  "retry_count": 0,
+  "max_retries": 3,
+  "last_error": null,
+  "report_path": null,
+  "slidespec_path": null,
+  "preview_urls": null,
+  "rating": null,
+  "metadata": {}
+}

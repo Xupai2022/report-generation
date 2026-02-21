@@ -38,7 +38,7 @@ PPT报告文件 + 预览图 (会话隔离目录)
 
 #### 1.1 Excel数据结构
 
-Excel文件建议按“汇总指标 + 明细列表”来组织（以 `data.xlsx` 为例）：
+Excel文件建议按“汇总指标 + 明细列表”来组织（以 `samples/data.xlsx` 为例）：
 
 - 汇总指标：集中放在"数据统计"sheet，用于看板/图表/关键数字（如告警/事件、工单与时效、资产与暴露面、漏洞与弱口令、威胁趋势、重要时期值守等）
 - 明细列表：按主题拆分到独立sheet（如"资产表"、"资产漏洞表"、"弱密码"、"告警表"、"事件表"），用于PPT表格页的明细呈现与抽样TOP列表
@@ -473,7 +473,7 @@ curl -X POST http://localhost:8000/api/v1/generate \
 }
 
 # 3. 获取预览图
-curl "http://localhost:8000/api/v1/preview?job_id=excel_report_2025-12:excel_security_report_v1"
+curl "http://localhost:8000/api/v1/reports/excel_report_2025-12%3Aexcel_security_report_v1/preview?regenerate_if_missing=true"
 
 # 响应示例
 {
@@ -1872,14 +1872,14 @@ with FileLock(slidespec_path, timeout=30.0):
 系统自动清理过期会话,防止磁盘空间耗尽:
 
 ```python
-# 服务器启动时自动清理24小时前的会话
+# 服务器启动时自动清理7天前的会话
 @app.on_event("startup")
 async def startup_cleanup():
-    cleaned_count = service.cleanup_old_sessions(max_age_hours=24)
+    cleaned_count = service.cleanup_old_sessions(max_age_hours=168)
     logger.info(f"🧹 Cleaned up {cleaned_count} old sessions")
 
 # 也可手动调用清理API
-POST /cleanup?max_age_hours=24
+DELETE /api/v1/sessions?max_age_hours=168
 ```
 
 ### API集成示例
@@ -1970,8 +1970,8 @@ Session isolation check:
 生产环境建议配置定时清理任务:
 
 ```bash
-# Linux crontab示例: 每小时清理一次超过24小时的会话
-0 * * * * curl -X POST http://localhost:8000/cleanup?max_age_hours=24
+# Linux crontab示例: 每小时清理一次超过7天的会话
+0 * * * * curl -X DELETE http://localhost:8000/api/v1/sessions?max_age_hours=168
 ```
 
 或使用 `systemd timer` / `Windows Task Scheduler`
@@ -2066,5 +2066,5 @@ class FileLock:
 - **会话管理**: [session_manager.py](../mss_ai_ppt_sample_assets/backend/modules/session_manager.py)
 - **文件锁**: [file_lock.py](../mss_ai_ppt_sample_assets/backend/modules/file_lock.py)
 - **API集成**: [app.py](../mss_ai_ppt_sample_assets/backend/app.py)
-- **并发测试**: [test_concurrency.py](../test_concurrency.py)
+- **并发测试**: [test_concurrency.py](../tests/test_concurrency.py)
 - **完整报告**: [CONCURRENCY_FIX_REPORT.md](../CONCURRENCY_FIX_REPORT.md)

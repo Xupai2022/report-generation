@@ -15,11 +15,11 @@ class PlaceholderDefinition(BaseModel):
     """Definition for a placeholder in V2 templates."""
     token: str  # Placeholder token name, e.g., "HEADLINE"
     type: Literal[
-        "text", "paragraph", "bullet_list", "kpi", "kpi_group", "table",
-        "chart_data", "incident_list", "incident_detail",
+        "text",
         "native_table",
         # Specific chart types
         "P11_bar",  # Response time bar chart (处置时间柱状图)
+        "P11_line",  # Monthly incident trend line chart (月度事件趋势折线图)
         "P12_pie",  # Threat type distribution donut chart (威胁类型分布饼图)
         "P13_pie",  # Asset distribution donut chart (资产类型分布饼图)
         "P14_pie",  # Severity distribution donut chart (告警严重程度分布饼图)
@@ -46,7 +46,7 @@ class PlaceholderDefinition(BaseModel):
     # Table-specific
     columns: Optional[List[str]] = None  # Column names for table type
 
-    # Chart-specific configuration (for bar_chart, pie_chart)
+    # Chart-specific configuration
     chart_config: Optional[Dict[str, Any]] = None  # Chart configuration
     # Expected structure for chart_config:
     # {
@@ -56,7 +56,7 @@ class PlaceholderDefinition(BaseModel):
     #   "chart_title_ai": true,  # Whether chart title is AI-generated
     #   "position": {"left": 1.0, "top": 2.0, "width": 8.0, "height": 4.0}  # Position in inches
     # }
-    # For pie_chart: data_source should point to dict like {"high": 52, "medium": 473}
+    # For pie/donut charts: data_source can point to dict like {"high": 52, "medium": 473}
 
     # Native table configuration (for native_table)
     table_config: Optional[Dict[str, Any]] = None  # Table configuration
@@ -126,20 +126,6 @@ class TemplateDescriptorV2(BaseModel):
                 if not ph.ai_generate:
                     result.append((slide.slide_key, ph.token, ph))
         return result
-
-    def get_validation_fields(self) -> Dict[str, str]:
-        """Get all fields that need validation.
-
-        Returns:
-            Dict mapping token to validation field path
-        """
-        result = {}
-        for slide in self.slides:
-            for ph in slide.placeholders:
-                if ph.validation:
-                    result[ph.token] = ph.validation
-        return result
-
 
 # ============================================================================
 # Utility functions

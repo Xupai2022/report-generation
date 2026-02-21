@@ -4,738 +4,479 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MSS AI PPT | 智能报告生成器</title>
+    <link rel="icon" type="image/svg+xml" href="assets/sangfor_logo_vector.svg">
     
     <style>
-        /* --- CSS Reset & Variables --- */
+        /* --- REFINED DESIGN SYSTEM - V2 --- */
         :root {
-            /* Colors: Slate (Grays) */
-            --slate-50: #f8fafc;
-            --slate-100: #f1f5f9;
-            --slate-200: #e2e8f0;
-            --slate-300: #cbd5e1;
-            --slate-400: #94a3b8;
-            --slate-500: #64748b;
-            --slate-600: #475569;
-            --slate-700: #334155;
-            --slate-800: #1e293b;
-            --slate-900: #0f172a;
+            /* ===== Color System - Cool Grays & A Professional Blue Accent ===== */
+            --color-bg-base: #F7F7F8;           /* Page background */
+            --color-bg-surface: #FFFFFF;        /* Main content surfaces (sidebars, canvas) */
+            --color-bg-surface-2: #FDFDFD;      /* Slightly elevated surfaces */
+            --color-bg-surface-hover: #F2F2F2;  /* Subtle hover for list items */
+            --color-bg-modal: rgba(255, 255, 255, 0.85); /* Modal/glassy background */
+            --color-bg-overlay: rgba(0, 0, 0, 0.05);
 
-            /* Colors: Brand (Indigo/Blue) */
-            --brand-50: #eff6ff;
-            --brand-100: #dbeafe;
-            --brand-500: #3b82f6;
-            --brand-600: #2563eb;
-            --brand-700: #1d4ed8;
+            --color-text-primary: #111827;      /* Main headings and text */
+            --color-text-secondary: #4B5563;    /* Secondary text, labels */
+            --color-text-tertiary: #6B7280;     /* Tertiary text, placeholders */
+            --color-text-disabled: #9CA3AF;     /* Disabled state */
+            --color-text-on-accent: #FFFFFF;    /* Text on primary buttons */
 
-            /* Colors: Semantic */
-            --danger-bg: #fef2f2;
-            --danger-text: #991b1b;
-            --success-text: #10b981;
-            
-            /* Dimensions */
-            --header-height: 64px;
-            --toolbar-height: 60px;
+            /* Accent Color - A calm, professional blue */
+            --color-accent: #2563EB;            /* Main brand color for actions */
+            --color-accent-hover: #1D4ED8;      /* Hover state */
+            --color-accent-active: #1E40AF;     /* Active/pressed state */
+            --color-accent-light: #EFF6FF;      /* Light background for highlights */
+            --color-accent-subtle: #DBEAFE;     /* Even more subtle bg */
+
+            /* Semantic Colors - Clear & Accessible */
+            --color-success: #16A34A;
+            --color-success-bg: #F0FDF4;
+            --color-warning: #F97316;
+            --color-warning-bg: #FFF7ED;
+            --color-error: #DC2626;
+            --color-error-bg: #FEF2F2;
+            --color-info: #3B82F6;
+            --color-info-bg: #EFF6FF;
+
+            /* Border System - Subtle & Clean */
+            --color-border-primary: #E5E7EB;    /* Main borders for layout */
+            --color-border-secondary: #F3F4F6;  /* Lighter borders for dividers */
+            --color-border-focus: #3B82F6;      /* Focus ring color */
+
+            /* Shadow System - Soft, Realistic Elevation */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+            --shadow-md: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -4px rgba(0, 0, 0, 0.07);
+            --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+
+            /* Radius System */
+            --radius-sm: 4px;
+            --radius-md: 6px;
+            --radius-lg: 8px;
+            --radius-xl: 12px;
+            --radius-full: 9999px;
+
+            /* Spacing System (4px grid) */
+            --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+            --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+            --space-12: 48px; --space-16: 64px;
+
+            /* Transitions */
+            --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+
+            /* Layout Dimensions */
+            --header-height: 60px;
+            --toolbar-height: 72px;
             --sidebar-width: 260px;
-            --editor-width: 350px;
+            --editor-width: 360px;
         }
 
-        * { box-sizing: border-box; }
-        
+        /* ===== Global Resets & Base Styles ===== */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
         body {
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", Helvetica, Arial, sans-serif;
-            background-color: var(--slate-50);
-            color: var(--slate-900);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", Roboto, "Helvetica Neue", sans-serif;
+            background-color: var(--color-bg-base);
+            color: var(--color-text-primary);
+            font-size: 14px;
             height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* App-like feel */
+            overflow: hidden;
         }
-
-        /* --- Typography --- */
         h1, h2, h3, h4, p { margin: 0; }
+        button { font-family: inherit; }
+
+        /* ===== Utility Classes ===== */
+        .hidden { display: none !important; }
         .text-xs { font-size: 12px; }
-        .text-sm { font-size: 14px; }
-        .font-bold { font-weight: 600; }
-        .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-        .uppercase { text-transform: uppercase; letter-spacing: 0.05em; }
+        .text-sm { font-size: 13px; }
+        .font-medium { font-weight: 500; }
+        .font-semibold { font-weight: 600; }
+        .font-bold { font-weight: 700; }
         .truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* --- Components: Layout --- */
-        header {
-            height: var(--header-height);
-            background: rgba(255, 255, 255, 0.9);
-            border-bottom: 1px solid var(--slate-200);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 24px;
-            flex-shrink: 0;
-            backdrop-filter: blur(8px);
-        }
+        /* ===== Scrollbar Styling ===== */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: var(--radius-full); }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
 
-        .logo-area { display: flex; align-items: center; gap: 12px; }
-        .logo-icon {
-            width: 36px; height: 36px;
-            background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
-            border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            color: white;
-            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
-        }
-        
-        .toolbar {
-            height: var(--toolbar-height);
-            background: #fff;
-            border-bottom: 1px solid var(--slate-200);
+        /* ===== Main Layout Structure ===== */
+        .app-layout { display: flex; flex-direction: column; height: 100vh; }
+        .app-header {
+            height: var(--header-height);
+            background-color: var(--color-bg-surface);
+            border-bottom: 1px solid var(--color-border-primary);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 24px;
+            padding: 0 var(--space-6);
             flex-shrink: 0;
             z-index: 10;
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
         }
-
-        .main-container {
-            flex: 1;
+        .app-toolbar {
+            height: var(--toolbar-height);
+            background-color: var(--color-bg-surface-2);
+            border-bottom: 1px solid var(--color-border-primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--space-6);
+            flex-shrink: 0;
+            z-index: 9;
+        }
+        .app-body {
+            flex-grow: 1;
             display: flex;
             overflow: hidden;
-            min-height: 0;
         }
-
-        /* --- Sidebar (Left) --- */
-        .sidebar {
-            width: var(--sidebar-width);
-            background: #fff;
-            border-right: 1px solid var(--slate-200);
-            display: flex;
-            flex-direction: column;
+        .app-sidebar, .app-editor {
             flex-shrink: 0;
-            z-index: 5;
-        }
-        
-        .sidebar-header { padding: 12px 16px; border-bottom: 1px solid var(--slate-100); display: flex; justify-content: space-between; align-items: center; }
-        .sidebar-content { flex: 1; overflow-y: auto; padding: 8px; }
-        
-        .slide-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px;
-            border: 1px solid transparent;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 4px;
-            background: #fff;
-        }
-        .slide-item:hover { border-color: var(--slate-200); background: var(--slate-50); }
-        .slide-item.active {
-            background: var(--brand-50);
-            border-color: var(--brand-500);
-        }
-        .slide-num {
-            width: 24px; height: 24px;
-            background: var(--slate-100);
-            color: var(--slate-500);
-            border-radius: 6px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 11px; font-weight: bold;
-        }
-        .slide-item.active .slide-num { background: var(--brand-500); color: white; }
-
-        /* --- Canvas (Center) --- */
-        .canvas-area {
-            flex: 1;
-            background-color: var(--slate-100);
-            background-image: radial-gradient(var(--slate-300) 1px, transparent 1px);
-            background-size: 20px 20px;
+            background-color: var(--color-bg-surface);
             display: flex;
             flex-direction: column;
-            position: relative;
-            min-width: 0;
         }
+        .app-sidebar { width: var(--sidebar-width); border-right: 1px solid var(--color-border-primary); }
+        .app-editor { width: var(--editor-width); border-left: 1px solid var(--color-border-primary); }
+        .app-canvas {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: var(--color-bg-base);
+            background-image: radial-gradient(var(--color-text-tertiary) 0.5px, transparent 0.5px);
+            background-size: 16px 16px;
+            background-position: -8px -8px;
+        }
+
+        /* ===== Header Components ===== */
+        .header-group { display: flex; align-items: center; gap: var(--space-4); }
+        .logo-group { display: flex; align-items: center; gap: var(--space-3); }
+        .logo-group img { height: 32px; }
+        .logo-group .title-group { display: flex; flex-direction: column; }
+        .logo-group .title-group h1 { font-size: 16px; font-weight: 600; color: var(--color-text-primary); }
+        .logo-group .title-group span { font-size: 11px; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; }
+        .status-indicator { display: flex; align-items: center; gap: var(--space-2); font-size: 12px; color: var(--color-text-secondary); }
+        .status-indicator .dot { width: 8px; height: 8px; background-color: var(--color-success); border-radius: 50%; }
+        .lang-switcher button {
+            background: none; border: none; padding: var(--space-1) var(--space-2); font-size: 13px;
+            color: var(--color-text-secondary); cursor: pointer; border-radius: var(--radius-md); transition: var(--transition-fast);
+        }
+        .lang-switcher button:hover { background-color: var(--color-bg-surface-hover); color: var(--color-text-primary); }
+        .lang-switcher button.active { background-color: var(--color-accent-light); color: var(--color-accent); font-weight: 500; }
+
+        /* ===== Toolbar Components ===== */
+        .toolbar-group { display: flex; align-items: center; gap: var(--space-6); }
+        .toolbar-group .divider { width: 1px; height: 32px; background-color: var(--color-border-primary); }
+        .toolbar-item { display: flex; flex-direction: column; gap: var(--space-1); }
+        .toolbar-item label { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.05em;}
+
+        /* ===== General UI Components ===== */
+        /* --- Buttons --- */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+            font-size: 14px; font-weight: 500; padding: 0 var(--space-4); height: 36px;
+            border-radius: var(--radius-md); border: 1px solid transparent;
+            cursor: pointer; transition: var(--transition-fast);
+        }
+        .btn:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
+        .btn:disabled { cursor: not-allowed; opacity: 0.5; }
+        .btn .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .btn-primary {
+            background-color: var(--color-accent); color: var(--color-text-on-accent);
+            box-shadow: var(--shadow-sm);
+        }
+        .btn-primary:hover:not(:disabled) { background-color: var(--color-accent-hover); }
+        .btn-primary:active:not(:disabled) { background-color: var(--color-accent-active); }
         
-        .canvas-toolbar {
-            height: 40px;
-            background: #fff;
-            border-bottom: 1px solid var(--slate-200);
+        .btn-secondary {
+            background-color: var(--color-bg-surface); color: var(--color-text-primary);
+            border-color: var(--color-border-primary); box-shadow: var(--shadow-sm);
+        }
+        .btn-secondary:hover:not(:disabled) { background-color: var(--color-bg-surface-hover); border-color: #d1d5db; }
+        .btn-secondary:active:not(:disabled) { background-color: #f3f4f6; }
+
+        .btn-sm { height: 32px; padding: 0 var(--space-3); font-size: 13px; }
+
+        /* --- Forms --- */
+        select, input[type="text"], textarea {
+            font-family: inherit; font-size: 14px; color: var(--color-text-primary);
+            background-color: var(--color-bg-surface);
+            border: 1px solid var(--color-border-primary);
+            border-radius: var(--radius-md);
+            transition: var(--transition-fast);
+        }
+        select:focus-visible, input[type="text"]:focus-visible, textarea:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; border-color: transparent;}
+        select:hover, input[type="text"]:hover, textarea:hover { border-color: #d1d5db; }
+        select { height: 36px; padding: 0 var(--space-3); min-width: 220px; }
+        .checkbox-group { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; }
+        .checkbox-group span { font-size: 13px; color: var(--color-text-secondary); }
+
+        /* ===== Panel Headers & Content ===== */
+        .panel-header {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 0 16px;
+            height: 44px; padding: 0 var(--space-4);
+            border-bottom: 1px solid var(--color-border-primary);
             flex-shrink: 0;
         }
-        
-        .canvas-viewport {
-            flex: 1;
-            overflow: auto;
-            display: block; /* changed for scrolling list */
-            padding: 32px;
-            scroll-behavior: smooth;
-        }
-
-        .preview-list {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 48px;
-            padding-bottom: 100px;
-            min-height: 100%;
-        }
-
-        .slide-view-item {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            transition: transform 0.2s;
-        }
-
-        .slide-view-label {
-            font-size: 11px;
-            color: var(--slate-500);
-            font-weight: 600;
-            text-align: center;
-            opacity: 0.7;
-        }
-
-        .preview-card {
-            background: white;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            border: 1px solid rgba(0,0,0,0.05);
-            width: auto;
-            max-width: 100%;
-            height: auto;
-            max-height: 80vh; /* prevent too tall */
-            display: block;
-        }
-
-        .placeholder-card {
-            width: 800px; 
-            max-width: 100%;
-            aspect-ratio: 16/9;
-            background: white;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--slate-300);
-            font-size: 14px;
-            border: 1px dashed var(--slate-300);
-        }
-        
-        .empty-state {
-            text-align: center;
-            color: var(--slate-400);
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* --- Editor (Right) --- */
-        .editor-panel {
-            width: var(--editor-width);
-            background: #fff;
-            border-left: 1px solid var(--slate-200);
-            display: flex;
-            flex-direction: column;
+        .panel-header h2 { font-size: 12px; font-weight: 600; color: var(--color-text-primary); text-transform: uppercase; letter-spacing: 0.05em;}
+        .panel-content { flex-grow: 1; overflow-y: auto; padding: var(--space-2); }
+        .panel-footer {
+            display: flex; align-items: center; justify-content: space-between;
+            height: 32px; padding: 0 var(--space-4); font-size: 11px;
+            border-top: 1px solid var(--color-border-primary); color: var(--color-text-tertiary);
             flex-shrink: 0;
-            box-shadow: -4px 0 15px rgba(0,0,0,0.02);
-            z-index: 5;
         }
-        
-        .editor-header {
-            padding: 12px 16px;
-            background: var(--slate-50);
-            border-bottom: 1px solid var(--slate-200);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        
-        textarea.code-editor {
-            flex: 1;
-            width: 100%;
-            border: none;
-            padding: 16px;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 12px;
-            line-height: 1.5;
-            resize: none;
-            outline: none;
-            color: var(--slate-700);
-        }
-        textarea.code-editor:focus { background-color: #fafafa; }
 
-        /* --- Logs (Bottom Left) --- */
-        .logs-section {
-            border-top: 1px solid var(--slate-200);
-            background: var(--slate-50);
+        /* ===== Left Sidebar: Slide List ===== */
+        .badge {
+            background-color: var(--color-bg-surface-hover); color: var(--color-text-secondary);
+            font-size: 11px; font-weight: 500; padding: var(--space-1) var(--space-2);
+            border-radius: var(--radius-full);
         }
+        .slide-item {
+            display: flex; align-items: center; gap: var(--space-3);
+            padding: var(--space-2) var(--space-3); border-radius: var(--radius-md);
+            cursor: pointer; transition: background-color var(--transition-fast);
+        }
+        .slide-item:hover { background-color: var(--color-bg-surface-hover); }
+        .slide-item.active { background-color: var(--color-accent-light); }
+        .slide-item .slide-num {
+            width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+            background-color: var(--color-bg-base); color: var(--color-text-secondary);
+            border-radius: var(--radius-sm); font-size: 12px; font-weight: 500;
+            transition: var(--transition-fast);
+        }
+        .slide-item.active .slide-num { background-color: var(--color-accent); color: var(--color-text-on-accent); }
+        .slide-item .slide-title { font-size: 13px; font-weight: 500; color: var(--color-text-primary); }
+        .slide-item .modified-indicator {
+            width: 6px; height: 6px; background-color: var(--color-warning);
+            border-radius: 50%; margin-left: auto; flex-shrink: 0;
+        }
+
+        /* ===== Left Sidebar: Logs ===== */
+        .logs-section { flex-shrink: 0; border-top: 1px solid var(--color-border-primary); }
         .logs-toggle {
-            width: 100%;
-            padding: 10px 16px;
-            border: none;
-            background: none;
-            text-align: left;
-            cursor: pointer;
-            display: flex; justify-content: space-between; align-items: center;
-            font-size: 12px; font-weight: 600; color: var(--slate-600);
+            width: 100%; height: 36px; padding: 0 var(--space-4); display: flex; align-items: center; justify-content: space-between;
+            background: none; border: none; cursor: pointer; font-size: 12px; font-weight: 500; color: var(--color-text-secondary);
         }
-        .logs-toggle:hover { background: var(--slate-100); }
+        .logs-toggle:hover { background: var(--color-bg-surface-hover); }
+        .logs-toggle .arrow { transition: transform var(--transition-fast); }
+        .logs-toggle .arrow.open { transform: rotate(180deg); }
         .logs-container {
-            height: 150px;
-            background: var(--slate-900);
-            color: #10b981;
-            overflow-y: auto;
-            padding: 12px;
-            font-family: monospace;
-            font-size: 11px;
-            display: none;
+            height: 150px; background-color: #111827; color: #9ca3af; padding: var(--space-3);
+            font-family: 'SF Mono', 'Consolas', 'Menlo', monospace; font-size: 12px; overflow-y: auto;
+            display: none; line-height: 1.5;
         }
         .logs-container.open { display: block; }
 
-        /* --- UI Elements --- */
-        select {
-            padding: 8px 12px;
-            border: 1px solid var(--slate-300);
-            border-radius: 6px;
-            font-size: 13px;
-            background-color: var(--slate-50);
-            min-width: 200px;
-            outline: none;
+        /* ===== Center Canvas ===== */
+        .canvas-viewport {
+            flex-grow: 1; padding: var(--space-8); overflow-y: auto;
         }
-        select:focus { border-color: var(--brand-500); ring: 2px var(--brand-100); }
-        
-        button.btn-primary {
-            background: var(--brand-600);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex; align-items: center; gap: 8px;
-            transition: background 0.2s;
+        .preview-list {
+            display: flex; flex-direction: column; align-items: center; gap: var(--space-10);
         }
-        button.btn-primary:hover { background: var(--brand-700); }
-        button.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        button.btn-secondary {
-            background: #fff;
-            color: var(--slate-700);
-            border: 1px solid var(--slate-300);
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex; align-items: center; gap: 8px;
-            transition: background 0.2s, border-color 0.2s;
+        .slide-view-item {
+            width: 100%; max-width: 960px; display: flex; flex-direction: column; gap: var(--space-3);
         }
-        button.btn-secondary:hover { background: var(--slate-50); border-color: var(--slate-400); }
-        button.btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        button.btn-sm { padding: 4px 12px; font-size: 12px; }
-
-        .badge {
-            background: var(--slate-100);
-            padding: 2px 8px;
-            border-radius: 99px;
-            font-size: 10px;
-            color: var(--slate-500);
+        .slide-view-label { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--color-text-tertiary); }
+        .preview-card {
+            background-color: var(--color-bg-surface);
+            box-shadow: var(--shadow-lg); border: 1px solid var(--color-border-primary);
+            border-radius: var(--radius-lg); width: 100%; aspect-ratio: 16/9;
+            object-fit: contain; display: block;
+        }
+        .placeholder-card {
+            background-color: var(--color-bg-surface);
+            box-shadow: var(--shadow-md); border: 1px dashed var(--color-border-primary);
+            border-radius: var(--radius-lg); width: 100%; aspect-ratio: 16/9;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--color-text-tertiary);
         }
 
-        /* --- Loader --- */
-        .spinner {
-            width: 16px; height: 16px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+        /* ===== Empty State ===== */
+        .empty-state {
+            height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: var(--space-4); color: var(--color-text-tertiary); text-align: center;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .empty-state .icon { font-size: 40px; line-height: 1; opacity: 0.5; }
+        .empty-state h3 { font-size: 16px; font-weight: 500; color: var(--color-text-primary); }
 
-        /* --- Scrollbars --- */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--slate-300); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--slate-400); }
-        
-        .hidden { display: none !important; }
-
-        /* --- Compact Progress Bar --- */
-        .progress-panel {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            width: 360px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-            border: 1px solid var(--slate-200);
-            padding: 16px;
-            z-index: 1000;
-            display: none;
-            animation: slideInUp 0.3s ease-out;
+        /* ===== Right Editor Panel ===== */
+        .editor-info {
+            padding: var(--space-3) var(--space-4); background-color: var(--color-info-bg);
+            border-bottom: 1px solid var(--color-border-primary);
+            display: flex; align-items: flex-start; gap: var(--space-3);
         }
-
-        .progress-panel.active { display: block; }
-
-        @keyframes slideInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .editor-info .icon { color: var(--color-info); flex-shrink: 0; }
+        .editor-info .text { font-size: 12px; color: #1e40af; line-height: 1.5; }
+        #slideJson {
+            flex-grow: 1; width: 100%; resize: none; border: none;
+            padding: var(--space-4); font-family: 'SF Mono', 'Consolas', monospace; font-size: 12px;
+            background-color: var(--color-bg-surface-2); line-height: 1.6;
         }
+        #slideJson:focus { outline: none; }
 
-        .progress-panel-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-
-        .progress-panel-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--slate-700);
-            flex: 1;
-        }
-
-        .progress-panel-close {
-            background: none;
-            border: none;
-            color: var(--slate-400);
-            cursor: pointer;
-            padding: 4px;
-            display: none;
-        }
-
-        .progress-panel-close:hover {
-            color: var(--slate-600);
-        }
-
-        /* Compact Steps */
-        .progress-steps-compact {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-
-        .progress-step-compact {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 11px;
-            transition: all 0.3s;
-        }
-
-        .progress-step-compact.pending {
-            opacity: 0.3;
-        }
-
-        .progress-step-compact.active {
-            opacity: 1;
-        }
-
-        .progress-step-compact.completed {
-            opacity: 0.6;
-        }
-
-        .step-icon-compact {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            font-size: 10px;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-
-        .progress-step-compact.pending .step-icon-compact {
-            background: var(--slate-100);
-            color: var(--slate-400);
-            border: 2px solid var(--slate-200);
-        }
-
-        .progress-step-compact.active .step-icon-compact {
-            background: var(--brand-500);
-            color: white;
-            border: 2px solid var(--brand-600);
-        }
-
-        .progress-step-compact.completed .step-icon-compact {
-            background: #10b981;
-            color: white;
-            border: 2px solid #059669;
-        }
-
-        .step-label-compact {
-            flex: 1;
-            font-weight: 500;
-            color: var(--slate-700);
-        }
-
-        .step-spinner-compact {
-            width: 12px;
-            height: 12px;
-            border: 2px solid white;
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-        }
-
-        /* Compact Progress Bar */
-        .progress-bar-compact {
-            background: var(--slate-100);
-            height: 6px;
-            border-radius: 99px;
-            overflow: hidden;
-            margin-bottom: 8px;
-        }
-
-        .progress-bar-fill-compact {
-            height: 100%;
-            background: linear-gradient(90deg, var(--brand-500), var(--brand-600));
-            border-radius: 99px;
-            transition: width 0.5s ease;
-            width: 0%;
-        }
-
-        .progress-percentage-compact {
-            font-size: 11px;
-            color: var(--slate-500);
-            font-weight: 600;
-            text-align: right;
-        }
-
-        /* --- Toast Notifications --- */
+        /* ===== Floating UI: Toast Notifications ===== */
         .toast-container {
-            position: fixed;
-            top: 80px;
-            right: 24px;
-            z-index: 2000;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            pointer-events: none;
+            position: fixed; top: var(--space-4); right: var(--space-4); z-index: 999;
+            display: flex; flex-direction: column; gap: var(--space-3);
         }
-
         .toast {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-            border: 1px solid var(--slate-200);
-            padding: 16px 20px;
-            min-width: 320px;
-            max-width: 420px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            pointer-events: auto;
-            animation: slideInRight 0.3s ease-out;
-            transition: opacity 0.3s, transform 0.3s;
+            width: 380px; display: flex; align-items: flex-start; gap: var(--space-3);
+            background: var(--color-bg-surface); padding: var(--space-4);
+            border-radius: var(--radius-lg); box-shadow: var(--shadow-xl);
+            animation: slideInRight 0.3s ease;
         }
-
-        .toast.toast-success {
-            border-left: 4px solid #10b981;
-        }
-
-        .toast.toast-error {
-            border-left: 4px solid #ef4444;
-        }
-
-        .toast.toast-info {
-            border-left: 4px solid var(--brand-500);
-        }
-
-        .toast.toast-warning {
-            border-left: 4px solid #f59e0b;
-        }
-
-        .toast.removing {
-            opacity: 0;
-            transform: translateX(100px);
-        }
-
-        @keyframes slideInRight {
-            from {
-                opacity: 0;
-                transform: translateX(100px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(20px); } }
+        .toast.removing { opacity: 0; transform: scale(0.95); transition: all 0.2s ease; }
         .toast-icon {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            font-size: 14px;
+            width: 20px; height: 20px; flex-shrink: 0; font-weight: 500;
+            display: flex; align-items: center; justify-content: center; border-radius: 50%;
         }
-
-        .toast-success .toast-icon {
-            background: #d1fae5;
-            color: #10b981;
-        }
-
-        .toast-error .toast-icon {
-            background: #fee2e2;
-            color: #ef4444;
-        }
-
-        .toast-info .toast-icon {
-            background: var(--brand-100);
-            color: var(--brand-600);
-        }
-
-        .toast-warning .toast-icon {
-            background: #fef3c7;
-            color: #f59e0b;
-        }
-
-        .toast-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .toast-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--slate-900);
-        }
-
-        .toast-message {
-            font-size: 12px;
-            color: var(--slate-600);
-            line-height: 1.4;
-        }
-
+        .toast-content { display: flex; flex-direction: column; gap: var(--space-1); }
+        .toast-title { font-weight: 600; color: var(--color-text-primary); }
+        .toast-message { font-size: 13px; color: var(--color-text-secondary); }
         .toast-close {
-            background: none;
-            border: none;
-            color: var(--slate-400);
-            cursor: pointer;
-            padding: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 4px;
-            transition: background 0.2s;
+            margin-left: auto; background: none; border: none; cursor: pointer;
+            color: var(--color-text-tertiary); font-size: 16px;
         }
+        .toast.toast-success .toast-icon { background-color: var(--color-success-bg); color: var(--color-success); }
+        .toast.toast-error .toast-icon { background-color: var(--color-error-bg); color: var(--color-error); }
+        .toast.toast-warning .toast-icon { background-color: var(--color-warning-bg); color: var(--color-warning); }
+        .toast.toast-info .toast-icon { background-color: var(--color-info-bg); color: var(--color-info); }
 
-        .toast-close:hover {
-            background: var(--slate-100);
-            color: var(--slate-600);
+        /* ===== Floating UI: Progress Panel ===== */
+        .progress-panel {
+            position: fixed; bottom: var(--space-4); right: var(--space-4); z-index: 998;
+            width: 360px; background-color: var(--color-bg-modal);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: var(--radius-xl); box-shadow: var(--shadow-2xl);
+            padding: var(--space-5);
+            animation: slideInUp 0.3s ease; display: none;
         }
+        @keyframes slideInUp { from { opacity: 0; transform: translateY(20px); } }
+        .progress-panel.active { display: block; }
+        .progress-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4); }
+        .progress-panel-title { font-size: 14px; font-weight: 600; color: var(--color-text-primary); }
+        .progress-steps-compact { display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-3); }
+        .progress-step-compact { display: flex; align-items: center; gap: var(--space-3); font-size: 13px; transition: opacity 0.3s; }
+        .progress-step-compact .step-icon-compact {
+            width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 600; flex-shrink: 0; transition: all 0.3s;
+        }
+        .progress-step-compact .step-label-compact { font-weight: 500; }
+        .progress-step-compact.pending { opacity: 0.4; }
+        .progress-step-compact.pending .step-icon-compact { background: var(--color-border-primary); color: var(--color-text-tertiary); }
+        .progress-step-compact.active .step-icon-compact { background: var(--color-accent); color: white; }
+        .progress-step-compact.active .step-label-compact { color: var(--color-text-primary); }
+        .progress-step-compact.completed { opacity: 0.7; }
+        .progress-step-compact.completed .step-icon-compact { background: var(--color-success); color: white; }
+        .progress-step-compact.completed .step-label-compact { text-decoration: line-through; }
+        .step-spinner-compact { width: 12px; height: 12px; border: 2px solid white; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
+        .progress-bar-compact { height: 6px; background: var(--color-bg-overlay); border-radius: var(--radius-full); overflow: hidden; margin: var(--space-2) 0;}
+        .progress-bar-fill-compact {
+            height: 100%; width: 0%; background: var(--color-accent);
+            border-radius: var(--radius-full); transition: width 0.4s ease;
+        }
+        .progress-percentage-compact { text-align: right; font-size: 12px; font-weight: 500; color: var(--color-text-secondary); }
+
+        /* ===== Floating UI: Rating Card ===== */
+        .rating-card {
+            position: fixed; bottom: var(--space-4); right: var(--space-4); z-index: 998;
+            width: 360px; background-color: var(--color-bg-surface); border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-2xl); border: 1px solid var(--color-border-primary);
+            animation: slideInUp 0.3s ease;
+        }
+        .rating-card-header { padding: var(--space-4); border-bottom: 1px solid var(--color-border-primary); display: flex; justify-content: space-between; align-items: center; }
+        .rating-card-header h4 { font-size: 16px; font-weight: 600; }
+        .rating-card-close { background: none; border: none; font-size: 18px; color: var(--color-text-tertiary); cursor: pointer; }
+        .rating-card-body { padding: var(--space-4); }
+        .rating-card-body p { margin-bottom: var(--space-3); color: var(--color-text-secondary); }
+        .rating-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin-bottom: var(--space-4); }
+        .rating-btn {
+            display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-3);
+            border: 1px solid var(--color-border-primary); border-radius: var(--radius-lg); cursor: pointer; transition: var(--transition-base);
+        }
+        .rating-btn:hover { border-color: var(--color-accent); background-color: var(--color-accent-light); }
+        .rating-btn.selected { border-color: var(--color-accent); background-color: var(--color-accent-light); box-shadow: 0 0 0 2px var(--color-accent-subtle); }
+        .rating-icon { font-size: 24px; }
+        #ratingCommentSection label { display: block; font-weight: 500; margin-bottom: var(--space-2); }
+        #ratingCommentSection .rating-required { font-size: 12px; font-weight: 400; color: var(--color-error); margin-left: var(--space-2); }
+        #ratingComment { width: 100%; min-height: 80px; padding: var(--space-3); }
+        .rating-char-count { text-align: right; font-size: 12px; color: var(--color-text-tertiary); margin-top: var(--space-1); }
+        .rating-actions { margin-top: var(--space-4); text-align: center; }
+        .rating-error { margin-top: var(--space-3); padding: var(--space-3); background-color: var(--color-error-bg); color: var(--color-error); border-radius: var(--radius-md); }
     </style>
 </head>
-<body>
+<body class="app-layout">
 
-    <!-- Toast Container (Top Right) -->
     <div id="toastContainer" class="toast-container"></div>
 
-    <!-- Compact Progress Panel (Bottom Right) -->
     <div id="progressPanel" class="progress-panel">
         <div class="progress-panel-header">
-            <div class="progress-panel-title" data-i18n="msgGenerating">正在生成报告</div>
-            <button id="progressClose" class="progress-panel-close">✕</button>
+            <h3 class="progress-panel-title" data-i18n="msgGenerating">正在生成报告</h3>
         </div>
-
-        <div class="progress-steps-compact" id="progressStepsCompact">
-            <!-- Steps will be injected here -->
-        </div>
-
+        <div class="progress-steps-compact" id="progressStepsCompact"></div>
         <div class="progress-bar-compact">
             <div class="progress-bar-fill-compact" id="progressBarFillCompact"></div>
         </div>
         <div class="progress-percentage-compact" id="progressPercentageCompact">0%</div>
     </div>
 
-    <!-- Header -->
-    <header>
-        <div class="logo-area">
-            <div class="logo-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                </svg>
-            </div>
-            <div>
-                <h1 style="font-size: 16px; font-weight: 700;">MSS AI PPT</h1>
-                <div style="font-size: 10px; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.5px;" data-i18n="pageSubtitle">智能报告生成器</div>
+    <header class="app-header">
+        <div class="header-group">
+            <div class="logo-group">
+                <img src="assets/sangfor_logo_vector.svg" alt="Sangfor Logo">
+                <div class="title-group">
+                    <h1>MSS AI PPT</h1>
+                    <span data-i18n="pageSubtitle">智能报告生成器</span>
+                </div>
             </div>
         </div>
-
-        <!-- Language Switcher -->
-        <div style="display: flex; gap: 8px; align-items: center;">
-            <span style="font-size: 12px; color: var(--slate-500); margin-right: 4px;" data-i18n="langSwitcher">语言</span>
-            <button
-                onclick="switchLanguage('zh-CN')"
-                id="langBtnZh"
-                style="padding: 6px 12px; border: 1px solid var(--slate-300); background: white; cursor: pointer; border-radius: 6px; font-size: 13px; transition: all 0.2s;">
-                中文
-            </button>
-            <button
-                onclick="switchLanguage('en-US')"
-                id="langBtnEn"
-                style="padding: 6px 12px; border: 1px solid var(--slate-300); background: white; cursor: pointer; border-radius: 6px; font-size: 13px; transition: all 0.2s;">
-                English
-            </button>
-        </div>
-        <div style="display: flex; gap: 12px; align-items: center;">
-            <div style="font-size: 12px; color: var(--slate-400);">v0.1.0-beta</div>
-            <div style="width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></div>
+        <div class="header-group">
+            <div class="lang-switcher">
+                <button onclick="switchLanguage('zh-CN')" id="langBtnZh">中文</button>
+                <button onclick="switchLanguage('en-US')" id="langBtnEn">English</button>
+            </div>
+            <div class="status-indicator">
+                <span>v1.0.0-beta</span>
+                <div class="dot"></div>
+            </div>
         </div>
     </header>
 
-    <!-- Toolbar -->
-    <div class="toolbar">
-        <div style="display: flex; gap: 20px; align-items: center;">
-            <div>
-                <div class="text-xs uppercase font-bold" style="color: var(--slate-400); margin-bottom: 4px;" data-i18n="labelInput">输入数据</div>
+    <div class="app-toolbar">
+        <div class="toolbar-group">
+            <div class="toolbar-item">
+                <label for="inputSelect" data-i18n="labelInput">输入数据</label>
                 <select id="inputSelect"><option data-i18n="msgLoading">加载中...</option></select>
             </div>
-            <div style="width: 1px; height: 32px; background: var(--slate-200);"></div>
-            <div>
-                <div class="text-xs uppercase font-bold" style="color: var(--slate-400); margin-bottom: 4px;" data-i18n="labelTemplate">选择模板</div>
+            <div class="divider"></div>
+            <div class="toolbar-item">
+                <label for="templateSelect" data-i18n="labelTemplate">选择模板</label>
                 <select id="templateSelect"><option data-i18n="msgLoading">加载中...</option></select>
             </div>
         </div>
-
-        <div style="display: flex; align-items: center; gap: 16px;">
-            <label style="font-size: 12px; color: var(--slate-600); display: flex; align-items: center; gap: 6px; cursor: pointer;">
+        <div class="toolbar-group">
+            <label class="checkbox-group">
                 <input type="checkbox" id="useMock" checked>
                 <span data-i18n="labelUseMock">快速生成 (Mock)</span>
             </label>
-            <button id="downloadBtn" class="btn-secondary" disabled>
-                <span data-i18n="btnDownload">下载 PPT</span>
-            </button>
-            <button id="downloadPdfBtn" class="btn-secondary" disabled>
-                <span data-i18n="btnDownloadPdf">下载 PDF</span>
-            </button>
-            <button id="generateBtn" class="btn-primary">
+            <button id="downloadBtn" class="btn btn-secondary" disabled data-i18n="btnDownload">下载 PPT</button>
+            <button id="downloadPdfBtn" class="btn btn-secondary" disabled data-i18n="btnDownloadPdf">下载 PDF</button>
+            <button id="generateBtn" class="btn btn-primary">
                 <span id="genIcon">
-                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3L3 14h9l-1 9 9-12h-9z"/></svg>
                 </span>
                 <span id="genSpinner" class="spinner hidden"></span>
                 <span data-i18n="btnGenerate">生成报告</span>
@@ -743,80 +484,98 @@
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-container">
-        
-        <!-- Left Sidebar -->
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <span class="text-xs font-bold uppercase" style="color: var(--slate-500);" data-i18n="sectionSlides">幻灯片列表</span>
+    <main class="app-body">
+        <aside class="app-sidebar">
+            <div class="panel-header">
+                <h2 data-i18n="sectionSlides">幻灯片列表</h2>
                 <span id="slideCount" class="badge">0</span>
             </div>
-            <div id="slidesList" class="sidebar-content">
-                <div class="empty-state" style="margin-top: 40px;">
-                    <div style="font-size: 12px;" data-i18n="msgNoData">暂无幻灯片</div>
+            <div id="slidesList" class="panel-content">
+                <div class="empty-state">
+                    <div class="icon">📄</div>
+                    <p class="text-sm font-medium" data-i18n="msgNoData">暂无幻灯片</p>
                 </div>
             </div>
-
             <div class="logs-section">
                 <button id="toggleLogsBtn" class="logs-toggle">
                     <span data-i18n="sectionLogs">系统日志</span>
-                    <span id="logArrow" style="transition: transform 0.2s;">▲</span>
+                    <span id="logArrow" class="arrow">▼</span>
                 </button>
                 <div id="logContainer" class="logs-container">
-                    <div id="logsContent">等待日志...</div>
+                    <div id="logsContent"></div>
                 </div>
             </div>
-        </div>
+        </aside>
 
-        <!-- Center Canvas -->
-        <div class="canvas-area">
-            <div class="canvas-toolbar">
-                <span id="activeSlideTitle" style="font-size: 12px; font-weight: 600; color: var(--slate-700);">总览</span>
-                <button id="refreshPreviewBtn" style="background:none; border:none; color: var(--brand-600); font-size: 12px; font-weight: 600; cursor: pointer;" data-i18n="btnRefreshPreview">
-                    刷新预览
-                </button>
+        <section class="app-canvas">
+            <div class="panel-header">
+                <h2 id="activeSlideTitle" class="truncate">总览</h2>
+                <button id="refreshPreviewBtn" class="btn btn-secondary btn-sm" data-i18n="btnRefreshPreview">刷新预览</button>
             </div>
-            
             <div id="canvasViewport" class="canvas-viewport">
-                <div id="previewList" class="preview-list hidden">
-                    <!-- Slides injected here -->
-                </div>
+                <div id="previewList" class="preview-list hidden"></div>
                 <div id="emptyState" class="empty-state">
-                    <div style="font-size: 40px; color: var(--slate-300); margin-bottom: 16px;">▨</div>
-                    <div style="font-size: 14px; font-weight: 500; color: var(--slate-500);" data-i18n="msgSelectDataAndTemplate">请选择数据和模板以开始</div>
+                    <div class="icon">✨</div>
+                    <h3 data-i18n="msgSelectDataAndTemplate">请选择数据和模板以开始</h3>
+                    <p class="text-sm" style="max-width: 300px;" data-i18n="appDescription">我将为您自动分析数据、编排内容并生成结构清晰、视觉专业的PPT报告。</p>
                 </div>
             </div>
-
-            <div style="padding: 6px 16px; background: #fff; border-top: 1px solid var(--slate-200); font-size: 10px; color: var(--slate-400); display: flex; justify-content: space-between;">
+            <div class="panel-footer">
                 <span id="jobIdDisplay" data-i18n="msgNoJob">任务ID: 无</span>
                 <span>1920 x 1080</span>
             </div>
-        </div>
+        </section>
 
-        <!-- Right Editor -->
-        <div class="editor-panel">
-            <div class="editor-header">
-                <span class="text-xs font-bold uppercase" style="color: var(--slate-500);" data-i18n="editorTitle">JSON 属性编辑器</span>
-                <button id="rewriteBtn" class="btn-primary btn-sm" data-i18n="btnApplyRegenerate">应用并重新生成</button>
+        <aside class="app-editor">
+            <div class="panel-header">
+                <h2 data-i18n="editorTitle">JSON 属性编辑器</h2>
+                <button id="rewriteBtn" class="btn btn-primary btn-sm">
+                    <span data-i18n="btnApplyRegenerate">应用并重新生成</span>
+                </button>
             </div>
-
-            <!-- Info banner -->
-            <div style="background: var(--brand-50); border-bottom: 1px solid var(--brand-200); padding: 10px 16px; display: flex; gap: 10px; align-items: start;">
-                <div style="color: var(--brand-600); font-size: 14px; flex-shrink: 0;">ℹ</div>
-                <div style="font-size: 11px; color: var(--brand-700); line-height: 1.4;" data-i18n="editorHint">
-                    <strong>编辑提示：</strong>只能修改字段的<strong>值</strong>，不能修改字段名（如TITLE、SUBTITLE等）。删除或重命名字段将被忽略。
-                </div>
+            <div class="editor-info">
+                <span class="icon">ℹ️</span>
+                <p class="text" data-i18n="editorHint">
+                    <strong>编辑提示：</strong>只能修改字段的<strong>值</strong>，不能修改字段名。删除或重命名字段将被忽略。
+                </p>
             </div>
-
             <textarea id="slideJson" class="code-editor" spellcheck="false" data-i18n-placeholder="editorPlaceholder"></textarea>
-            <div style="padding: 8px 16px; background: var(--slate-50); border-top: 1px solid var(--slate-200); font-size: 10px; color: var(--slate-400); text-align: right;">
-                JSON 格式
+            <div class="panel-footer">JSON 格式</div>
+        </aside>
+    </main>
+
+    <div id="ratingCard" class="rating-card" style="display: none;">
+        <div class="rating-card-header">
+            <h4 data-i18n="ratingTitle">为这份报告评分</h4>
+            <button class="rating-card-close" onclick="closeRatingCard()">&times;</button>
+        </div>
+        <div class="rating-card-body">
+            <p data-i18n="ratingPrompt">PPT已开始下载，请问这份报告是否基本可用？</p>
+            <div class="rating-buttons">
+                <button class="rating-btn" data-rating="liked" onclick="selectRating('liked')">
+                    <span class="rating-icon">👍</span>
+                    <span data-i18n="ratingLiked">满意</span>
+                </button>
+                <button class="rating-btn" data-rating="disliked" onclick="selectRating('disliked')">
+                    <span class="rating-icon">👎</span>
+                    <span data-i18n="ratingDisliked">不满意</span>
+                </button>
             </div>
+            <div id="ratingCommentSection" style="display: none;">
+                <label for="ratingComment">
+                    <span data-i18n="ratingCommentLabel">请告诉我们具体的问题</span>
+                    <span class="rating-required">(必填，至少10个字)</span>
+                </label>
+                <textarea id="ratingComment" rows="3" maxlength="500" data-i18n-placeholder="ratingCommentPlaceholder"></textarea>
+                <div class="rating-char-count"><span id="ratingCharCount">0</span> / 500</div>
+            </div>
+            <div class="rating-actions" id="ratingActions">
+                <button class="btn btn-primary" id="submitRatingBtn" onclick="submitRating()" style="display: none;" data-i18n="ratingSubmit">提交评分</button>
+            </div>
+            <div id="ratingError" class="rating-error" style="display: none;"></div>
         </div>
     </div>
-
-    <!-- Logic -->
+    
     <script>
         // --- i18n System ---
         let currentLang = localStorage.getItem('lang') || 'zh-CN';
@@ -833,9 +592,18 @@
             }
         }
 
-        function t(key) {
-            return translations[key] || key;
-        }
+	        function t(key) {
+	            return translations[key] || key;
+	        }
+
+	        function tf(key, params = {}) {
+	            let template = t(key);
+	            for (const [name, value] of Object.entries(params)) {
+	                const token = `{${name}}`;
+	                template = template.split(token).join(String(value));
+	            }
+	            return template;
+	        }
 
         function switchLanguage(lang) {
             currentLang = lang;
@@ -847,31 +615,22 @@
         }
 
         function updateLanguageButtonStyles() {
-            const zhBtn = document.getElementById('langBtnZh');
-            const enBtn = document.getElementById('langBtnEn');
-
-            if (currentLang === 'zh-CN') {
-                zhBtn.style.background = 'var(--brand-500)';
-                zhBtn.style.color = 'white';
-                zhBtn.style.borderColor = 'var(--brand-500)';
-                enBtn.style.background = 'white';
-                enBtn.style.color = 'var(--slate-700)';
-                enBtn.style.borderColor = 'var(--slate-300)';
-            } else {
-                enBtn.style.background = 'var(--brand-500)';
-                enBtn.style.color = 'white';
-                enBtn.style.borderColor = 'var(--brand-500)';
-                zhBtn.style.background = 'white';
-                zhBtn.style.color = 'var(--slate-700)';
-                zhBtn.style.borderColor = 'var(--slate-300)';
-            }
+            document.getElementById('langBtnZh').classList.toggle('active', currentLang === 'zh-CN');
+            document.getElementById('langBtnEn').classList.toggle('active', currentLang === 'en-US');
         }
 
         function updateUILanguage() {
             // Update all elements with data-i18n attribute
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
-                el.textContent = t(key);
+                // Handle strong tags inside translations
+                const translation = t(key);
+                const strongRegex = /<strong>(.*?)<\/strong>/g;
+                if (strongRegex.test(translation)) {
+                    el.innerHTML = translation;
+                } else {
+                    el.textContent = translation;
+                }
             });
 
             // Update placeholders
@@ -999,68 +758,35 @@
             const {
                 type = 'info',  // 'success', 'error', 'warning', 'info'
                 title = '',
-                duration = 4000,  // Auto-dismiss after 4 seconds
-                closable = true
+                duration = 4000
             } = options;
 
             const container = $('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
+            const toastEl = document.createElement('div');
+            toastEl.className = `toast toast-${type}`;
 
-            // Icon mapping
-            const icons = {
-                success: '✓',
-                error: '✕',
-                warning: '!',
-                info: 'i'
+            const icons = { success: '✓', error: '✕', warning: '!', info: 'ℹ️' };
+
+            toastEl.innerHTML = `
+                <div class="toast-icon">${icons[type] || icons.info}</div>
+                <div class="toast-content">
+                    ${title ? `<div class="toast-title">${title}</div>` : ''}
+                    <div class="toast-message">${message}</div>
+                </div>
+                <button class="toast-close">&times;</button>
+            `;
+            container.appendChild(toastEl);
+            
+            const remove = () => {
+                toastEl.classList.add('removing');
+                setTimeout(() => toastEl.remove(), 200);
             };
 
-            const icon = icons[type] || icons.info;
-
-            // Build toast HTML
-            let html = `
-                <div class="toast-icon">${icon}</div>
-                <div class="toast-content">
-            `;
-
-            if (title) {
-                html += `<div class="toast-title">${title}</div>`;
-            }
-
-            html += `<div class="toast-message">${message}</div>`;
-            html += `</div>`;
-
-            if (closable) {
-                html += `<button class="toast-close">✕</button>`;
-            }
-
-            toast.innerHTML = html;
-            container.appendChild(toast);
-
-            // Close button handler
-            if (closable) {
-                const closeBtn = toast.querySelector('.toast-close');
-                closeBtn.onclick = () => removeToast(toast);
-            }
-
-            // Auto-dismiss
+            toastEl.querySelector('.toast-close').onclick = remove;
             if (duration > 0) {
-                setTimeout(() => removeToast(toast), duration);
+                setTimeout(remove, duration);
             }
-
-            return toast;
         }
-
-        function removeToast(toast) {
-            toast.classList.add('removing');
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.parentNode.removeChild(toast);
-                }
-            }, 300);  // Match CSS transition duration
-        }
-
-        // Convenience methods
         const toast = {
             success: (message, title) => showToast(message, { type: 'success', title }),
             error: (message, title) => showToast(message, { type: 'error', title, duration: 6000 }),
@@ -1070,69 +796,43 @@
 
         // --- WebSocket Connection ---
         function initWebSocket() {
-            // Generate unique client ID
             state.clientId = 'client_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const wsUrl = `${protocol}//${window.location.host}/ws/${state.clientId}`;
-
             console.log('Connecting to WebSocket:', wsUrl);
 
             state.websocket = new WebSocket(wsUrl);
-
-            state.websocket.onopen = () => {
-                console.log('WebSocket connected:', state.clientId);
-                state.wsReady = true;  // Mark as ready
-            };
-
-            state.websocket.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                console.log('WebSocket message:', data);
-                handleWebSocketMessage(data);
-            };
-
-            state.websocket.onerror = (error) => {
-                console.error('WebSocket error:', error);
-                state.wsReady = false;
-            };
-
+            state.websocket.onopen = () => { console.log('WebSocket connected'); state.wsReady = true; };
+            state.websocket.onerror = (error) => { console.error('WebSocket error:', error); state.wsReady = false; };
             state.websocket.onclose = () => {
                 console.log('WebSocket closed, reconnecting in 3s...');
                 state.wsReady = false;
                 setTimeout(initWebSocket, 3000);
             };
-        }
-
-        function handleWebSocketMessage(data) {
-            switch(data.type) {
-                case 'connected':
-                    console.log('Connected to server');
-                    break;
-
-                case 'progress':
-                    updateProgress(data.progress, data.message, data.details);
-                    break;
-
-                case 'step_update':
-                    updateStep(data.step_id, data.status, data.message);
-                    break;
-
-                case 'completed':
-                    handleGenerationComplete(data.result);
-                    break;
-
-                case 'failed':
-                    handleGenerationFailed(data.result);
-                    break;
-            }
+            state.websocket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                console.log('WS <<', data);
+                switch(data.type) {
+                    case 'progress':
+                        updateProgress(data.progress, data.message, data.details);
+                        break;
+                    case 'step_update':
+                        updateStep(data.step_id, data.status, data.message);
+                        break;
+                    case 'completed':
+                        handleGenerationComplete(data.result);
+                        break;
+                    case 'failed':
+                        handleGenerationFailed(data.result);
+                        break;
+                }
+            };
         }
 
         // --- Progress UI Management ---
         const PROGRESS_STEPS = [
-            { id: 'init', label: 'progressInit' },
-            { id: 'load_template', label: 'progressLoadTemplate' },
-            { id: 'generate_content', label: 'progressGenerateContent' },
-            { id: 'render_ppt', label: 'progressRenderPpt' },
+            { id: 'init', label: 'progressInit' }, { id: 'load_template', label: 'progressLoadTemplate' },
+            { id: 'generate_content', label: 'progressGenerateContent' }, { id: 'render_ppt', label: 'progressRenderPpt' },
             { id: 'complete', label: 'progressComplete' }
         ];
 
@@ -1146,7 +846,7 @@
         function hideProgressPanel() {
             setTimeout(() => {
                 $('progressPanel').classList.remove('active');
-            }, 2000);
+            }, 3000);
         }
 
         function renderProgressSteps() {
@@ -1164,33 +864,22 @@
 
         function updateStep(stepId, status) {
             const step = state.progressSteps.find(s => s.id === stepId);
-            if (step) {
-                step.status = status;
-                renderProgressSteps();
-            }
+            if (step) { step.status = status; renderProgressSteps(); }
         }
 
-        function updateProgress(progress, message, details) {
+        function updateProgress(progress) {
             updateProgressBar(progress);
+            let currentStepIndex = 0;
+            if (progress < 20) currentStepIndex = 0;
+            else if (progress < 30) currentStepIndex = 1;
+            else if (progress < 70) currentStepIndex = 2;
+            else if (progress < 90) currentStepIndex = 3;
+            else currentStepIndex = 4;
 
-            // Update current step based on progress
-            let currentStepIndex = Math.floor(progress / (100 / state.progressSteps.length));
-            if (currentStepIndex >= state.progressSteps.length) {
-                currentStepIndex = state.progressSteps.length - 1;
-            }
-
-            // Mark previous steps as completed
             for (let i = 0; i < currentStepIndex; i++) {
-                if (state.progressSteps[i].status !== 'completed') {
-                    state.progressSteps[i].status = 'completed';
-                }
+                if (state.progressSteps[i].status !== 'completed') state.progressSteps[i].status = 'completed';
             }
-
-            // Mark current step as active
-            if (state.progressSteps[currentStepIndex]) {
-                state.progressSteps[currentStepIndex].status = 'active';
-            }
-
+            if (state.progressSteps[currentStepIndex]) state.progressSteps[currentStepIndex].status = 'active';
             renderProgressSteps();
         }
 
@@ -1199,418 +888,237 @@
             $('progressPercentageCompact').textContent = Math.round(progress) + '%';
         }
 
-        function handleGenerationComplete(result) {
-            // Mark all steps as completed
+        async function handleGenerationComplete(result) {
             state.progressSteps.forEach(s => s.status = 'completed');
             renderProgressSteps();
             updateProgressBar(100);
-
-            // Clear modified slides on new generation
+            
             state.modifiedSlides.clear();
+            state.sessionId = null; // Clear session for next run
+            console.log('Job completed, cleared session_id.');
 
-            // Update state with result
             if (result.job_id) {
                 state.jobId = result.job_id;
                 state.slidespec = result.slidespec;
-                $('jobIdDisplay').textContent = t('msgJobId') + ": " + result.job_id;
+                $('jobIdDisplay').textContent = `${t('msgJobId')}: ${result.job_id}`;
                 syncActionButtons();
-
-                if (result.slidespec && result.slidespec.slides && result.slidespec.slides.length) {
-                    state.activeSlideKey = result.slidespec.slides[0].slide_key;
-                }
-
+                state.activeSlideKey = result.slidespec?.slides?.[0]?.slide_key;
                 renderSlides();
                 renderPreviewList();
+                if (state.activeSlideKey) {
+                    const slide = state.slidespec.slides.find(s => s.slide_key === state.activeSlideKey);
+                    if (slide) $('slideJson').value = JSON.stringify(slide.placeholders || {}, null, 2);
+                }
 
-                // Fetch previews
+                // Fetch previews after a short delay
                 setTimeout(async () => {
                     try {
+                        console.log('Fetching previews for job:', result.job_id);
                         const prevRes = await api(`/api/v1/reports/${encodeURIComponent(result.job_id)}/preview?regenerate_if_missing=true`);
+                        console.log('Preview API response:', prevRes);
                         const prevData = prevRes.data || prevRes;
+                        console.log('Preview data:', prevData);
                         state.previews = prevData.preview_urls || prevData.images || [];
+                        console.log('Extracted previews:', state.previews);
                         renderPreviewList();
                         updateActiveState(state.activeSlideKey, true);
-
-                        // Update logs
-                        const l = await api('/api/v1/system/logs?limit=20');
-                        const logData = l.data || l;
-                        renderLogs(logData.lines || []);
-                    } catch (e) {
-                        console.error('Failed to load previews:', e);
-                    }
+                    } catch (e) { console.error('Failed to load previews:', e); }
                 }, 500);
             }
-
             hideProgressPanel();
         }
 
-        function handleGenerationFailed(result) {
-            toast.error(result.error || '未知错误', '生成失败');
-            hideProgressPanel();
-        }
+	    function handleGenerationFailed(result) {
+            state.sessionId = null;
+            console.log('Job failed, cleared session_id for retry.');
+	        toast.error(result.error || t('errorUnknown'), t('msgError'));
+	        hideProgressPanel();
+	    }
 
-        // --- Cooldown Management ---
         function checkAndRestoreCooldown() {
             const cooldownEnd = parseInt(localStorage.getItem('generateCooldownEnd') || '0');
             const now = Date.now();
-
             if (cooldownEnd > now) {
-                // Still in cooldown period, restore countdown
                 const btn = $('generateBtn');
-                if (!btn) {
-                    console.warn('Generate button not found, skipping cooldown restore');
-                    return;
-                }
-
-                const cooldownInterval = setInterval(() => {
-                    const cooldownEnd = parseInt(localStorage.getItem('generateCooldownEnd') || '0');
-                    const remaining = Math.ceil((cooldownEnd - Date.now()) / 1000);
+                const updateCountdown = () => {
+                    const remaining = Math.ceil((parseInt(localStorage.getItem('generateCooldownEnd') || '0') - Date.now()) / 1000);
                     const btnTextSpan = btn.querySelector('[data-i18n="btnGenerate"]');
-
-                    if (remaining <= 0) {
-                        clearInterval(cooldownInterval);
-                        localStorage.removeItem('generateCooldownEnd');
-                        if (btnTextSpan) btnTextSpan.textContent = t('btnGenerate');
+                    if (remaining > 0) {
+                        if(btnTextSpan) btnTextSpan.textContent = `${t('btnGenerate')} (${remaining}s)`;
+                        setTimeout(updateCountdown, 1000);
                     } else {
-                        if (btnTextSpan) btnTextSpan.textContent = `${t('btnGenerate')} (${remaining}${t('msgRetryIn')})`;
+                        if(btnTextSpan) btnTextSpan.textContent = t('btnGenerate');
                     }
-                }, 1000);
-
-                // Update immediately
-                const remaining = Math.ceil((cooldownEnd - now) / 1000);
-                const btnTextSpan = btn.querySelector('[data-i18n="btnGenerate"]');
-                if (btnTextSpan) btnTextSpan.textContent = `${t('btnGenerate')} (${remaining}${t('msgRetryIn')})`;
+                };
+                updateCountdown();
             }
         }
 
-        // --- API Client ---
         async function api(path, opts = {}) {
             const res = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...opts });
             if (!res.ok) {
-                // 尝试解析 JSON 错误响应
                 const errorData = await res.json().catch(() => null);
                 const error = new Error(errorData?.error?.message || res.statusText);
-                error.data = errorData;  // 保存完整错误信息
+                error.data = errorData;
                 throw error;
             }
             return await res.json();
         }
 
-        // --- Init ---
         async function init() {
-            // Load translations first
             await loadTranslations(currentLang);
             updateUILanguage();
             updateLanguageButtonStyles();
-
-            // Initialize WebSocket
             initWebSocket();
-
-            // Check for existing cooldown on page load
             checkAndRestoreCooldown();
-
             try {
-                const [tplsResp, inputsResp, logsResp] = await Promise.all([
+                const [tplsResp, inputsResp] = await Promise.all([
                     api('/api/v1/templates'),
                     api('/api/v1/inputs'),
-                    api('/api/v1/system/logs?limit=20')
                 ]);
-
-                // Extract data from new response format
-                const tpls = tplsResp.data || tplsResp;
-                const inputs = inputsResp.data || inputsResp;
-                const logs = logsResp.data || logsResp;
-
-                // Cache templates and inputs for language switching
-                window.cachedTemplates = tpls;
-                window.cachedInputs = inputs;
-
-                const inputSel = $('inputSelect');
-                inputSel.innerHTML = `<option value="">${t('msgSelectDataSource')}</option>`;
-                inputs.forEach(i => {
-                    const opt = document.createElement('option');
-                    opt.value = i.id;
-                    opt.textContent = `${i.tenant_name || i.id} (${i.period})`;
-                    inputSel.appendChild(opt);
-                });
-
-                const tplSel = $('templateSelect');
-                tplSel.innerHTML = `<option value="">${t('msgSelectTemplate')}</option>`;
-                tpls.forEach(tpl => {
-                    const opt = document.createElement('option');
-                    opt.value = tpl.template_id;
-                    opt.textContent = getTemplateNameTranslated(tpl.template_id, tpl.name);
-                    tplSel.appendChild(opt);
-                });
-
-                renderLogs(logs.lines || []);
+                window.cachedTemplates = tplsResp.data || tplsResp;
+                window.cachedInputs = inputsResp.data || inputsResp;
+                updateInputDropdown();
+                updateTemplateDropdown();
             } catch (e) { console.error(e); }
         }
 
-        // --- Intersection Observer for Scroll Sync ---
         const observer = new IntersectionObserver((entries) => {
             if (state.isClickScrolling) return;
-
-            // Find the entry with largest intersection ratio
-            let maxRatio = 0;
-            let maxEntry = null;
-            
-            entries.forEach(e => {
-                if(e.intersectionRatio > maxRatio) {
-                    maxRatio = e.intersectionRatio;
-                    maxEntry = e;
-                }
-            });
-
-            if (maxEntry && maxRatio > 0.4) { // 40% visible
-                const key = maxEntry.target.dataset.key;
+            const intersecting = entries.find(e => e.isIntersecting);
+            if (intersecting) {
+                const key = intersecting.target.dataset.key;
                 if (key && key !== state.activeSlideKey) {
-                    updateActiveState(key, false); // false = do not scroll right view
+                    updateActiveState(key, false);
                 }
             }
-        }, {
-            root: $('canvasViewport'),
-            threshold: [0.1, 0.4, 0.6, 0.8]
-        });
+        }, { root: $('canvasViewport'), threshold: 0.5 });
 
-        // --- Renderers ---
         function renderLogs(lines) {
             const container = $('logsContent');
-            if (!lines.length) {
-                container.innerHTML = '<span style="opacity:0.5">暂无日志。</span>';
-                return;
-            }
-            container.innerHTML = lines.map((l, i) => 
-                `<div><span style="opacity:0.3; margin-right:8px;">${i+1}</span>${l}</div>`
-            ).join('');
-            $('logContainer').scrollTop = $('logContainer').scrollHeight;
+            container.innerHTML = lines.map((l, i) => `<div><span style="opacity:0.3; margin-right:8px;">${i+1}</span>${l}</div>`).join('');
+            container.scrollTop = container.scrollHeight;
         }
 
         function renderSlides() {
             const list = $('slidesList');
             const slides = state.slidespec?.slides || [];
             $('slideCount').textContent = slides.length;
-            
             if (!slides.length) {
-                list.innerHTML = '<div class="empty-state" style="margin-top:40px;"><div style="font-size:12px;">暂无幻灯片</div></div>';
-                return;
+                list.innerHTML = `<div class="empty-state"><div class="icon">📄</div><p class="text-sm font-medium" data-i18n="msgNoData">暂无幻灯片</p></div>`; return;
             }
-
-            // Only rebuild list if count changes or force update needed. 
-            // For simplicity, we rebuild but try to maintain scroll pos if possible? 
-            // Actually, rebuilding is fine for this scale.
-            list.innerHTML = '';
-            slides.forEach((s, idx) => {
-                const div = document.createElement('div');
-                div.className = 'slide-item';
-                div.dataset.key = s.slide_key; // For selector lookup
-                div.onclick = () => updateActiveState(s.slide_key, true); // true = click scroll
-                div.innerHTML = `
+            list.innerHTML = slides.map((s, idx) => `
+                <div class="slide-item" data-key="${s.slide_key}">
                     <div class="slide-num">${idx + 1}</div>
-                    <div style="flex:1; overflow:hidden;">
-                        <div class="text-sm font-bold truncate">${s.slide_key}</div>
-                    </div>
-                `;
-                list.appendChild(div);
+                    <div class="slide-title truncate">${s.slide_key}</div>
+                    ${state.modifiedSlides.has(s.slide_key) ? '<div class="modified-indicator"></div>' : ''}
+                </div>`).join('');
+            list.querySelectorAll('.slide-item').forEach(el => {
+                el.onclick = () => updateActiveState(el.dataset.key, true);
             });
-            
-            // Highlight current
             highlightSidebar(state.activeSlideKey);
         }
 
         function renderPreviewList() {
             const list = $('previewList');
             const slides = state.slidespec?.slides || [];
-            
+            console.log('renderPreviewList called, slides:', slides.length, 'previews:', state.previews.length);
+            observer.disconnect();
             if (!slides.length) {
                 list.classList.add('hidden');
                 $('emptyState').classList.remove('hidden');
                 return;
             }
-
-            list.innerHTML = '';
-            
-            slides.forEach((s, idx) => {
+            list.innerHTML = slides.map((s, idx) => {
                 const imgUrl = state.previews[idx];
-                const viewItem = document.createElement('div');
-                viewItem.className = 'slide-view-item';
-                viewItem.id = 'view-' + s.slide_key;
-                viewItem.dataset.key = s.slide_key;
-
-                const label = document.createElement('div');
-                label.className = 'slide-view-label';
-                label.textContent = `${t('msgPageNumber')} ${idx+1} ${t('msgPage')}: ${s.slide_key}`;
-                viewItem.appendChild(label);
-
-                if (imgUrl) {
-                    const img = document.createElement('img');
-                    // Add timestamp to prevent browser caching
-                    img.src = `${imgUrl}?t=${Date.now()}`;
-                    img.className = 'preview-card';
-                    img.loading = 'lazy';
-                    viewItem.appendChild(img);
-                } else {
-                    const ph = document.createElement('div');
-                    ph.className = 'placeholder-card';
-                    ph.textContent = '正在生成预览...';
-                    viewItem.appendChild(ph);
-                }
-                
-                list.appendChild(viewItem);
-                observer.observe(viewItem);
-            });
-
+                console.log(`Slide ${idx}: key=${s.slide_key}, imgUrl=${imgUrl}`);
+                return `
+                <div class="slide-view-item" id="view-${s.slide_key}" data-key="${s.slide_key}">
+                    <div class="slide-view-label"><span>${t('msgPageNumber')} ${idx+1}</span> <span>${s.slide_key}</span></div>
+                    ${imgUrl ? `<img src="${imgUrl}?t=${Date.now()}" class="preview-card" loading="lazy">` :
+                               `<div class="placeholder-card">${t('msgGeneratingPreview')}</div>`}
+                </div>`;
+            }).join('');
+            list.querySelectorAll('.slide-view-item').forEach(el => observer.observe(el));
             $('emptyState').classList.add('hidden');
             list.classList.remove('hidden');
         }
 
         function highlightSidebar(key) {
-            const items = document.querySelectorAll('.slide-item');
-            items.forEach(el => {
-                if (el.dataset.key === key) {
-                    el.classList.add('active');
-                    // Scroll sidebar to keep active item in view
-                    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                } else {
-                    el.classList.remove('active');
-                }
+            document.querySelectorAll('.slide-item').forEach(el => {
+                const isActive = el.dataset.key === key;
+                el.classList.toggle('active', isActive);
+                if (isActive) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             });
         }
 
         function updateActiveState(key, scrollRightView) {
-            // Save current slide modifications before switching
             if (state.activeSlideKey && state.activeSlideKey !== key) {
                 saveCurrentSlideModifications();
             }
-
             state.activeSlideKey = key;
-
-            // 1. Sidebar Highlight
             highlightSidebar(key);
-
-            // 2. Editor & Header
             $('activeSlideTitle').textContent = key;
             const slide = state.slidespec.slides.find(s => s.slide_key === key);
             if (slide) {
-                // Check if this slide has pending modifications
-                const pendingMods = state.modifiedSlides.get(key);
-                const editorContent = pendingMods || slide.placeholders || {};
+                const editorContent = state.modifiedSlides.get(key) || slide.placeholders || {};
                 $('slideJson').value = JSON.stringify(editorContent, null, 2);
             }
-
-            // Update modified slides count badge
             updateModifiedSlidesUI();
-
-            // 3. Scroll Right View (Only if clicked)
             if (scrollRightView) {
-                const viewItem = document.getElementById('view-' + key);
+                const viewItem = $(`view-${key}`);
                 if (viewItem) {
                     state.isClickScrolling = true;
                     viewItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    // Release lock after animation roughly finishes
                     setTimeout(() => { state.isClickScrolling = false; }, 800);
                 }
             }
         }
 
-        // Save current slide modifications to state
         function saveCurrentSlideModifications() {
             if (!state.activeSlideKey) return;
-
             try {
-                const currentJson = $('slideJson').value;
-                const editedContent = JSON.parse(currentJson);
-
-                // Find original content
+                const editedContent = JSON.parse($('slideJson').value);
                 const slide = state.slidespec.slides.find(s => s.slide_key === state.activeSlideKey);
                 if (!slide) return;
-
                 const originalContent = slide.placeholders || {};
-
-                // **IMPORTANT**: Protect token keys from modification
-                // Only allow editing VALUES, not KEYS
-                // This prevents users from accidentally breaking token references
                 const protectedContent = {};
-
-                // Iterate through ORIGINAL keys to preserve them
                 for (const originalKey in originalContent) {
-                    if (originalKey in editedContent) {
-                        // User kept the key, use their edited value
-                        protectedContent[originalKey] = editedContent[originalKey];
-                    } else {
-                        // User deleted the key, keep original to prevent breaking
-                        protectedContent[originalKey] = originalContent[originalKey];
-                    }
+                    protectedContent[originalKey] = (originalKey in editedContent) ? editedContent[originalKey] : originalContent[originalKey];
                 }
-
-                // Warn if user tried to add new keys (not supported)
                 const addedKeys = Object.keys(editedContent).filter(k => !(k in originalContent));
                 if (addedKeys.length > 0) {
-                    console.warn(`Warning: Ignored added keys (not in template): ${addedKeys.join(', ')}`);
-                    toast.warning(
-                        `忽略了新增的字段: ${addedKeys.join(', ')}。只能修改现有字段的值。`,
-                        '提示',
-                        { duration: 5000 }
-                    );
+                    toast.warning(tf('msgIgnoredAddedFields', { fields: addedKeys.join(', ') }), t('toastTitleHint'));
                 }
-
-                // Check if content has changed
                 if (JSON.stringify(protectedContent) !== JSON.stringify(originalContent)) {
                     state.modifiedSlides.set(state.activeSlideKey, protectedContent);
                 } else {
-                    // Remove from modified if it's been reverted to original
                     state.modifiedSlides.delete(state.activeSlideKey);
                 }
-
             } catch (e) {
-                console.warn('Failed to save slide modifications:', e);
-                toast.error('JSON格式错误，无法保存修改', '保存失败');
+                toast.error(t('errorInvalidJsonCannotSave'), t('titleSaveFailed'));
             }
         }
-
-        // Update UI to show modified slides count
+        
         function updateModifiedSlidesUI() {
             const count = state.modifiedSlides.size;
             const btn = $('rewriteBtn');
-
+            const btnText = btn.querySelector('[data-i18n="btnApplyRegenerate"]');
             if (count > 0) {
-                btn.textContent = `${t('btnApplyRegenerate')} (${count}页已修改)`;
-                btn.style.background = '#f59e0b'; // Orange to indicate pending changes
+                btnText.textContent = `${t('btnApplyRegenerate')} (${count})`;
+                btn.style.setProperty('--btn-bg', 'var(--color-warning)'); // A way to change color
             } else {
-                btn.textContent = t('btnApplyRegenerate');
-                btn.style.background = ''; // Reset to default
+                btnText.textContent = t('btnApplyRegenerate');
+                btn.style.setProperty('--btn-bg', 'var(--color-accent)');
             }
-
-            // Add visual indicator to modified slides in sidebar
-            document.querySelectorAll('.slide-item').forEach(el => {
-                const key = el.dataset.key;
-                const indicator = el.querySelector('.modified-indicator');
-
-                if (state.modifiedSlides.has(key)) {
-                    if (!indicator) {
-                        const dot = document.createElement('div');
-                        dot.className = 'modified-indicator';
-                        dot.style.cssText = 'width:6px;height:6px;background:#f59e0b;border-radius:50%;margin-left:auto;';
-                        dot.title = '已修改';
-                        el.appendChild(dot);
-                    }
-                } else {
-                    if (indicator) indicator.remove();
-                }
-            });
+            renderSlides(); // Re-render to show/hide indicators
         }
 
         function setLoading(flag) {
             state.loading = flag;
             syncActionButtons();
-            
-            if (flag) {
-                $('genIcon').classList.add('hidden');
-                $('genSpinner').classList.remove('hidden');
-            } else {
-                $('genIcon').classList.remove('hidden');
-                $('genSpinner').classList.add('hidden');
-            }
+            $('genIcon').classList.toggle('hidden', flag);
+            $('genSpinner').classList.toggle('hidden', !flag);
         }
 
         function syncActionButtons() {
@@ -1620,134 +1128,53 @@
             $('downloadPdfBtn').disabled = state.loading || !state.jobId;
         }
 
-        // --- Actions ---
         $('generateBtn').onclick = async () => {
             const iId = $('inputSelect').value;
             const tId = $('templateSelect').value;
-            if (!iId || !tId) {
-                toast.warning('请选择数据源和模板', '提示');
-                return;
-            }
+            if (!iId || !tId) { return toast.warning(t('msgSelectDataAndTemplate'), t('toastTitleHint')); }
 
-            // 前端防抖：检查按钮是否被禁用（冷却中）
-            // 从 localStorage 读取冷却结束时间
-            const btn = $('generateBtn');
             const cooldownEnd = parseInt(localStorage.getItem('generateCooldownEnd') || '0');
-            const now = Date.now();
+            if (cooldownEnd > Date.now()) { return toast.warning(`${t('msgRequestTooFrequent')}${Math.ceil((cooldownEnd - Date.now())/1000)}${t('msgRetryIn')}`); }
 
-            if (cooldownEnd > now) {
-                const remainingTime = Math.ceil((cooldownEnd - now) / 1000);
-                toast.warning(`${t('msgRequestTooFrequent')}${remainingTime} ${t('msgRetryIn')}`, t('msgPleaseWait'));
-                return;
-            }
-
-            // Check WebSocket connection
             if (!state.wsReady) {
-                console.warn('WebSocket not ready, waiting...');
-                // Wait for WebSocket to connect (max 3 seconds)
-                for (let i = 0; i < 30; i++) {
-                    if (state.wsReady) break;
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                }
-                if (!state.wsReady) {
-                    console.error('WebSocket connection timeout');
-                }
+                console.warn('WebSocket not ready, retrying...');
+                await new Promise(resolve => setTimeout(resolve, 500));
+                if(!state.wsReady) return toast.error(t('errorWebSocketConnection'), t('msgError'));
             }
 
-            // Generate session ID with new format: {uuid8}_{timestamp20}
-            // Example: a3f2c5d8_20250129143025123456
-            const uuid8 = Array.from({length: 8}, () =>
-                Math.floor(Math.random() * 16).toString(16)
-            ).join('');
-            const nowDate = new Date();
-            const timestamp20 =
-                nowDate.getFullYear().toString() +
-                (nowDate.getMonth() + 1).toString().padStart(2, '0') +
-                nowDate.getDate().toString().padStart(2, '0') +
-                nowDate.getHours().toString().padStart(2, '0') +
-                nowDate.getMinutes().toString().padStart(2, '0') +
-                nowDate.getSeconds().toString().padStart(2, '0') +
-                nowDate.getMilliseconds().toString().padStart(3, '0') +
-                Math.floor(Math.random() * 1000).toString().padStart(3, '0'); // Add 3 more digits for microseconds
-            state.sessionId = uuid8 + '_' + timestamp20;
-
-            // Show progress panel
+            if (!state.sessionId) {
+                // Generate session ID matching backend format: {uuid8}_{timestamp20}
+                // Example: a3f2c5d8_20250129143025123456
+                const uuid8 = Array.from({length: 8}, () => Math.floor(Math.random() * 16).toString(16)).join('');
+                const now = new Date();
+                const timestamp20 = [
+                    now.getFullYear(),
+                    String(now.getMonth() + 1).padStart(2, '0'),
+                    String(now.getDate()).padStart(2, '0'),
+                    String(now.getHours()).padStart(2, '0'),
+                    String(now.getMinutes()).padStart(2, '0'),
+                    String(now.getSeconds()).padStart(2, '0'),
+                    String(now.getMilliseconds() * 1000).padStart(6, '0')  // Convert ms to microseconds (6 digits)
+                ].join('');
+                state.sessionId = `${uuid8}_${timestamp20}`;
+                console.log('Generated new session_id:', state.sessionId);
+            }
+            
             showProgressPanel();
-
-            // 设置冷却时间（与后端同步为30秒）
+            
             const COOLDOWN_SECONDS = 30;
-            const cooldownEndTime = Date.now() + (COOLDOWN_SECONDS * 1000);
-            localStorage.setItem('generateCooldownEnd', cooldownEndTime.toString());
-
-            // 启动倒计时
-            const cooldownInterval = setInterval(() => {
-                const cooldownEnd = parseInt(localStorage.getItem('generateCooldownEnd') || '0');
-                const remaining = Math.ceil((cooldownEnd - Date.now()) / 1000);
-                const btnTextSpan = btn.querySelector('[data-i18n="btnGenerate"]');
-
-                if (remaining <= 0) {
-                    clearInterval(cooldownInterval);
-                    localStorage.removeItem('generateCooldownEnd');
-                    if (btnTextSpan) btnTextSpan.textContent = t('btnGenerate');
-                } else {
-                    if (btnTextSpan) btnTextSpan.textContent = `${t('btnGenerate')} (${remaining}${t('msgRetryIn')})`;
-                }
-            }, 1000);
-
+            localStorage.setItem('generateCooldownEnd', Date.now() + COOLDOWN_SECONDS * 1000);
+            checkAndRestoreCooldown();
+            
             setLoading(true);
             try {
                 await doGenerate(iId, tId, $('useMock').checked);
             } catch (e) {
                 console.error(e);
-
-                // 如果出错，清除冷却时间（允许重试）
-                clearInterval(cooldownInterval);
-
-                // Check if it's a 429 rate limit error
-                if (e.message && e.message.includes('429')) {
-                    // Extract remaining seconds from error message if available
-                    // Message format: "请求过于频繁，请 N 秒后再试"
-                    const match = e.message.match(/(\d+)\s*秒/);
-                    if (match) {
-                        const serverSeconds = parseInt(match[1]);
-                        const newCooldownEnd = Date.now() + (serverSeconds * 1000);
-                        localStorage.setItem('generateCooldownEnd', newCooldownEnd.toString());
-
-                        // Restart countdown with server's time
-                        const newInterval = setInterval(() => {
-                            const cooldownEnd = parseInt(localStorage.getItem('generateCooldownEnd') || '0');
-                            const remaining = Math.ceil((cooldownEnd - Date.now()) / 1000);
-                            const btnTextSpan = btn.querySelector('[data-i18n="btnGenerate"]');
-
-                            if (remaining <= 0) {
-                                clearInterval(newInterval);
-                                localStorage.removeItem('generateCooldownEnd');
-                                if (btnTextSpan) btnTextSpan.textContent = t('btnGenerate');
-                            } else {
-                                if (btnTextSpan) btnTextSpan.textContent = `${t('btnGenerate')} (${remaining}${t('msgRetryIn')})`;
-                            }
-                        }, 1000);
-
-                        toast.warning(e.message, t('msgPleaseWait'));
-                        setLoading(false);
-                        return; // Don't clear cooldown
-                    }
-                }
-
-                // For other errors, clear cooldown to allow retry
                 localStorage.removeItem('generateCooldownEnd');
-                const btnTextSpan = btn.querySelector('[data-i18n="btnGenerate"]');
-                if (btnTextSpan) btnTextSpan.textContent = t('btnGenerate');
-
-                // Check if automatic mock retry is suggested
+                checkAndRestoreCooldown();
                 if (e.data?.error?.auto_retry_with_mock) {
-                    // Auto retry with mock
-                    try {
-                        await doGenerate(iId, tId, true); // Force mock
-                    } catch (retryError) {
-                        console.error('Mock retry failed:', retryError);
-                        handleGenerationFailed({ error: retryError.message });
-                    }
+                    await doGenerate(iId, tId, true);
                 } else {
                     handleGenerationFailed({ error: e.message });
                 }
@@ -1756,109 +1183,59 @@
             }
         };
 
-        // Extract generation logic as separate function
         async function doGenerate(inputId, templateId, useMock) {
-            // 1. Generate SlideSpec
             const res = await api('/api/v1/reports', {
                 method: 'POST',
                 body: JSON.stringify({
-                    input_id: inputId,
-                    template_id: templateId,
-                    use_mock: useMock,
-                    session_id: state.sessionId,
-                    client_id: state.clientId
+                    input_id: inputId, template_id: templateId, use_mock: useMock,
+                    session_id: state.sessionId, client_id: state.clientId, idempotency_key: state.sessionId
                 })
             });
-
-            // Extract data from new response format
             const result = res.data || res;
-
-            // WebSocket will send completion message with progress updates
-            // Only handle result directly if WebSocket is not available (fallback)
-            if (!state.websocket || state.websocket.readyState !== WebSocket.OPEN) {
-                console.log("WebSocket not connected, handling response directly");
+            if (result.status === 'running') {
+                toast.info(t('msgGeneratingPleaseWait'), t('toastTitleHint'));
+            } else if (result.status === 'completed' && result.from_cache) {
+                toast.success(t('msgUsingCachedResult'), t('toastTitleHint'));
                 handleGenerationComplete(result);
             }
-            // Otherwise, wait for WebSocket 'completed' message which includes the result
         }
 
         $('downloadBtn').onclick = () => {
             if (!state.jobId) return;
             window.location.href = `/api/v1/reports/${encodeURIComponent(state.jobId)}/download?regenerate_if_missing=true`;
+            setTimeout(() => showRatingCard(state.jobId), 1000);
         };
 
         $('downloadPdfBtn').onclick = () => {
             if (!state.jobId) return;
             window.location.href = `/api/v1/reports/${encodeURIComponent(state.jobId)}/download-pdf?regenerate_if_missing=true`;
+            setTimeout(() => showRatingCard(state.jobId), 1000);
         };
 
         $('rewriteBtn').onclick = async () => {
             if (!state.jobId) return;
-
-            // Save current slide modifications before submitting
             saveCurrentSlideModifications();
+            if (state.modifiedSlides.size === 0) { return toast.warning(t('msgNoChangesToApply'), t('toastTitleHint')); }
 
-            if (state.modifiedSlides.size === 0) {
-                toast.warning('没有修改需要应用', '提示');
-                return;
-            }
-
+            setLoading(true);
             try {
-                setLoading(true);
-
-                // Convert Map to array format for API
-                const slidesArray = Array.from(state.modifiedSlides.entries()).map(([slide_key, new_content]) => ({
-                    slide_key,
-                    new_content
-                }));
-
-                console.log(`Submitting ${slidesArray.length} modified slides:`, slidesArray);
-
-                // Use batch rewrite API
+                const slidesArray = Array.from(state.modifiedSlides.entries()).map(([slide_key, new_content]) => ({ slide_key, new_content }));
                 const res = await api(`/api/v1/reports/${encodeURIComponent(state.jobId)}/slides`, {
-                    method: 'PATCH',
-                    body: JSON.stringify({
-                        slides: slidesArray
-                    })
+                    method: 'PATCH', body: JSON.stringify({ slides: slidesArray })
                 });
-
-                console.log('Rewrite response:', res);
-
-                // Extract data from new response format
                 const result = res.data || res;
-
-                // Update Spec with new data
                 if (result.slidespec) state.slidespec = result.slidespec;
-
-                // Clear modified slides after successful submission
                 state.modifiedSlides.clear();
                 updateModifiedSlidesUI();
-
-                // Refresh Previews
                 const prevRes = await api(`/api/v1/reports/${encodeURIComponent(state.jobId)}/preview?regenerate_if_missing=true`);
                 const prevData = prevRes.data || prevRes;
                 state.previews = prevData.preview_urls || prevData.images || [];
-                renderPreviewList(); // Refresh images
-
-                // Reload current slide content from updated slidespec
+                renderPreviewList();
                 const slide = state.slidespec.slides.find(s => s.slide_key === state.activeSlideKey);
-                if (slide) {
-                    $('slideJson').value = JSON.stringify(slide.placeholders || {}, null, 2);
-                }
-
-                const l = await api('/api/v1/system/logs?limit=20');
-                const logData = l.data || l;
-                renderLogs(logData.lines || []);
-
-                // Show success toast instead of alert
-                toast.success(
-                    `已成功更新 ${result.updated_count || result.updated_slides?.length || 0} 个幻灯片`,
-                    '更新完成'
-                );
-
+                if (slide) $('slideJson').value = JSON.stringify(slide.placeholders || {}, null, 2);
+                toast.success(tf('msgUpdateSlidesSuccess', { count: result.updated_count || 0 }), t('titleUpdateCompleted'));
             } catch(e) {
-                toast.error(e.message, '更新失败');
-                console.error(e);
+                toast.error(e.message, t('titleUpdateFailed'));
             } finally {
                 setLoading(false);
             }
@@ -1867,22 +1244,71 @@
         $('toggleLogsBtn').onclick = () => {
             const c = $('logContainer');
             const a = $('logArrow');
-            if (c.style.display === 'block') {
-                c.style.display = 'none';
-                a.style.transform = 'rotate(0deg)';
-            } else {
-                c.style.display = 'block';
-                a.style.transform = 'rotate(180deg)';
-            }
+            const isOpen = c.classList.toggle('open');
+            a.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
         };
 
         $('refreshPreviewBtn').onclick = async () => {
-            if(state.jobId) {
-                const prevRes = await api(`/preview?job_id=${state.jobId}&regenerate_if_missing=true`);
-                state.previews = prevRes.images || [];
+            if (!state.jobId) return;
+            try {
+                const prevRes = await api(`/api/v1/reports/${encodeURIComponent(state.jobId)}/preview?regenerate_if_missing=true`);
+                const prevData = prevRes.data || prevRes;
+                state.previews = prevData.preview_urls || prevData.images || [];
                 renderPreviewList();
-            }
+            } catch (e) { console.error('Failed to refresh previews:', e); }
         };
+
+        let ratingState = { selectedRating: null, jobId: null, ratedJobs: new Set() };
+        function showRatingCard(jobId) {
+            if (ratingState.ratedJobs.has(jobId)) return;
+            ratingState.jobId = jobId;
+            ratingState.selectedRating = null;
+            $('ratingCard').style.display = 'block';
+            // Reset UI
+            document.querySelectorAll('.rating-btn').forEach(btn => btn.classList.remove('selected'));
+            $('ratingCommentSection').style.display = 'none';
+            $('submitRatingBtn').style.display = 'none';
+        }
+        function closeRatingCard() { $('ratingCard').style.display = 'none'; }
+        function selectRating(rating) {
+            ratingState.selectedRating = rating;
+            document.querySelectorAll('.rating-btn').forEach(btn => btn.classList.toggle('selected', btn.dataset.rating === rating));
+            if (rating === 'disliked') {
+                $('ratingCommentSection').style.display = 'block';
+                $('submitRatingBtn').style.display = 'inline-block';
+                $('submitRatingBtn').disabled = $('ratingComment').value.length < 10;
+            } else {
+                submitRating();
+            }
+        }
+        async function submitRating() {
+            const { selectedRating, jobId } = ratingState;
+            const comment = $('ratingComment').value.trim();
+            if (!selectedRating) return;
+            if (selectedRating === 'disliked' && comment.length < 10) {
+                return showRatingError(t('ratingErrorCommentTooShort'));
+            }
+            try {
+                await api(`/api/v1/ratings/jobs/${encodeURIComponent(jobId)}/rating`, {
+                    method: 'POST', body: JSON.stringify({ rating: selectedRating, comment: comment || null })
+                });
+                ratingState.ratedJobs.add(jobId);
+                toast.success(t('ratingSuccessMessage'));
+                closeRatingCard();
+            } catch (error) { showRatingError(error.message); }
+        }
+        function showRatingError(message) {
+            const errorDiv = $('ratingError');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        $('ratingComment').addEventListener('input', function() {
+            const count = this.value.length;
+            $('ratingCharCount').textContent = count;
+            if (ratingState.selectedRating === 'disliked') {
+                $('submitRatingBtn').disabled = count < 10;
+            }
+        });
 
         init();
     </script>

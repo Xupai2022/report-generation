@@ -235,12 +235,13 @@ class HealthChecker:
             session_dirs = [d for d in sessions_dir.iterdir() if d.is_dir()]
             total_count = len(session_dirs)
 
-            # Find old sessions (>24 hours)
+            # Find old sessions (older than configured retention period)
             current_time = time.time()
+            retention_hours = config.settings.session_retention_days * 24
             old_sessions = []
             for session_dir in session_dirs:
                 age_hours = (current_time - session_dir.stat().st_mtime) / 3600
-                if age_hours > 24:
+                if age_hours > retention_hours:
                     old_sessions.append((session_dir.name, age_hours))
 
             # Check for orphaned sessions

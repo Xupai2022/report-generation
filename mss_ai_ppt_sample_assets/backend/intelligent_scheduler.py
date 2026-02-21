@@ -116,17 +116,17 @@ class IntelligentScheduler:
         if success_rate < 0.8:
             # Too many failures, reduce concurrency
             new_concurrency = max(self.min_concurrency, self.current_concurrency - 1)
-            logger.info(f"⬇️ Reducing concurrency due to low success rate: {success_rate:.1%}")
+            logger.info(f"Reducing concurrency due to low success rate: {success_rate:.1%}")
 
         elif success_rate > 0.95 and avg_duration < 180:
             # High success and fast responses, increase concurrency
             new_concurrency = min(self.max_concurrency, self.current_concurrency + 1)
-            logger.info(f"⬆️ Increasing concurrency: success={success_rate:.1%}, avg_time={avg_duration:.0f}s")
+            logger.info(f"Increasing concurrency: success={success_rate:.1%}, avg_time={avg_duration:.0f}s")
 
         elif avg_duration > 300:
             # Slow responses, reduce concurrency
             new_concurrency = max(self.min_concurrency, self.current_concurrency - 1)
-            logger.info(f"⬇️ Reducing concurrency due to slow responses: {avg_duration:.0f}s")
+            logger.info(f"Reducing concurrency due to slow responses: {avg_duration:.0f}s")
 
         if new_concurrency != self.current_concurrency:
             await self._update_semaphore(new_concurrency)
