@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MSS AI PPT | 智能报告生成器</title>
-    <link rel="icon" type="image/svg+xml" href="assets/sangfor_logo_vector.svg">
+    <link rel="icon" type="image/svg+xml" href="/assets/sangfor_logo_vector.svg">
     
     <style>
         /* --- REFINED DESIGN SYSTEM - V2 --- */
@@ -172,14 +172,44 @@
         .logo-group .title-group { display: flex; flex-direction: column; }
         .logo-group .title-group h1 { font-size: 16px; font-weight: 600; color: var(--color-text-primary); }
         .logo-group .title-group span { font-size: 11px; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; }
-        .status-indicator { display: flex; align-items: center; gap: var(--space-2); font-size: 12px; color: var(--color-text-secondary); }
-        .status-indicator .dot { width: 8px; height: 8px; background-color: var(--color-success); border-radius: 50%; }
-        .lang-switcher button {
-            background: none; border: none; padding: var(--space-1) var(--space-2); font-size: 13px;
-            color: var(--color-text-secondary); cursor: pointer; border-radius: var(--radius-md); transition: var(--transition-fast);
+        .lang-switcher { display: flex; align-items: center; }
+        .lang-toggle-btn {
+            position: relative;
+            width: 42px;
+            height: 42px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            border-radius: 12px;
+            color: #334155;
+            cursor: pointer;
+            transition: background-color var(--transition-fast), color var(--transition-fast);
         }
-        .lang-switcher button:hover { background-color: var(--color-bg-surface-hover); color: var(--color-text-primary); }
-        .lang-switcher button.active { background-color: var(--color-accent-light); color: var(--color-accent); font-weight: 500; }
+        .lang-toggle-btn .lang-toggle-icon {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.9;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0.78;
+        }
+        .lang-toggle-btn .lang-text {
+            font-size: 7.1px;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            fill: currentColor;
+            stroke: none;
+        }
+        .lang-toggle-btn:hover { background: rgba(15, 23, 42, 0.04); color: #0f172a; }
+        .lang-toggle-btn:active { background: rgba(15, 23, 42, 0.08); }
+        .lang-toggle-btn[data-lang="zh-CN"] { color: #1f2937; }
+        .lang-toggle-btn[data-lang="en-US"] { color: #0f172a; }
+        .lang-toggle-btn:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
 
         /* ===== Toolbar Components ===== */
         .toolbar-group { display: flex; align-items: center; gap: var(--space-6); }
@@ -196,7 +226,7 @@
             cursor: pointer; transition: var(--transition-fast);
         }
         .btn:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
-        .btn:disabled { cursor: not-allowed; opacity: 0.5; }
+        .btn:disabled { cursor: not-allowed; opacity: 0.56; }
         .btn .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -206,13 +236,39 @@
         }
         .btn-primary:hover:not(:disabled) { background-color: var(--color-accent-hover); }
         .btn-primary:active:not(:disabled) { background-color: var(--color-accent-active); }
+        #generateBtn {
+            min-width: 140px;
+            border-radius: 10px;
+            border: 1px solid #1e293b;
+            background: linear-gradient(180deg, #2d3b4d 0%, #243141 100%);
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.14);
+        }
+        #generateBtn:hover:not(:disabled) {
+            background: linear-gradient(180deg, #324154 0%, #28374a 100%);
+            box-shadow: 0 5px 14px rgba(15, 23, 42, 0.18);
+            transform: translateY(-1px);
+        }
+        #generateBtn:active:not(:disabled) {
+            background: #202d3c;
+            box-shadow: 0 1px 6px rgba(15, 23, 42, 0.14);
+            transform: translateY(0);
+        }
         
         .btn-secondary {
             background-color: var(--color-bg-surface); color: var(--color-text-primary);
-            border-color: var(--color-border-primary); box-shadow: var(--shadow-sm);
+            border-color: #d8dee6;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
         }
-        .btn-secondary:hover:not(:disabled) { background-color: var(--color-bg-surface-hover); border-color: #d1d5db; }
-        .btn-secondary:active:not(:disabled) { background-color: #f3f4f6; }
+        .btn-secondary:hover:not(:disabled) {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+        }
+        .btn-secondary:active:not(:disabled) {
+            background-color: #f1f5f9;
+            border-color: #cbd5e1;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+        }
 
         .btn-sm { height: 32px; padding: 0 var(--space-3); font-size: 13px; }
         .icon-export-btn {
@@ -221,10 +277,25 @@
             height: 40px;
             padding: 0;
             border-radius: 10px;
+            color: #334155;
+            transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+        }
+        .icon-export-btn:hover:not(:disabled) { transform: translateY(-1px); }
+        .icon-export-btn:active:not(:disabled) { transform: translateY(0); }
+        #presentBtn:hover:not(:disabled) {
+            background-color: #eef4ff;
+            border-color: #bfdbfe;
+            color: #1d4ed8;
+        }
+        #refreshPreviewBtn:hover:not(:disabled) {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+            color: #0f172a;
         }
         .tooltip-card-btn { position: relative; }
         .icon-export-btn svg { width: 18px; height: 18px; }
         .icon-export-btn[data-tooltip]:hover::after,
+        .lang-toggle-btn[data-tooltip]:hover::after,
         .tooltip-card-btn[data-tooltip]:hover::after {
             content: attr(data-tooltip);
             position: absolute;
@@ -242,6 +313,7 @@
             animation: tooltipFloatIn 160ms ease-out;
         }
         .icon-export-btn[data-tooltip]:hover::before,
+        .lang-toggle-btn[data-tooltip]:hover::before,
         .tooltip-card-btn[data-tooltip]:hover::before {
             content: "";
             position: absolute;
@@ -357,22 +429,6 @@
             border-radius: 50%; margin-left: auto; flex-shrink: 0;
         }
 
-        /* ===== Left Sidebar: Logs ===== */
-        .logs-section { flex-shrink: 0; border-top: 1px solid var(--color-border-primary); }
-        .logs-toggle {
-            width: 100%; height: 36px; padding: 0 var(--space-4); display: flex; align-items: center; justify-content: space-between;
-            background: none; border: none; cursor: pointer; font-size: 12px; font-weight: 500; color: var(--color-text-secondary);
-        }
-        .logs-toggle:hover { background: var(--color-bg-surface-hover); }
-        .logs-toggle .arrow { transition: transform var(--transition-fast); }
-        .logs-toggle .arrow.open { transform: rotate(180deg); }
-        .logs-container {
-            height: 150px; background-color: #111827; color: #9ca3af; padding: var(--space-3);
-            font-family: 'SF Mono', 'Consolas', 'Menlo', monospace; font-size: 12px; overflow-y: auto;
-            display: none; line-height: 1.5;
-        }
-        .logs-container.open { display: block; }
-
         /* ===== Center Canvas ===== */
         .canvas-viewport {
             flex-grow: 1; padding: var(--space-8); overflow-y: auto;
@@ -478,12 +534,97 @@
         }
         .editor-info .icon { color: var(--color-info); flex-shrink: 0; }
         .editor-info .text { font-size: 12px; color: #1e40af; line-height: 1.5; }
-        #slideJson {
-            flex-grow: 1; width: 100%; resize: none; border: none;
-            padding: var(--space-4); font-family: 'SF Mono', 'Consolas', monospace; font-size: 12px;
-            background-color: var(--color-bg-surface-2); line-height: 1.6;
+        .field-editor-shell {
+            flex-grow: 1;
+            background: linear-gradient(180deg, #f8fafc 0%, #f3f6f9 100%);
+            padding: var(--space-4);
+            overflow-y: auto;
         }
-        #slideJson:focus { outline: none; }
+        .field-editor-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-3);
+        }
+        .field-editor-empty {
+            border: 1px dashed #d1d5db;
+            border-radius: var(--radius-lg);
+            background: rgba(255, 255, 255, 0.7);
+            color: var(--color-text-secondary);
+            padding: var(--space-4);
+            text-align: center;
+            font-size: 13px;
+        }
+        .field-card {
+            border: 1px solid #dde3ea;
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(2px);
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(15, 23, 42, 0.04);
+            padding: var(--space-3);
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+        }
+        .field-card:hover {
+            border-color: #c5d1de;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+            transform: translateY(-1px);
+        }
+        .field-card.active {
+            border-color: #8fb2e8;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.14), 0 10px 22px rgba(15, 23, 42, 0.09);
+        }
+        .field-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: var(--space-2);
+            margin-bottom: var(--space-2);
+        }
+        .field-key {
+            font-size: 12px;
+            font-weight: 600;
+            color: #0f172a;
+            letter-spacing: 0.02em;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: #eaf1f8;
+        }
+        .field-type {
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .field-input {
+            width: 100%;
+            border: 1px solid #d7dee6;
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 9px 10px;
+            font-size: 13px;
+            color: #0f172a;
+            line-height: 1.55;
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+            resize: vertical;
+        }
+        .field-input:hover {
+            border-color: #b8c6d5;
+        }
+        .field-input:focus {
+            outline: none;
+            border-color: #7ea4de;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+        }
+        .field-input.field-input-structured {
+            min-height: 108px;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 12px;
+            background: #fbfdff;
+        }
+        .field-hint {
+            margin-top: 6px;
+            color: #64748b;
+            font-size: 11px;
+        }
 
         /* ===== Floating UI: Toast Notifications ===== */
         .toast-container {
@@ -769,7 +910,7 @@
     <header class="app-header">
         <div class="header-group">
             <div class="logo-group">
-                <img src="assets/sangfor_logo_vector.svg" alt="Sangfor Logo">
+                <img src="/assets/sangfor_logo_vector.svg" alt="Sangfor Logo" onerror="this.onerror=null;this.src='/ui/assets/sangfor_logo_vector.svg';">
                 <div class="title-group">
                     <h1>MSS AI PPT</h1>
                     <span data-i18n="pageSubtitle">智能报告生成器</span>
@@ -778,12 +919,14 @@
         </div>
         <div class="header-group">
             <div class="lang-switcher">
-                <button onclick="switchLanguage('zh-CN')" id="langBtnZh">中文</button>
-                <button onclick="switchLanguage('en-US')" id="langBtnEn">English</button>
-            </div>
-            <div class="status-indicator">
-                <span>v1.0.0-beta</span>
-                <div class="dot"></div>
+                <button id="langToggleBtn" class="lang-toggle-btn" type="button" onclick="toggleLanguage()" aria-label="Switch language" data-tooltip="Switch language">
+                    <svg class="lang-toggle-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M7.2 3.1a9.3 9.3 0 0 1 13.2 10.1"></path>
+                        <path d="M16.8 20.9a9.3 9.3 0 0 1-13.2-10.1"></path>
+                        <text class="lang-text" x="5.2" y="9.0">中</text>
+                        <text class="lang-text" x="10.8" y="16.7">En</text>
+                    </svg>
+                </button>
             </div>
         </div>
     </header>
@@ -834,15 +977,6 @@
                     <p class="text-sm font-medium" data-i18n="msgNoData">暂无幻灯片</p>
                 </div>
             </div>
-            <div class="logs-section">
-                <button id="toggleLogsBtn" class="logs-toggle">
-                    <span data-i18n="sectionLogs">系统日志</span>
-                    <span id="logArrow" class="arrow">▼</span>
-                </button>
-                <div id="logContainer" class="logs-container">
-                    <div id="logsContent"></div>
-                </div>
-            </div>
         </aside>
 
         <section class="app-canvas">
@@ -865,7 +999,7 @@
                             </svg>
                         </button>
                     </div>
-                    <button id="presentBtn" class="btn btn-secondary icon-export-btn" type="button" disabled data-tooltip="全屏播放幻灯片" aria-label="全屏播放幻灯片">
+                    <button id="presentBtn" class="btn btn-secondary icon-export-btn" type="button" disabled data-tooltip="???????" aria-label="???????">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <rect x="3.5" y="4.5" width="17" height="12" rx="2"></rect>
                             <path d="M10 9l4 2.5-4 2.5z" fill="currentColor" stroke="none"></path>
@@ -910,8 +1044,10 @@
                     <strong>编辑提示：</strong>只能修改字段的<strong>值</strong>，不能修改字段名。删除或重命名字段将被忽略。
                 </p>
             </div>
-            <textarea id="slideJson" class="code-editor" spellcheck="false" data-i18n-placeholder="editorPlaceholder"></textarea>
-            <div class="panel-footer">JSON 格式</div>
+            <div id="fieldEditorShell" class="field-editor-shell">
+                <div id="slideFields" class="field-editor-list"></div>
+            </div>
+            <div class="panel-footer" data-i18n="editorFooter">Key-Value</div>
         </aside>
     </main>
 
@@ -1023,9 +1159,19 @@
             });
         }
 
+        function toggleLanguage() {
+            const nextLang = currentLang === 'zh-CN' ? 'en-US' : 'zh-CN';
+            switchLanguage(nextLang);
+        }
+
         function updateLanguageButtonStyles() {
-            document.getElementById('langBtnZh').classList.toggle('active', currentLang === 'zh-CN');
-            document.getElementById('langBtnEn').classList.toggle('active', currentLang === 'en-US');
+            const toggleBtn = document.getElementById('langToggleBtn');
+            if (!toggleBtn) return;
+            const nextLang = currentLang === 'zh-CN' ? 'en-US' : 'zh-CN';
+            const tip = nextLang === 'en-US' ? 'Switch to English' : '切换到中文';
+            toggleBtn.dataset.lang = currentLang;
+            toggleBtn.setAttribute('aria-label', tip);
+            toggleBtn.setAttribute('data-tooltip', tip);
         }
 
         function updateUILanguage() {
@@ -1070,6 +1216,13 @@
             updateModifiedSlidesUI();
             updatePreviewLayoutSwitchText();
             updateExportCopy();
+            if (state.activeSlideKey && state.slidespec?.slides) {
+                const slide = state.slidespec.slides.find(s => s.slide_key === state.activeSlideKey);
+                if (slide) {
+                    const editorContent = state.modifiedSlides.get(state.activeSlideKey) || slide.placeholders || {};
+                    renderSlideFields(editorContent);
+                }
+            }
         }
 
         function getTemplateNameTranslated(templateId, originalName) {
@@ -1153,7 +1306,6 @@
             previewStamp: Date.now(),
             activeSlideKey: null,
             loading: false,
-            logsVisible: false,
             isClickScrolling: false, // flag to prevent intersection observer conflict
             websocket: null,
             clientId: null,
@@ -1324,7 +1476,10 @@
                 renderPreviewList();
                 if (state.activeSlideKey) {
                     const slide = state.slidespec.slides.find(s => s.slide_key === state.activeSlideKey);
-                    if (slide) $('slideJson').value = JSON.stringify(slide.placeholders || {}, null, 2);
+                    if (slide) {
+                        const editorContent = state.modifiedSlides.get(state.activeSlideKey) || slide.placeholders || {};
+                        renderSlideFields(editorContent);
+                    }
                 }
 
                 // Fetch previews after a short delay
@@ -1387,6 +1542,7 @@
         async function init() {
             await loadTranslations(currentLang);
             updateUILanguage();
+            renderSlideFields();
             updateLanguageButtonStyles();
             initWebSocket();
             checkAndRestoreCooldown();
@@ -1412,12 +1568,6 @@
                 }
             }
         }, { root: $('canvasViewport'), threshold: 0.5 });
-
-        function renderLogs(lines) {
-            const container = $('logsContent');
-            container.innerHTML = lines.map((l, i) => `<div><span style="opacity:0.3; margin-right:8px;">${i+1}</span>${l}</div>`).join('');
-            container.scrollTop = container.scrollHeight;
-        }
 
         function renderSlides() {
             const list = $('slidesList');
@@ -1628,6 +1778,121 @@
             });
         }
 
+        function isStructuredValue(value) {
+            return value !== null && typeof value === 'object';
+        }
+
+        function getValueTypeLabel(value) {
+            if (Array.isArray(value)) return 'array';
+            if (value === null) return 'null';
+            return typeof value;
+        }
+
+        function stringifyValueForInput(value) {
+            if (isStructuredValue(value)) {
+                return JSON.stringify(value, null, 2);
+            }
+            if (value === null || typeof value === 'undefined') return '';
+            return String(value);
+        }
+
+        function renderSlideFields(content = {}) {
+            const container = $('slideFields');
+            if (!container) return;
+            container.innerHTML = '';
+            const entries = Object.entries(content || {});
+            if (!entries.length) {
+                container.innerHTML = `<div class="field-editor-empty">${t('editorPlaceholder')}</div>`;
+                return;
+            }
+
+            entries.forEach(([key, value]) => {
+                const type = getValueTypeLabel(value);
+                const card = document.createElement('div');
+                card.className = 'field-card';
+                card.dataset.fieldKey = key;
+
+                const header = document.createElement('div');
+                header.className = 'field-header';
+
+                const keyTag = document.createElement('span');
+                keyTag.className = 'field-key';
+                keyTag.textContent = key;
+
+                const typeTag = document.createElement('span');
+                typeTag.className = 'field-type';
+                typeTag.textContent = type;
+
+                header.appendChild(keyTag);
+                header.appendChild(typeTag);
+                card.appendChild(header);
+
+                const input = isStructuredValue(value) ? document.createElement('textarea') : document.createElement('input');
+                if (!isStructuredValue(value)) input.type = 'text';
+                input.className = `field-input${isStructuredValue(value) ? ' field-input-structured' : ''}`;
+                input.dataset.fieldKey = key;
+                input.dataset.originalType = type;
+                input.value = stringifyValueForInput(value);
+                input.spellcheck = false;
+                if (isStructuredValue(value)) {
+                    input.rows = 4;
+                }
+                input.addEventListener('focus', () => card.classList.add('active'));
+                input.addEventListener('blur', () => card.classList.remove('active'));
+                card.appendChild(input);
+
+                if (isStructuredValue(value)) {
+                    const hint = document.createElement('div');
+                    hint.className = 'field-hint';
+                    hint.textContent = t('editorStructuredHint');
+                    card.appendChild(hint);
+                }
+
+                container.appendChild(card);
+            });
+        }
+
+        function parseEditedValue(raw, originalValue, key) {
+            const kind = getValueTypeLabel(originalValue);
+            const trimmed = raw.trim();
+
+            if (kind === 'string') return raw;
+            if (kind === 'number') {
+                const parsed = Number(trimmed);
+                if (Number.isNaN(parsed)) {
+                    throw new Error(tf('errorInvalidNumberField', { field: key }));
+                }
+                return parsed;
+            }
+            if (kind === 'boolean') {
+                const normalized = trimmed.toLowerCase();
+                if (normalized === 'true' || normalized === '1' || normalized === 'yes') return true;
+                if (normalized === 'false' || normalized === '0' || normalized === 'no') return false;
+                throw new Error(tf('errorInvalidBooleanField', { field: key }));
+            }
+            if (kind === 'null') {
+                if (!trimmed || trimmed === 'null') return null;
+                try {
+                    return JSON.parse(raw);
+                } catch {
+                    return raw;
+                }
+            }
+            try {
+                return JSON.parse(raw);
+            } catch {
+                throw new Error(tf('errorInvalidStructuredField', { field: key }));
+            }
+        }
+
+        function findEditorInputByKey(key) {
+            const inputs = document.querySelectorAll('.field-input[data-field-key]');
+            for (const input of inputs) {
+                if (input.dataset.fieldKey === key) return input;
+            }
+            return null;
+        }
+
         function updateActiveState(key, scrollRightView) {
             if (state.activeSlideKey && state.activeSlideKey !== key) {
                 saveCurrentSlideModifications();
@@ -1639,7 +1904,7 @@
             const slide = state.slidespec.slides.find(s => s.slide_key === key);
             if (slide) {
                 const editorContent = state.modifiedSlides.get(key) || slide.placeholders || {};
-                $('slideJson').value = JSON.stringify(editorContent, null, 2);
+                renderSlideFields(editorContent);
             }
             updateModifiedSlidesUI();
             if (scrollRightView) {
@@ -1655,25 +1920,27 @@
         function saveCurrentSlideModifications() {
             if (!state.activeSlideKey) return;
             try {
-                const editedContent = JSON.parse($('slideJson').value);
                 const slide = state.slidespec.slides.find(s => s.slide_key === state.activeSlideKey);
                 if (!slide) return;
                 const originalContent = slide.placeholders || {};
                 const protectedContent = {};
-                for (const originalKey in originalContent) {
-                    protectedContent[originalKey] = (originalKey in editedContent) ? editedContent[originalKey] : originalContent[originalKey];
+
+                for (const [originalKey, originalValue] of Object.entries(originalContent)) {
+                    const input = findEditorInputByKey(originalKey);
+                    if (!input) {
+                        protectedContent[originalKey] = originalValue;
+                        continue;
+                    }
+                    protectedContent[originalKey] = parseEditedValue(input.value, originalValue, originalKey);
                 }
-                const addedKeys = Object.keys(editedContent).filter(k => !(k in originalContent));
-                if (addedKeys.length > 0) {
-                    toast.warning(tf('msgIgnoredAddedFields', { fields: addedKeys.join(', ') }), t('toastTitleHint'));
-                }
+
                 if (JSON.stringify(protectedContent) !== JSON.stringify(originalContent)) {
                     state.modifiedSlides.set(state.activeSlideKey, protectedContent);
                 } else {
                     state.modifiedSlides.delete(state.activeSlideKey);
                 }
             } catch (e) {
-                toast.error(t('errorInvalidJsonCannotSave'), t('titleSaveFailed'));
+                toast.error(e.message || t('errorInvalidJsonCannotSave'), t('titleSaveFailed'));
             }
         }
         
@@ -1906,20 +2173,16 @@
                 renderSlides();
                 renderPreviewList();
                 const slide = state.slidespec.slides.find(s => s.slide_key === state.activeSlideKey);
-                if (slide) $('slideJson').value = JSON.stringify(slide.placeholders || {}, null, 2);
+                if (slide) {
+                    const editorContent = state.modifiedSlides.get(state.activeSlideKey) || slide.placeholders || {};
+                    renderSlideFields(editorContent);
+                }
                 toast.success(tf('msgUpdateSlidesSuccess', { count: result.updated_count || 0 }), t('titleUpdateCompleted'));
             } catch(e) {
                 toast.error(e.message, t('titleUpdateFailed'));
             } finally {
                 setLoading(false);
             }
-        };
-
-        $('toggleLogsBtn').onclick = () => {
-            const c = $('logContainer');
-            const a = $('logArrow');
-            const isOpen = c.classList.toggle('open');
-            a.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
         };
 
         $('refreshPreviewBtn').onclick = async () => {

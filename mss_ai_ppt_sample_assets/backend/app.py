@@ -4,6 +4,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from pathlib import Path
 import logging
 import asyncio
+import mimetypes
 
 from mss_ai_ppt_sample_assets.backend.services.report_service import ReportService
 from mss_ai_ppt_sample_assets.backend.services.job_manager import JobManager
@@ -25,6 +26,9 @@ setup_logging(
     backup_count=config.settings.log_backup_count
 )
 logger = logging.getLogger(__name__)
+
+# Ensure SVG static files are served with the standard MIME type.
+mimetypes.add_type("image/svg+xml", ".svg")
 
 app = FastAPI(
     title="MSS AI PPT API",
@@ -93,6 +97,9 @@ logger.info("API routes registered | WebSocket, JobManager, AdminService, Rating
 FRONTEND_DIR = Path(__file__).parent / "frontend"
 if FRONTEND_DIR.exists():
     app.mount("/ui", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
+    ASSETS_DIR = FRONTEND_DIR / "assets"
+    if ASSETS_DIR.exists():
+        app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
 
 # Mount i18n directory for translation files
 I18N_DIR = FRONTEND_DIR / "i18n"
