@@ -1,16 +1,13 @@
 {
   "pageTitle": "MSS AI PPT 报告生成系统",
   "pageSubtitle": "智能报告生成器",
-
   "sectionGenerate": "生成报告",
   "sectionJobs": "任务列表",
   "sectionSlides": "幻灯片列表",
   "sectionLogs": "系统日志",
-
   "labelInput": "输入数据",
   "labelTemplate": "选择模板",
   "labelUseMock": "快速生成 (Mock)",
-
   "btnGenerate": "生成报告",
   "btnPreview": "预览",
   "btnDownload": "下载 PPT",
@@ -20,19 +17,16 @@
   "btnApplyRegenerate": "应用并重新生成",
   "btnApplyRegenerateWithCount": "应用并重新生成 ({count}页已修改)",
   "btnRefreshPreview": "刷新预览",
-
   "statusPending": "等待中",
   "statusProcessing": "生成中",
   "statusCompleted": "已完成",
   "statusFailed": "失败",
   "statusRetrying": "重试中",
-
   "progressInit": "初始化",
   "progressLoadTemplate": "加载模板",
   "progressGenerateContent": "AI生成内容",
   "progressRenderPpt": "渲染PPT",
   "progressComplete": "完成",
-
   "tableJobId": "任务ID",
   "tableInput": "输入数据",
   "tableTemplate": "模板",
@@ -40,7 +34,6 @@
   "tableProgress": "进度",
   "tableCreatedAt": "创建时间",
   "tableActions": "操作",
-
   "msgGenerating": "正在生成报告",
   "msgGeneratingPleaseWait": "正在生成报告,请稍候...",
   "msgSuccess": "报告生成成功！",
@@ -50,7 +43,6 @@
   "msgNoData": "暂无数据",
   "msgSelectInput": "请选择输入数据",
   "msgSelectTemplate": "请选择报告模板",
-
   "admin.title": "管理后台",
   "admin.logout": "登出",
   "admin.search": "搜索任务ID、输入源、模板...",
@@ -110,16 +102,13 @@
   "msgGeneratingPreview": "生成预览中...",
   "appDescription": "我将为您自动分析数据、编排内容并生成结构清晰、视觉专业的PPT报告。",
   "errorWebSocketConnection": "WebSocket连接失败，请刷新页面重试",
-
   "editorTitle": "JSON 属性编辑器",
   "editorHint": "编辑提示：只能修改字段的值，不能修改字段名（如TITLE、SUBTITLE等）。删除或重命名字段将被忽略。",
   "editorPlaceholder": "// 选择幻灯片以编辑属性...",
-
   "tooltipMockData": "使用预生成的模拟数据，跳过AI生成过程，适合快速测试",
   "tooltipPreview": "预览报告内容（生成PNG图片）",
   "tooltipDownload": "下载生成的PPT文件",
   "tooltipModified": "已修改",
-
   "errorNetworkFailed": "网络请求失败",
   "errorUnknown": "未知错误",
   "errorGenerationFailed": "报告生成失败",
@@ -131,14 +120,11 @@
   "msgUpdateSlidesSuccess": "已成功更新 {count} 个幻灯片",
   "titleUpdateCompleted": "更新完成",
   "titleUpdateFailed": "更新失败",
-
   "langSwitcher": "语言",
   "langChinese": "中文",
   "langEnglish": "English",
-
   "templateExecutive": "MSS月度安全报告（管理版）",
   "templateTechnical": "MSS月度安全报告（技术版）",
-
   "ratingTitle": "为这份报告评分",
   "ratingPrompt": "已开始下载，请问这份报告是否基本可用？",
   "ratingLiked": "满意",
@@ -148,5 +134,8 @@
   "ratingSubmit": "提交评分",
   "ratingSuccessMessage": "感谢您的反馈！",
   "ratingErrorNoSelection": "请选择满意或不满意",
-  "ratingErrorCommentTooShort": "请至少输入10个字说明原因"
+  "ratingErrorCommentTooShort": "请至少输入10个字说明原因",
+  "btnPresentSlides": "播放幻灯片",
+  "presentBtnTitle": "全屏播放幻灯片",
+  "msgFullscreenExitHint": "MSS-AIPPT - 按 Esc 退出全屏"
 }

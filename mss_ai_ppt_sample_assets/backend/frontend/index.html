@@ -141,8 +141,19 @@
             display: flex;
             flex-direction: column;
         }
-        .app-sidebar { width: var(--sidebar-width); border-right: 1px solid var(--color-border-primary); }
+        .app-sidebar {
+            width: var(--sidebar-width);
+            border-right: 1px solid var(--color-border-primary);
+            overflow: hidden;
+            transition: width 260ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease, border-color 220ms ease;
+        }
         .app-editor { width: var(--editor-width); border-left: 1px solid var(--color-border-primary); }
+        .app-body.preview-two-up-mode .app-sidebar {
+            width: 0;
+            opacity: 0;
+            border-right-color: transparent;
+            pointer-events: none;
+        }
         .app-canvas {
             flex-grow: 1;
             display: flex;
@@ -204,6 +215,50 @@
         .btn-secondary:active:not(:disabled) { background-color: #f3f4f6; }
 
         .btn-sm { height: 32px; padding: 0 var(--space-3); font-size: 13px; }
+        .icon-export-btn {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border-radius: 10px;
+        }
+        .tooltip-card-btn { position: relative; }
+        .icon-export-btn svg { width: 18px; height: 18px; }
+        .icon-export-btn[data-tooltip]:hover::after,
+        .tooltip-card-btn[data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 50%;
+            top: calc(100% + 8px);
+            transform: translateX(-50%);
+            white-space: nowrap;
+            background: rgba(17, 24, 39, 0.94);
+            color: #fff;
+            font-size: 12px;
+            padding: 5px 8px;
+            border-radius: 6px;
+            line-height: 1.1;
+            z-index: 20;
+            animation: tooltipFloatIn 160ms ease-out;
+        }
+        .icon-export-btn[data-tooltip]:hover::before,
+        .tooltip-card-btn[data-tooltip]:hover::before {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: calc(100% + 3px);
+            transform: translateX(-50%);
+            width: 8px;
+            height: 8px;
+            background: rgba(17, 24, 39, 0.94);
+            rotate: 45deg;
+            z-index: 19;
+            animation: tooltipFloatIn 160ms ease-out;
+        }
+        @keyframes tooltipFloatIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
 
         /* --- Forms --- */
         select, input[type="text"], textarea {
@@ -226,6 +281,7 @@
             border-bottom: 1px solid var(--color-border-primary);
             flex-shrink: 0;
         }
+        .panel-actions { display: flex; align-items: center; gap: var(--space-2); }
         .panel-header h2 { font-size: 12px; font-weight: 600; color: var(--color-text-primary); text-transform: uppercase; letter-spacing: 0.05em;}
         .panel-content { flex-grow: 1; overflow-y: auto; padding: var(--space-2); }
         .panel-footer {
@@ -242,20 +298,60 @@
             border-radius: var(--radius-full);
         }
         .slide-item {
-            display: flex; align-items: center; gap: var(--space-3);
-            padding: var(--space-2) var(--space-3); border-radius: var(--radius-md);
+            display: flex; flex-direction: column; gap: var(--space-2);
+            padding: var(--space-2); border-radius: var(--radius-md);
             cursor: pointer; transition: background-color var(--transition-fast);
         }
         .slide-item:hover { background-color: var(--color-bg-surface-hover); }
         .slide-item.active { background-color: var(--color-accent-light); }
+        .slide-thumb-wrap {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            background-color: var(--color-bg-base);
+            border: 1px solid var(--color-border-primary);
+        }
+        .slide-thumb {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .slide-thumb-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: var(--color-text-tertiary);
+            background-color: var(--color-bg-surface-2);
+        }
         .slide-item .slide-num {
-            width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
-            background-color: var(--color-bg-base); color: var(--color-text-secondary);
-            border-radius: var(--radius-sm); font-size: 12px; font-weight: 500;
-            transition: var(--transition-fast);
+            position: absolute;
+            top: var(--space-2);
+            left: var(--space-2);
+            min-width: 26px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 var(--space-2);
+            background-color: rgba(17, 24, 39, 0.72);
+            color: #fff;
+            border-radius: var(--radius-sm);
+            font-size: 11px;
+            font-weight: 600;
         }
         .slide-item.active .slide-num { background-color: var(--color-accent); color: var(--color-text-on-accent); }
-        .slide-item .slide-title { font-size: 13px; font-weight: 500; color: var(--color-text-primary); }
+        .slide-item .slide-meta {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+        .slide-item .slide-title { flex: 1; font-size: 12px; font-weight: 500; color: var(--color-text-primary); }
         .slide-item .modified-indicator {
             width: 6px; height: 6px; background-color: var(--color-warning);
             border-radius: 50%; margin-left: auto; flex-shrink: 0;
@@ -283,11 +379,28 @@
         }
         .preview-list {
             display: flex; flex-direction: column; align-items: center; gap: var(--space-10);
+            max-width: 100%;
+            transition: all 280ms cubic-bezier(0.22, 1, 0.36, 1);
         }
         .slide-view-item {
             width: 100%; max-width: 960px; display: flex; flex-direction: column; gap: var(--space-3);
+            transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1), opacity 260ms cubic-bezier(0.22, 1, 0.36, 1);
+            cursor: pointer;
         }
-        .slide-view-label { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--color-text-tertiary); }
+        .preview-frame { position: relative; width: 100%; }
+        .preview-page-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 2;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #ffffff;
+            background: rgba(17, 24, 39, 0.68);
+            backdrop-filter: blur(2px);
+        }
         .preview-card {
             background-color: var(--color-bg-surface);
             box-shadow: var(--shadow-lg); border: 1px solid var(--color-border-primary);
@@ -300,6 +413,53 @@
             border-radius: var(--radius-lg); width: 100%; aspect-ratio: 16/9;
             display: flex; align-items: center; justify-content: center;
             color: var(--color-text-tertiary);
+        }
+        .preview-list.preview-list-two-up {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            align-items: start;
+            gap: var(--space-6);
+            width: min(1400px, 100%);
+            margin: 0 auto;
+        }
+        .preview-list.preview-list-two-up .slide-view-item { max-width: none; }
+        .slide-view-item.active .preview-card,
+        .slide-view-item.active .placeholder-card {
+            border-color: var(--color-accent);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2), var(--shadow-lg);
+        }
+        .preview-list.animating .slide-view-item {
+            opacity: 0;
+            transform: translateY(10px) scale(0.985);
+        }
+        .preview-list .slide-view-item.layout-enter {
+            animation: previewItemEnter 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        @keyframes previewItemEnter {
+            from { opacity: 0; transform: translateY(10px) scale(0.985); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .preview-layout-switch {
+            display: inline-flex; align-items: center; gap: var(--space-1); padding: 4px;
+            background: #eceef1; border: 1px solid #dde1e6; border-radius: 12px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        }
+        .preview-layout-btn {
+            width: 34px; height: 30px; border: none; border-radius: 9px;
+            background: transparent; color: #4b5563; cursor: pointer;
+            display: inline-flex; align-items: center; justify-content: center;
+            transition: all var(--transition-fast);
+        }
+        .preview-layout-btn:hover { color: var(--color-text-primary); }
+        .preview-layout-btn.active {
+            background: #ffffff; color: #111827; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+        }
+        .preview-layout-btn svg {
+            width: 16px; height: 16px; stroke: currentColor; fill: none;
+            stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+        }
+        @media (max-width: 1100px) {
+            .preview-list.preview-list-two-up { grid-template-columns: 1fr; }
         }
 
         /* ===== Empty State ===== */
@@ -416,6 +576,179 @@
         .rating-char-count { text-align: right; font-size: 12px; color: var(--color-text-tertiary); margin-top: var(--space-1); }
         .rating-actions { margin-top: var(--space-4); text-align: center; }
         .rating-error { margin-top: var(--space-3); padding: var(--space-3); background-color: var(--color-error-bg); color: var(--color-error); border-radius: var(--radius-md); }
+
+        /* ===== Export Modal ===== */
+        .export-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: transparent;
+            z-index: 1150;
+            display: none;
+            pointer-events: none;
+        }
+        .export-modal-overlay.active { display: block; pointer-events: auto; }
+        .export-modal {
+            position: fixed;
+            width: min(25vw, 430px);
+            min-width: 330px;
+            max-width: 92vw;
+            background: #f4f4f4;
+            border-radius: 14px;
+            border: 1px solid #e5e7eb;
+            box-shadow: var(--shadow-2xl);
+            padding: 14px 14px 12px;
+            transform-origin: top center;
+            animation: exportPopoverIn 180ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        @keyframes exportPopoverIn {
+            from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .export-modal-subtitle {
+            font-size: 15px;
+            color: #111827;
+            margin: 2px 2px 12px;
+            font-weight: 700;
+            letter-spacing: 0;
+        }
+        .export-option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); margin-bottom: var(--space-3); }
+        .export-option {
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            background: #f8fafc;
+            padding: 10px;
+            cursor: pointer;
+            transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+        }
+        .export-option:hover { transform: translateY(-1px); border-color: #9ca3af; }
+        .export-option.selected {
+            border-color: #111827;
+            box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.2);
+        }
+        .export-thumb {
+            height: 92px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            background: linear-gradient(145deg, #f4f4f4 0%, #e8ebef 100%);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .export-file-mark {
+            width: 74px;
+            height: 74px;
+            border-radius: 10px;
+            position: relative;
+            border: 1px solid rgba(0, 0, 0, 0.14);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 10px;
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            color: #ffffff;
+        }
+        .export-file-mark::after {
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+        }
+        .export-file-mark::before {
+            position: absolute;
+            content: "";
+            top: -1px;
+            right: -1px;
+            width: 20px;
+            height: 20px;
+            clip-path: polygon(100% 0, 0 0, 100% 100%);
+            background: rgba(255, 255, 255, 0.88);
+        }
+        .export-thumb-ppt .export-file-mark {
+            border-color: rgba(146, 64, 14, 0.45);
+            background:
+                linear-gradient(90deg, #c2410c 0 26%, transparent 26%),
+                linear-gradient(160deg, #f59e0b 0%, #ea580c 100%);
+        }
+        .export-thumb-ppt .export-file-mark::before {
+            background: rgba(255, 243, 233, 0.96);
+        }
+        .export-thumb-ppt .export-file-mark::after {
+            content: "PPTX";
+            font-size: 14px;
+            font-weight: 800;
+        }
+        .export-thumb-pdf .export-file-mark {
+            border-color: rgba(127, 29, 29, 0.45);
+            background:
+                radial-gradient(circle at 22% 72%, rgba(255, 255, 255, 0.22) 0 10%, transparent 11%),
+                linear-gradient(160deg, #ef4444 0%, #b91c1c 100%);
+        }
+        .export-thumb-pdf .export-file-mark::before {
+            background: rgba(255, 237, 237, 0.96);
+        }
+        .export-thumb-pdf .export-file-mark::after {
+            content: "PDF";
+            font-size: 18px;
+            font-weight: 800;
+        }
+        .export-modal-actions { display: block; }
+        .export-confirm-btn {
+            width: 100%;
+            height: 40px;
+            border: none;
+            border-radius: 10px;
+            background: #171111;
+            color: #fff;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .export-confirm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        @media (max-width: 900px) {
+            .export-modal { width: min(92vw, 430px); min-width: 0; }
+            .export-modal-subtitle { font-size: 14px; }
+            .export-option-grid { grid-template-columns: 1fr; }
+            .export-confirm-btn { font-size: 16px; }
+        }
+
+        /* ===== Fullscreen Presentation ===== */
+        .presenter-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 1200;
+            background: #05070b;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .presenter-stage {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        .presenter-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 0;
+            box-shadow: none;
+        }
+        .presenter-empty {
+            width: min(90vw, 1200px);
+            aspect-ratio: 16 / 9;
+            border: 1px dashed rgba(255, 255, 255, 0.28);
+            border-radius: var(--radius-lg);
+            color: #9ca3af;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body class="app-layout">
@@ -472,8 +805,13 @@
                 <input type="checkbox" id="useMock" checked>
                 <span data-i18n="labelUseMock">快速生成 (Mock)</span>
             </label>
-            <button id="downloadBtn" class="btn btn-secondary" disabled data-i18n="btnDownload">下载 PPT</button>
-            <button id="downloadPdfBtn" class="btn btn-secondary" disabled data-i18n="btnDownloadPdf">下载 PDF</button>
+            <button id="exportBtn" class="btn btn-secondary icon-export-btn" type="button" disabled data-tooltip="下载">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M12 3v11"></path>
+                    <path d="M8 10l4 4 4-4"></path>
+                    <path d="M4 17v2h16v-2"></path>
+                </svg>
+            </button>
             <button id="generateBtn" class="btn btn-primary">
                 <span id="genIcon">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3L3 14h9l-1 9 9-12h-9z"/></svg>
@@ -510,7 +848,40 @@
         <section class="app-canvas">
             <div class="panel-header">
                 <h2 id="activeSlideTitle" class="truncate">总览</h2>
-                <button id="refreshPreviewBtn" class="btn btn-secondary btn-sm" data-i18n="btnRefreshPreview">刷新预览</button>
+                <div class="panel-actions">
+                    <div class="preview-layout-switch" role="group" aria-label="Preview layout switch">
+                        <button id="previewLayoutListBtn" class="preview-layout-btn active" type="button" aria-label="列表预览" title="列表预览">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+                                <line x1="12" y1="4" x2="12" y2="20"></line>
+                            </svg>
+                        </button>
+                        <button id="previewLayoutTwoUpBtn" class="preview-layout-btn" type="button" aria-label="每行两张" title="每行两张">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <rect x="4" y="4" width="6" height="6" rx="1"></rect>
+                                <rect x="14" y="4" width="6" height="6" rx="1"></rect>
+                                <rect x="4" y="14" width="6" height="6" rx="1"></rect>
+                                <rect x="14" y="14" width="6" height="6" rx="1"></rect>
+                            </svg>
+                        </button>
+                    </div>
+                    <button id="presentBtn" class="btn btn-secondary icon-export-btn" type="button" disabled data-tooltip="全屏播放幻灯片" aria-label="全屏播放幻灯片">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="3.5" y="4.5" width="17" height="12" rx="2"></rect>
+                            <path d="M10 9l4 2.5-4 2.5z" fill="currentColor" stroke="none"></path>
+                            <path d="M12 16.5V20"></path>
+                            <path d="M8 20h8"></path>
+                        </svg>
+                    </button>
+                    <button id="refreshPreviewBtn" class="btn btn-secondary icon-export-btn" type="button" data-tooltip="刷新预览" aria-label="刷新预览">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M21 2v6h-6"></path>
+                            <path d="M3 13a9 9 0 0 0 15.55 4.6L21 14"></path>
+                            <path d="M3 22v-6h6"></path>
+                            <path d="M21 11A9 9 0 0 0 5.45 6.4L3 10"></path>
+                        </svg>
+                    </button>
+                </div>
             </div>
             <div id="canvasViewport" class="canvas-viewport">
                 <div id="previewList" class="preview-list hidden"></div>
@@ -544,6 +915,27 @@
         </aside>
     </main>
 
+    <div id="exportModalOverlay" class="export-modal-overlay">
+        <div class="export-modal" role="dialog" aria-modal="true" aria-label="Export options">
+            <p id="exportModalSubtitle" class="export-modal-subtitle">可选择导出方式</p>
+            <div class="export-option-grid">
+                <div id="exportOptionPpt" class="export-option selected" data-format="ppt" role="button" tabindex="0" aria-label="导出PPT">
+                    <div class="export-thumb export-thumb-ppt">
+                        <div class="export-file-mark"></div>
+                    </div>
+                </div>
+                <div id="exportOptionPdf" class="export-option" data-format="pdf" role="button" tabindex="0" aria-label="导出PDF">
+                    <div class="export-thumb export-thumb-pdf">
+                        <div class="export-file-mark"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="export-modal-actions">
+                <button id="exportConfirmBtn" class="export-confirm-btn" type="button">导出</button>
+            </div>
+        </div>
+    </div>
+
     <div id="ratingCard" class="rating-card" style="display: none;">
         <div class="rating-card-header">
             <h4 data-i18n="ratingTitle">为这份报告评分</h4>
@@ -575,11 +967,28 @@
             <div id="ratingError" class="rating-error" style="display: none;"></div>
         </div>
     </div>
+
+    <div id="presenterModal" class="presenter-modal hidden" aria-hidden="true">
+        <div class="presenter-stage">
+            <img id="presenterImage" class="presenter-image hidden" alt="Slide preview">
+            <div id="presenterEmpty" class="presenter-empty">Preview is not ready for this slide.</div>
+        </div>
+    </div>
     
     <script>
         // --- i18n System ---
         let currentLang = localStorage.getItem('lang') || 'zh-CN';
         let translations = {};
+        const i18nFallback = {
+            'zh-CN': {
+                btnPresentSlides: '播放幻灯片',
+                presentBtnTitle: '全屏播放幻灯片'
+            },
+            'en-US': {
+                btnPresentSlides: 'Play Slides',
+                presentBtnTitle: 'Start slideshow in fullscreen'
+            }
+        };
 
         async function loadTranslations(lang) {
             try {
@@ -593,7 +1002,7 @@
         }
 
 	        function t(key) {
-	            return translations[key] || key;
+	            return translations[key] || i18nFallback[currentLang]?.[key] || key;
 	        }
 
 	        function tf(key, params = {}) {
@@ -659,6 +1068,8 @@
 
             // Update modified slides button
             updateModifiedSlidesUI();
+            updatePreviewLayoutSwitchText();
+            updateExportCopy();
         }
 
         function getTemplateNameTranslated(templateId, originalName) {
@@ -739,6 +1150,7 @@
             jobId: null,
             slidespec: null,
             previews: [],
+            previewStamp: Date.now(),
             activeSlideKey: null,
             loading: false,
             logsVisible: false,
@@ -748,7 +1160,12 @@
             sessionId: null,
             progressSteps: [],
             wsReady: false,  // Track if WebSocket is ready
-            modifiedSlides: new Map()  // Track all modified slides: Map<slide_key, new_content>
+            modifiedSlides: new Map(),  // Track all modified slides: Map<slide_key, new_content>
+            isPresenting: false,
+            presentIndex: 0,
+            presentLastWheelAt: 0,
+            previewLayout: 'list',
+            exportFormat: 'ppt'
         };
 
         const $ = (id) => document.getElementById(id);
@@ -867,7 +1284,7 @@
             if (step) { step.status = status; renderProgressSteps(); }
         }
 
-        function updateProgress(progress) {
+        function updateProgress(progress, message, details) {
             updateProgressBar(progress);
             let currentStepIndex = 0;
             if (progress < 20) currentStepIndex = 0;
@@ -919,7 +1336,9 @@
                         const prevData = prevRes.data || prevRes;
                         console.log('Preview data:', prevData);
                         state.previews = prevData.preview_urls || prevData.images || [];
+                        state.previewStamp = Date.now();
                         console.log('Extracted previews:', state.previews);
+                        renderSlides();
                         renderPreviewList();
                         updateActiveState(state.activeSlideKey, true);
                     } catch (e) { console.error('Failed to load previews:', e); }
@@ -1005,13 +1424,22 @@
             const slides = state.slidespec?.slides || [];
             $('slideCount').textContent = slides.length;
             if (!slides.length) {
-                list.innerHTML = `<div class="empty-state"><div class="icon">📄</div><p class="text-sm font-medium" data-i18n="msgNoData">暂无幻灯片</p></div>`; return;
+                list.innerHTML = `<div class="empty-state"><div class="icon">📄</div><p class="text-sm font-medium">${t('msgNoData')}</p></div>`;
+                return;
             }
             list.innerHTML = slides.map((s, idx) => `
                 <div class="slide-item" data-key="${s.slide_key}">
-                    <div class="slide-num">${idx + 1}</div>
-                    <div class="slide-title truncate">${s.slide_key}</div>
-                    ${state.modifiedSlides.has(s.slide_key) ? '<div class="modified-indicator"></div>' : ''}
+                    <div class="slide-thumb-wrap">
+                        ${state.previews[idx]
+                            ? `<img src="${state.previews[idx]}?t=${state.previewStamp}" class="slide-thumb" loading="lazy" alt="Slide ${idx + 1}">`
+                            : `<div class="slide-thumb-placeholder">${t('msgGeneratingPreview')}</div>`
+                        }
+                        <div class="slide-num">${idx + 1}</div>
+                    </div>
+                    <div class="slide-meta">
+                        <div class="slide-title truncate">${s.slide_key}</div>
+                        ${state.modifiedSlides.has(s.slide_key) ? '<div class="modified-indicator"></div>' : ''}
+                    </div>
                 </div>`).join('');
             list.querySelectorAll('.slide-item').forEach(el => {
                 el.onclick = () => updateActiveState(el.dataset.key, true);
@@ -1033,15 +1461,163 @@
                 const imgUrl = state.previews[idx];
                 console.log(`Slide ${idx}: key=${s.slide_key}, imgUrl=${imgUrl}`);
                 return `
-                <div class="slide-view-item" id="view-${s.slide_key}" data-key="${s.slide_key}">
-                    <div class="slide-view-label"><span>${t('msgPageNumber')} ${idx+1}</span> <span>${s.slide_key}</span></div>
-                    ${imgUrl ? `<img src="${imgUrl}?t=${Date.now()}" class="preview-card" loading="lazy">` :
-                               `<div class="placeholder-card">${t('msgGeneratingPreview')}</div>`}
+                <div class="slide-view-item" id="view-${s.slide_key}" data-key="${s.slide_key}" data-index="${idx}">
+                    <div class="preview-frame">
+                        <div class="preview-page-badge">${idx + 1} / ${slides.length}</div>
+                        ${imgUrl ? `<img src="${imgUrl}?t=${Date.now()}" class="preview-card" loading="lazy">` :
+                                   `<div class="placeholder-card">${t('msgGeneratingPreview')}</div>`}
+                    </div>
                 </div>`;
             }).join('');
-            list.querySelectorAll('.slide-view-item').forEach(el => observer.observe(el));
+            list.classList.toggle('preview-list-two-up', state.previewLayout === 'two-up');
+            updatePreviewLayoutChrome();
+            if (state.previewLayout === 'list') {
+                list.querySelectorAll('.slide-view-item').forEach(el => observer.observe(el));
+            }
+            list.querySelectorAll('.slide-view-item').forEach(el => {
+                el.addEventListener('click', () => {
+                    updateActiveState(el.dataset.key, false);
+                });
+                el.addEventListener('dblclick', () => {
+                    const idx = Number.parseInt(el.dataset.index, 10);
+                    if (Number.isNaN(idx)) return;
+                    startPresentation(idx, true);
+                });
+            });
+            highlightPreviewSelection(state.activeSlideKey);
             $('emptyState').classList.add('hidden');
             list.classList.remove('hidden');
+            animatePreviewItems();
+        }
+
+        function updatePreviewLayoutSwitchText() {
+            const listBtn = $('previewLayoutListBtn');
+            const twoUpBtn = $('previewLayoutTwoUpBtn');
+            if (!listBtn || !twoUpBtn) return;
+            const labels = currentLang === 'en-US'
+                ? { list: 'List Preview', twoUp: '2-Up Preview' }
+                : { list: '列表预览', twoUp: '每行两张' };
+            listBtn.title = labels.list;
+            listBtn.setAttribute('aria-label', labels.list);
+            twoUpBtn.title = labels.twoUp;
+            twoUpBtn.setAttribute('aria-label', labels.twoUp);
+        }
+
+        function updatePreviewLayoutButtons() {
+            $('previewLayoutListBtn').classList.toggle('active', state.previewLayout === 'list');
+            $('previewLayoutTwoUpBtn').classList.toggle('active', state.previewLayout === 'two-up');
+        }
+
+        function updatePreviewLayoutChrome() {
+            document.querySelector('.app-body')?.classList.toggle('preview-two-up-mode', state.previewLayout === 'two-up');
+        }
+
+        function highlightPreviewSelection(key) {
+            document.querySelectorAll('.slide-view-item').forEach(el => {
+                el.classList.toggle('active', el.dataset.key === key);
+            });
+        }
+
+        function animatePreviewItems() {
+            const list = $('previewList');
+            const items = list.querySelectorAll('.slide-view-item');
+            if (!items.length) return;
+            list.classList.add('animating');
+            requestAnimationFrame(() => {
+                items.forEach((el, idx) => {
+                    el.classList.remove('layout-enter');
+                    void el.offsetWidth;
+                    el.style.animationDelay = `${Math.min(idx * 20, 140)}ms`;
+                    el.classList.add('layout-enter');
+                });
+                setTimeout(() => list.classList.remove('animating'), 360);
+            });
+        }
+
+        function setPreviewLayout(layout) {
+            if (layout !== 'list' && layout !== 'two-up') return;
+            if (state.previewLayout === layout) return;
+            state.previewLayout = layout;
+            updatePreviewLayoutButtons();
+            updatePreviewLayoutChrome();
+            updateActiveSlideTitle();
+            if ((state.slidespec?.slides || []).length) {
+                renderPreviewList();
+                return;
+            }
+            $('previewList').classList.toggle('preview-list-two-up', state.previewLayout === 'two-up');
+        }
+
+        function updateActiveSlideTitle() {
+            if (state.previewLayout === 'two-up') {
+                $('activeSlideTitle').textContent = '总览';
+                return;
+            }
+            const activeIndex = state.slidespec?.slides?.findIndex(s => s.slide_key === state.activeSlideKey) ?? -1;
+            const totalSlides = state.slidespec?.slides?.length || 0;
+            $('activeSlideTitle').textContent = activeIndex >= 0 ? `${activeIndex + 1} / ${totalSlides}` : '总览';
+        }
+
+        function updateExportCopy() {
+            const isEn = currentLang === 'en-US';
+            $('exportBtn').setAttribute('data-tooltip', isEn ? 'Download' : '下载');
+            $('presentBtn').setAttribute('data-tooltip', isEn ? 'Start slideshow in fullscreen' : '全屏播放幻灯片');
+            $('presentBtn').setAttribute('aria-label', isEn ? 'Start slideshow in fullscreen' : '全屏播放幻灯片');
+            $('refreshPreviewBtn').setAttribute('data-tooltip', isEn ? 'Refresh Preview' : '刷新预览');
+            $('refreshPreviewBtn').setAttribute('aria-label', isEn ? 'Refresh Preview' : '刷新预览');
+            $('exportModalSubtitle').textContent = isEn ? 'Choose export format' : '可选择导出方式';
+            $('exportConfirmBtn').textContent = isEn ? 'Export' : '导出';
+        }
+
+        function setExportFormat(format) {
+            if (format !== 'ppt' && format !== 'pdf') return;
+            state.exportFormat = format;
+            $('exportOptionPpt').classList.toggle('selected', format === 'ppt');
+            $('exportOptionPdf').classList.toggle('selected', format === 'pdf');
+        }
+
+        function openExportModal() {
+            if (!state.jobId) return;
+            setExportFormat(state.exportFormat || 'ppt');
+            $('exportModalOverlay').classList.add('active');
+            positionExportModal();
+        }
+
+        function closeExportModal() {
+            $('exportModalOverlay').classList.remove('active');
+        }
+
+        function positionExportModal() {
+            const btn = $('exportBtn');
+            const modal = document.querySelector('#exportModalOverlay .export-modal');
+            if (!btn || !modal) return;
+
+            const btnRect = btn.getBoundingClientRect();
+            const modalRect = modal.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const gap = 10;
+
+            let left = btnRect.left + (btnRect.width / 2) - (modalRect.width / 2);
+            const minLeft = 8;
+            const maxLeft = viewportWidth - modalRect.width - 8;
+            left = Math.max(minLeft, Math.min(left, maxLeft));
+
+            let top = btnRect.bottom + gap;
+            const maxTop = viewportHeight - modalRect.height - 8;
+            top = Math.min(top, maxTop);
+
+            modal.style.left = `${left}px`;
+            modal.style.top = `${Math.max(8, top)}px`;
+        }
+
+        function performExport() {
+            if (!state.jobId) return;
+            const isPdf = state.exportFormat === 'pdf';
+            const path = isPdf ? 'download-pdf' : 'download';
+            window.location.href = `/api/v1/reports/${encodeURIComponent(state.jobId)}/${path}?regenerate_if_missing=true`;
+            closeExportModal();
+            setTimeout(() => showRatingCard(state.jobId), 1000);
         }
 
         function highlightSidebar(key) {
@@ -1058,7 +1634,8 @@
             }
             state.activeSlideKey = key;
             highlightSidebar(key);
-            $('activeSlideTitle').textContent = key;
+            highlightPreviewSelection(key);
+            updateActiveSlideTitle();
             const slide = state.slidespec.slides.find(s => s.slide_key === key);
             if (slide) {
                 const editorContent = state.modifiedSlides.get(key) || slide.placeholders || {};
@@ -1124,8 +1701,87 @@
         function syncActionButtons() {
             $('generateBtn').disabled = state.loading;
             $('rewriteBtn').disabled = state.loading || !state.jobId;
-            $('downloadBtn').disabled = state.loading || !state.jobId;
-            $('downloadPdfBtn').disabled = state.loading || !state.jobId;
+            $('exportBtn').disabled = state.loading || !state.jobId;
+            $('presentBtn').disabled = state.loading || !state.slidespec?.slides?.length;
+        }
+
+        function getSlideCount() {
+            return state.slidespec?.slides?.length || 0;
+        }
+
+        function clampPresentIndex(index) {
+            const count = getSlideCount();
+            if (!count) return 0;
+            return Math.max(0, Math.min(index, count - 1));
+        }
+
+        function renderPresentation() {
+            const slides = state.slidespec?.slides || [];
+            const count = slides.length;
+            if (!count) return;
+
+            state.presentIndex = clampPresentIndex(state.presentIndex);
+            const idx = state.presentIndex;
+            const imgUrl = state.previews[idx];
+
+            if (imgUrl) {
+                $('presenterImage').src = `${imgUrl}?t=${Date.now()}`;
+                $('presenterImage').classList.remove('hidden');
+                $('presenterEmpty').classList.add('hidden');
+            } else {
+                $('presenterImage').classList.add('hidden');
+                $('presenterImage').removeAttribute('src');
+                $('presenterEmpty').classList.remove('hidden');
+            }
+        }
+
+        async function toggleBrowserFullscreen() {
+            const root = $('presenterModal');
+            try {
+                if (document.fullscreenElement) {
+                    await document.exitFullscreen();
+                } else if (root.requestFullscreen) {
+                    await root.requestFullscreen();
+                }
+            } catch (e) {
+                console.warn('Failed to toggle fullscreen:', e);
+            }
+        }
+
+        async function startPresentation(startIndex = 0, requestFullscreen = false) {
+            if (!getSlideCount()) {
+                toast.warning('No slides available for presentation', t('toastTitleHint'));
+                return;
+            }
+            state.isPresenting = true;
+            state.presentIndex = clampPresentIndex(startIndex);
+            $('presenterModal').classList.remove('hidden');
+            $('presenterModal').setAttribute('aria-hidden', 'false');
+            renderPresentation();
+            if (requestFullscreen) {
+                await toggleBrowserFullscreen();
+            }
+        }
+
+        async function closePresentation(exitBrowserFullscreen = true) {
+            state.isPresenting = false;
+            $('presenterModal').classList.add('hidden');
+            $('presenterModal').setAttribute('aria-hidden', 'true');
+            if (exitBrowserFullscreen && document.fullscreenElement) {
+                try {
+                    await document.exitFullscreen();
+                } catch (e) {
+                    console.warn('Failed to exit fullscreen:', e);
+                }
+            }
+        }
+
+        function stepPresentation(delta) {
+            if (!state.isPresenting) return;
+            const nextIndex = clampPresentIndex(state.presentIndex + delta);
+            if (nextIndex === state.presentIndex) return;
+            state.presentIndex = nextIndex;
+            renderPresentation();
         }
 
         $('generateBtn').onclick = async () => {
@@ -1200,17 +1856,33 @@
             }
         }
 
-        $('downloadBtn').onclick = () => {
-            if (!state.jobId) return;
-            window.location.href = `/api/v1/reports/${encodeURIComponent(state.jobId)}/download?regenerate_if_missing=true`;
-            setTimeout(() => showRatingCard(state.jobId), 1000);
+        $('exportBtn').onclick = () => {
+            openExportModal();
         };
-
-        $('downloadPdfBtn').onclick = () => {
-            if (!state.jobId) return;
-            window.location.href = `/api/v1/reports/${encodeURIComponent(state.jobId)}/download-pdf?regenerate_if_missing=true`;
-            setTimeout(() => showRatingCard(state.jobId), 1000);
-        };
+        $('exportOptionPpt').onclick = () => setExportFormat('ppt');
+        $('exportOptionPdf').onclick = () => setExportFormat('pdf');
+        $('exportOptionPpt').addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                setExportFormat('ppt');
+            }
+        });
+        $('exportOptionPdf').addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                setExportFormat('pdf');
+            }
+        });
+        $('exportConfirmBtn').onclick = () => performExport();
+        $('exportModalOverlay').addEventListener('click', (event) => {
+            if (event.target === $('exportModalOverlay')) closeExportModal();
+        });
+        window.addEventListener('resize', () => {
+            if ($('exportModalOverlay').classList.contains('active')) positionExportModal();
+        });
+        window.addEventListener('scroll', () => {
+            if ($('exportModalOverlay').classList.contains('active')) positionExportModal();
+        }, true);
 
         $('rewriteBtn').onclick = async () => {
             if (!state.jobId) return;
@@ -1230,6 +1902,8 @@
                 const prevRes = await api(`/api/v1/reports/${encodeURIComponent(state.jobId)}/preview?regenerate_if_missing=true`);
                 const prevData = prevRes.data || prevRes;
                 state.previews = prevData.preview_urls || prevData.images || [];
+                state.previewStamp = Date.now();
+                renderSlides();
                 renderPreviewList();
                 const slide = state.slidespec.slides.find(s => s.slide_key === state.activeSlideKey);
                 if (slide) $('slideJson').value = JSON.stringify(slide.placeholders || {}, null, 2);
@@ -1254,9 +1928,64 @@
                 const prevRes = await api(`/api/v1/reports/${encodeURIComponent(state.jobId)}/preview?regenerate_if_missing=true`);
                 const prevData = prevRes.data || prevRes;
                 state.previews = prevData.preview_urls || prevData.images || [];
+                state.previewStamp = Date.now();
+                renderSlides();
                 renderPreviewList();
+                if (state.isPresenting) {
+                    renderPresentation();
+                }
             } catch (e) { console.error('Failed to refresh previews:', e); }
         };
+
+        $('previewLayoutListBtn').onclick = () => setPreviewLayout('list');
+        $('previewLayoutTwoUpBtn').onclick = () => setPreviewLayout('two-up');
+
+        $('presentBtn').onclick = async () => {
+            const startIndex = state.slidespec?.slides?.findIndex(s => s.slide_key === state.activeSlideKey);
+            await startPresentation(startIndex >= 0 ? startIndex : 0, true);
+        };
+
+        $('presenterModal').addEventListener('click', (event) => {
+            if (event.target === $('presenterModal')) {
+                closePresentation();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && $('exportModalOverlay').classList.contains('active')) {
+                event.preventDefault();
+                closeExportModal();
+                return;
+            }
+            if (!state.isPresenting) return;
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                stepPresentation(-1);
+            } else if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+                event.preventDefault();
+                stepPresentation(1);
+            } else if (event.key === 'Escape') {
+                event.preventDefault();
+                closePresentation();
+            }
+        });
+
+        $('presenterModal').addEventListener('wheel', (event) => {
+            if (!state.isPresenting) return;
+            event.preventDefault();
+            const now = Date.now();
+            if (now - state.presentLastWheelAt < 180) return;
+            if (Math.abs(event.deltaY) < 10) return;
+            state.presentLastWheelAt = now;
+            stepPresentation(event.deltaY > 0 ? 1 : -1);
+        }, { passive: false });
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!state.isPresenting) return;
+            if (!document.fullscreenElement) {
+                closePresentation(false);
+            }
+        });
 
         let ratingState = { selectedRating: null, jobId: null, ratedJobs: new Set() };
         function showRatingCard(jobId) {
@@ -1310,6 +2039,9 @@
             }
         });
 
+        updatePreviewLayoutButtons();
+        updatePreviewLayoutSwitchText();
+        updatePreviewLayoutChrome();
         init();
     </script>
 </body>

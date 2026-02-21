@@ -6,6 +6,7 @@ import re
 import time
 from typing import Any, Dict, List, Optional
 
+import httpx
 from openai import OpenAI, APIError, RateLimitError, APIConnectionError
 
 from mss_ai_ppt_sample_assets.backend import config
@@ -21,6 +22,14 @@ from mss_ai_ppt_sample_assets.backend.modules.template_loader import TemplateRep
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
+
+def _build_openai_client() -> OpenAI:
+    client_kwargs = {"api_key": config.settings.openai_api_key}
+    if config.settings.openai_base_url:
+        client_kwargs["base_url"] = config.settings.openai_base_url
+    client_kwargs["http_client"] = httpx.Client(trust_env=False)
+    return OpenAI(**client_kwargs)
 
 
 class LLMGenerationError(Exception):
@@ -44,10 +53,7 @@ class LLMOrchestratorV2:
 
         if config.settings.enable_llm:
             try:
-                client_kwargs = {"api_key": config.settings.openai_api_key}
-                if config.settings.openai_base_url:
-                    client_kwargs["base_url"] = config.settings.openai_base_url
-                self.client = OpenAI(**client_kwargs)
+                self.client = _build_openai_client()
                 logger.info("OpenAI client initialized successfully")
             except Exception as e:
                 logger.error(f"Failed to initialize OpenAI client: {e}")
@@ -850,7 +856,6 @@ class LLMOrchestratorV2:
             if ws_manager and session_id and event_loop:
                 import asyncio
                 try:
-                    # Schedule coroutine in the main event loop
                     asyncio.run_coroutine_threadsafe(
                         ws_manager.send_progress_update(session_id, progress, message),
                         event_loop
@@ -859,16 +864,15 @@ class LLMOrchestratorV2:
                     logger.debug(f"Failed to send progress update: {e}")
 
         if total_batches <= 1:
-            # No need for batching, use original method
-            logger.info("📦 Single batch - using standard generation")
-            send_progress(35, "调用AI生成全部幻灯片内容...")
+            logger.info("Single batch - using standard generation")
+            send_progress(35, "??AI?????????...")
             system_prompt = self._build_system_prompt(template)
             user_prompt = self._build_user_prompt(tenant_input, template)
             result = self._call_and_parse_with_retry(system_prompt, user_prompt, template)
-            send_progress(60, "AI内容生成完成")
+            send_progress(60, "AI??????")
             return result
 
-        logger.info(f"📦 Smart batching: splitting into {total_batches} batches")
+        logger.info(f"Smart batching: splitting into {total_batches} batches")
 
         all_ai_placeholders: Dict[str, Dict[str, Any]] = {}
         system_prompt = self._build_system_prompt(template)
@@ -877,10 +881,10 @@ class LLMOrchestratorV2:
         progress_per_batch = 30.0 / total_batches
 
         for i, batch_slide_keys in enumerate(batches):
-            logger.info(f"🔄 Processing batch {i + 1}/{total_batches}: slides {batch_slide_keys}")
+            logger.info(f"Processing batch {i + 1}/{total_batches}: slides {batch_slide_keys}")
 
             current_progress = 30 + int(i * progress_per_batch)
-            send_progress(current_progress, f"AI生成进度 ({i + 1}/{total_batches} 批次)...")
+            send_progress(current_progress, f"AI???? ({i + 1}/{total_batches} ??)...")
 
             user_prompt = self._build_user_prompt_for_slides(
                 tenant_input,
@@ -895,7 +899,6 @@ class LLMOrchestratorV2:
 
             batch_placeholders = self._call_and_parse_with_retry(system_prompt, user_prompt, template)
 
-            # Merge batch results
             for slide_key, tokens in batch_placeholders.items():
                 if slide_key not in all_ai_placeholders:
                     all_ai_placeholders[slide_key] = {}
@@ -903,7 +906,7 @@ class LLMOrchestratorV2:
 
             logger.info(f"Batch {i + 1}/{total_batches} completed")
 
-        send_progress(60, "所有AI内容生成完成")
+        send_progress(60, "??AI??????")
         return all_ai_placeholders
 
     def _call_and_parse_with_retry(
@@ -913,51 +916,32 @@ class LLMOrchestratorV2:
         template: TemplateDescriptorV2,
         max_parse_retries: int = 5,
     ) -> Dict[str, Dict[str, Any]]:
-        """Call LLM and parse response with retry on format errors.
-
-        If parsing fails 5 times, raises LLMGenerationError with suggestion to use mock mode.
-
-        Args:
-            system_prompt: System prompt
-            user_prompt: User prompt
-            template: Template descriptor for parsing
-            max_parse_retries: Maximum parse retry attempts (default: 5)
-
-        Returns:
-            Parsed placeholders dict
-
-        Raises:
-            LLMGenerationError: If all retries fail
-        """
+        """Call LLM and parse response with retry on format errors."""
         for attempt in range(max_parse_retries):
             try:
-                logger.info(f"🎯 LLM generation attempt {attempt + 1}/{max_parse_retries}")
+                logger.info(f"LLM generation attempt {attempt + 1}/{max_parse_retries}")
 
-                # Call OpenAI API (with its own network retry logic)
                 response = self._call_openai_with_retry(system_prompt, user_prompt)
 
-                # Try to parse the response
                 parsed = self._parse_llm_response(response, template)
 
                 logger.info(f"Successfully parsed LLM response on attempt {attempt + 1}")
                 return parsed
 
             except LLMGenerationError as e:
-                logger.error(f"❌ Parse attempt {attempt + 1}/{max_parse_retries} failed: {e}")
+                logger.error(f"Parse attempt {attempt + 1}/{max_parse_retries} failed: {e}")
 
                 if attempt < max_parse_retries - 1:
-                    logger.warning(f"🔄 Retrying LLM call due to format error...")
+                    logger.warning("Retrying LLM call due to format error...")
                 else:
-                    # All retries exhausted
                     error_msg = (
-                        f"AI响应格式错误，已重试{max_parse_retries}次仍失败。"
-                        f"建议切换到mock模式重新生成。"
-                        f"最后错误: {e}"
+                        f"AI??????????{max_parse_retries}?????"
+                        f"?????mock???????"
+                        f"????: {e}"
                     )
-                    logger.error(f"💥 {error_msg}")
+                    logger.error(error_msg)
                     raise LLMGenerationError(error_msg) from e
 
-        # Should not reach here, but just in case
         raise LLMGenerationError(f"Unexpected error: exceeded {max_parse_retries} retries")
 
     def _call_openai_with_retry(
@@ -972,19 +956,22 @@ class LLMOrchestratorV2:
             raise LLMGenerationError("OpenAI client is not initialized. Enable LLM in settings.")
 
         logger.info("=" * 80)
-        logger.info("CALLING OPENAI API (V2)")        
+        logger.info("CALLING OPENAI API (V2)")
         logger.info(f"System prompt length: {len(system_prompt)} chars")
         logger.info(f"User prompt length: {len(user_prompt)} chars")
         logger.info("=" * 80)
 
-        # Use tenacity retry decorator for better error handling
         content = self._call_openai_api(system_prompt, user_prompt)
         return content
 
     @with_llm_retry
-    def _call_openai_api(self, system_prompt: str, user_prompt: str) -> str:
+    def _call_openai_api(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+    ) -> str:
         """Make the actual OpenAI API call (wrapped with retry decorator)."""
-        response = self.client.chat.completions.create(
+        stream = self.client.chat.completions.create(
             model=config.settings.openai_model,
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -992,15 +979,26 @@ class LLMOrchestratorV2:
             ],
             temperature=0.4,
             response_format={"type": "json_object"},
+            stream=True,
         )
 
-        content = response.choices[0].message.content
+        content_chunks: List[str] = []
+
+        for chunk in stream:
+            if not getattr(chunk, "choices", None):
+                continue
+
+            delta = chunk.choices[0].delta
+            content_piece = getattr(delta, "content", None)
+            if content_piece:
+                content_chunks.append(content_piece)
+
+        content = "".join(content_chunks)
         if not content:
             raise LLMGenerationError("OpenAI returned empty response")
 
         logger.info("=" * 80)
         logger.info("OPENAI API CALL SUCCESSFUL")
-        logger.info(f"Total tokens used: {response.usage.total_tokens}")
         logger.info(f"Response length: {len(content)} chars")
         logger.info("=" * 80)
         return content
@@ -1195,10 +1193,7 @@ class LLMOrchestrator:
 
         if config.settings.enable_llm:
             try:
-                client_kwargs = {"api_key": config.settings.openai_api_key}
-                if config.settings.openai_base_url:
-                    client_kwargs["base_url"] = config.settings.openai_base_url
-                self.client = OpenAI(**client_kwargs)
+                self.client = _build_openai_client()
             except Exception as e:
                 raise LLMGenerationError(f"OpenAI client initialization failed: {e}") from e
 

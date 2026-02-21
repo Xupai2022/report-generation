@@ -1,16 +1,13 @@
 {
   "pageTitle": "MSS AI PPT Report Generation System",
   "pageSubtitle": "Intelligent Report Generator",
-
   "sectionGenerate": "Generate Report",
   "sectionJobs": "Job List",
   "sectionSlides": "Slide List",
   "sectionLogs": "System Logs",
-
   "labelInput": "Input Data",
   "labelTemplate": "Select Template",
   "labelUseMock": "Quick Generate (Mock)",
-
   "btnGenerate": "Generate Report",
   "btnPreview": "Preview",
   "btnDownload": "Download PPT",
@@ -20,19 +17,16 @@
   "btnApplyRegenerate": "Apply & Regenerate",
   "btnApplyRegenerateWithCount": "Apply & Regenerate ({count} modified)",
   "btnRefreshPreview": "Refresh Preview",
-
   "statusPending": "Pending",
   "statusProcessing": "Processing",
   "statusCompleted": "Completed",
   "statusFailed": "Failed",
   "statusRetrying": "Retrying",
-
   "progressInit": "Initializing",
   "progressLoadTemplate": "Loading Template",
   "progressGenerateContent": "AI Generating Content",
   "progressRenderPpt": "Rendering PPT",
   "progressComplete": "Completed",
-
   "tableJobId": "Job ID",
   "tableInput": "Input Data",
   "tableTemplate": "Template",
@@ -40,7 +34,6 @@
   "tableProgress": "Progress",
   "tableCreatedAt": "Created At",
   "tableActions": "Actions",
-
   "msgGenerating": "Generating Report",
   "msgGeneratingPleaseWait": "Generating report, please wait...",
   "msgSuccess": "Report generated successfully!",
@@ -53,6 +46,7 @@
   "msgSelectDataSource": "Select data source...",
   "msgConfirmGenerate": "Confirm to generate report?",
   "msgSelectDataAndTemplate": "Please select data and template to start",
+  "appDescription": "I will automatically analyze your data, organize the content, and generate a clear, professionally designed PPT report.",
   "msgNoJob": "Job ID: None",
   "msgJobId": "Job ID",
   "msgRetryIn": "seconds until retry",
@@ -63,16 +57,13 @@
   "msgNoChangesToApply": "No changes to apply",
   "msgPageNumber": "Page",
   "msgPage": "",
-
   "editorTitle": "JSON Property Editor",
   "editorHint": "Edit Hint: You can only modify field values, not field names (e.g., TITLE, SUBTITLE). Deleting or renaming fields will be ignored.",
   "editorPlaceholder": "// Select a slide to edit properties...",
-
   "tooltipMockData": "Use pre-generated mock data, skip AI generation process, suitable for quick testing",
   "tooltipPreview": "Preview report content (generate PNG images)",
   "tooltipDownload": "Download generated PPT file",
   "tooltipModified": "Modified",
-
   "errorNetworkFailed": "Network request failed",
   "errorUnknown": "Unknown error",
   "errorGenerationFailed": "Report generation failed",
@@ -84,14 +75,11 @@
   "msgUpdateSlidesSuccess": "Updated {count} slides successfully",
   "titleUpdateCompleted": "Update completed",
   "titleUpdateFailed": "Update failed",
-
   "langSwitcher": "Language",
   "langChinese": "中文",
   "langEnglish": "English",
-
   "templateExecutive": "MSS Monthly Security Report (Executive)",
   "templateTechnical": "MSS Monthly Security Report (Technical)",
-
   "ratingTitle": "Rate this report",
   "ratingPrompt": "Download has started. Is this report basically usable?",
   "ratingLiked": "Good",
@@ -101,5 +89,8 @@
   "ratingSubmit": "Submit Rating",
   "ratingSuccessMessage": "Thank you for your feedback!",
   "ratingErrorNoSelection": "Please select Good or Not Good",
-  "ratingErrorCommentTooShort": "Please enter at least 10 characters to explain the reason"
+  "ratingErrorCommentTooShort": "Please enter at least 10 characters to explain the reason",
+  "btnPresentSlides": "Play Slides",
+  "presentBtnTitle": "Start slideshow in fullscreen",
+  "msgFullscreenExitHint": "MSS-AIPPT - To exit full screen, press Esc"
 }

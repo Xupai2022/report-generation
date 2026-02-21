@@ -16,6 +16,7 @@ from typing import Dict, Any, Optional
 from dataclasses import dataclass, asdict
 from enum import Enum
 
+import httpx
 from mss_ai_ppt_sample_assets.backend import config
 
 logger = logging.getLogger(__name__)
@@ -149,6 +150,7 @@ class HealthChecker:
             client_kwargs = {"api_key": config.settings.openai_api_key}
             if config.settings.openai_base_url:
                 client_kwargs["base_url"] = config.settings.openai_base_url
+            client_kwargs["http_client"] = httpx.Client(trust_env=False)
 
             client = OpenAI(**client_kwargs)
 
