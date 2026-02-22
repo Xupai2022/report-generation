@@ -65,6 +65,32 @@ class UpdateSlidesRequest(BaseModel):
         }
 
 
+class AISlideRewriteRequest(BaseModel):
+    """Request model for AI rewrite of a single slide."""
+    slide_key: str = Field(..., description="Slide identifier", example="summary")
+    user_prompt: str = Field(
+        ...,
+        min_length=1,
+        max_length=2000,
+        description="User preference/instruction for AI rewrite of the selected slide"
+    )
+
+    @validator("user_prompt")
+    def validate_user_prompt(cls, v: str):
+        """Validate user prompt is not empty after trimming."""
+        if not v or not v.strip():
+            raise ValueError("user_prompt cannot be empty")
+        return v.strip()
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "slide_key": "summary",
+                "user_prompt": "请聚焦本月高风险告警的业务影响，语气更偏管理层，给出3条可执行建议。"
+            }
+        }
+
+
 class SubmitRatingRequest(BaseModel):
     """User rating submission request."""
     rating: Literal["liked", "disliked"] = Field(

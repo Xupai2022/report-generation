@@ -711,6 +711,114 @@ class LLMOrchestratorV2:
 
         return "\n".join(prompt_parts)
 
+    def _build_rewrite_prompt_with_user_preference(
+        self,
+        base_prompt: str,
+        slide_key: str,
+        ai_tokens: List[str],
+        user_prompt: str,
+        current_slide_content: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """Append user preference instructions for single-slide AI rewrite."""
+        ai_tokens_text = ", ".join(ai_tokens)
+        current_content_section = ""
+        if current_slide_content:
+            current_content_section = "\n".join([
+                "",
+                "## 当前页已生成内容（仅供参考）",
+                "以下内容是该页当前已生成内容，用于保持表达连续性。",
+                "你可以参考其结构和术语，但不要被原措辞限制。",
+                "如有冲突，优先遵循用户偏好与模板约束。",
+                "```json",
+                json.dumps(current_slide_content, ensure_ascii=False, indent=2),
+                "```",
+            ])
+
+        preference_section = "\n".join([
+            "",
+            "## 重写任务",
+            f"你只需要重写这一页：{slide_key}。",
+            f"只生成这些占位符：{ai_tokens_text}。",
+            "",
+            "## 用户偏好（高优先级）",
+            "用户对这一页给出了额外要求，请在不编造数据、且不违反输出约束的前提下尽量遵循：",
+            user_prompt.strip(),
+            "",
+            "不要输出其他页面的占位符。",
+            "输出内容必须为中文。",
+            "请严格按要求的 JSON 格式返回。",
+        ])
+        return f"{base_prompt}{current_content_section}\n{preference_section}"
+
+    def rewrite_single_slide_v2(
+        self,
+        tenant_input: TenantInput,
+        template_id: str,
+        slide_key: str,
+        user_prompt: str,
+        current_slide_content: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Rewrite AI-generated placeholders for one slide with user preference."""
+        template = self.template_repo.get_descriptor_v2(template_id)
+
+        target_slide = next((s for s in template.slides if s.slide_key == slide_key), None)
+        if not target_slide:
+            raise ValueError(f"Slide '{slide_key}' not found in template '{template_id}'")
+
+        ai_tokens = [ph.token for ph in target_slide.placeholders if ph.ai_generate]
+        if not ai_tokens:
+            raise ValueError(f"Slide '{slide_key}' has no AI-generated placeholders to rewrite")
+
+        system_prompt = self._build_system_prompt(template)
+        base_user_prompt = self._build_user_prompt_for_slides(
+            tenant_input=tenant_input,
+            template=template,
+            slide_keys=[slide_key],
+            batch_index=0,
+            total_batches=1,
+        )
+        filtered_current_content: Dict[str, Any] = {}
+        if isinstance(current_slide_content, dict):
+            for token in ai_tokens:
+                if token in current_slide_content:
+                    filtered_current_content[token] = current_slide_content[token]
+
+        rewrite_user_prompt = self._build_rewrite_prompt_with_user_preference(
+            base_prompt=base_user_prompt,
+            slide_key=slide_key,
+            ai_tokens=ai_tokens,
+            user_prompt=user_prompt,
+            current_slide_content=filtered_current_content or None,
+        )
+
+        parsed = self._call_and_parse_with_retry(system_prompt, rewrite_user_prompt, template)
+
+        slide_placeholders = parsed.get(slide_key)
+        if not isinstance(slide_placeholders, dict):
+            raise LLMGenerationError(
+                f"LLM response missing placeholders for slide '{slide_key}'"
+            )
+
+        ai_token_set = set(ai_tokens)
+        filtered_placeholders = {
+            token: value for token, value in slide_placeholders.items() if token in ai_token_set
+        }
+        missing_tokens = [token for token in ai_tokens if token not in filtered_placeholders]
+
+        warnings: List[str] = []
+        if missing_tokens:
+            warnings.append(
+                f"LLM response did not include some AI placeholders: {', '.join(missing_tokens)}"
+            )
+
+        return {
+            "slide_key": slide_key,
+            "placeholders": filtered_placeholders,
+            "warnings": warnings,
+            "missing_tokens": missing_tokens,
+            "updated_tokens": list(filtered_placeholders.keys()),
+        }
+
     def _estimate_prompt_tokens(self, text: str) -> int:
         """Estimate token count for a text string.
 

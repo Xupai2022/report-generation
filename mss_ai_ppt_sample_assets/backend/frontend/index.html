@@ -534,6 +534,47 @@
         }
         .editor-info .icon { color: var(--color-info); flex-shrink: 0; }
         .editor-info .text { font-size: 12px; color: #1e40af; line-height: 1.5; }
+        .ai-rewrite-panel {
+            border-bottom: 1px solid var(--color-border-primary);
+            background: #f8fafc;
+            padding: var(--space-3) var(--space-4);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-2);
+        }
+        .ai-rewrite-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--color-text-primary);
+        }
+        .ai-rewrite-input {
+            width: 100%;
+            min-height: 82px;
+            resize: vertical;
+            border: 1px solid #d7dee6;
+            border-radius: 8px;
+            padding: 9px 10px;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #0f172a;
+            background: #ffffff;
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+        }
+        .ai-rewrite-input:hover { border-color: #b8c6d5; }
+        .ai-rewrite-input:focus {
+            outline: none;
+            border-color: #7ea4de;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+        }
+        .ai-rewrite-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+        .ai-rewrite-hint {
+            font-size: 11px;
+            color: #64748b;
+            line-height: 1.4;
+        }
         .field-editor-shell {
             flex-grow: 1;
             background: linear-gradient(180deg, #f8fafc 0%, #f3f6f9 100%);
@@ -1044,6 +1085,24 @@
                     <strong>编辑提示：</strong>只能修改字段的<strong>值</strong>，不能修改字段名。删除或重命名字段将被忽略。
                 </p>
             </div>
+            <div class="ai-rewrite-panel">
+                <label for="aiRewritePrompt" class="ai-rewrite-label" data-i18n="labelAiRewritePrompt">AI重写偏好</label>
+                <textarea
+                    id="aiRewritePrompt"
+                    class="ai-rewrite-input"
+                    rows="4"
+                    maxlength="2000"
+                    data-i18n-placeholder="placeholderAiRewritePrompt"
+                ></textarea>
+                <div class="ai-rewrite-actions">
+                    <button id="aiRewriteBtn" class="btn btn-secondary btn-sm" type="button">
+                        <span data-i18n="btnAiRewriteCurrentSlide">AI重写当前页</span>
+                    </button>
+                </div>
+                <div class="ai-rewrite-hint" data-i18n="msgAiRewriteHint">
+                    选择当前页并输入偏好，系统会将你的要求加入提示词后重写该页AI内容。
+                </div>
+            </div>
             <div id="fieldEditorShell" class="field-editor-shell">
                 <div id="slideFields" class="field-editor-list"></div>
             </div>
@@ -1472,6 +1531,7 @@
                 $('jobIdDisplay').textContent = `${t('msgJobId')}: ${result.job_id}`;
                 syncActionButtons();
                 state.activeSlideKey = result.slidespec?.slides?.[0]?.slide_key;
+                syncActionButtons();
                 renderSlides();
                 renderPreviewList();
                 if (state.activeSlideKey) {
@@ -1556,6 +1616,7 @@
                 updateInputDropdown();
                 updateTemplateDropdown();
             } catch (e) { console.error(e); }
+            syncActionButtons();
         }
 
         const observer = new IntersectionObserver((entries) => {
@@ -1907,6 +1968,7 @@
                 renderSlideFields(editorContent);
             }
             updateModifiedSlidesUI();
+            syncActionButtons();
             if (scrollRightView) {
                 const viewItem = $(`view-${key}`);
                 if (viewItem) {
@@ -1958,6 +2020,14 @@
             renderSlides(); // Re-render to show/hide indicators
         }
 
+        async function refreshPreviewsForCurrentReport() {
+            if (!state.jobId) return;
+            const prevRes = await api(`/api/v1/reports/${encodeURIComponent(state.jobId)}/preview?regenerate_if_missing=true`);
+            const prevData = prevRes.data || prevRes;
+            state.previews = prevData.preview_urls || prevData.images || [];
+            state.previewStamp = Date.now();
+        }
+
         function setLoading(flag) {
             state.loading = flag;
             syncActionButtons();
@@ -1968,6 +2038,10 @@
         function syncActionButtons() {
             $('generateBtn').disabled = state.loading;
             $('rewriteBtn').disabled = state.loading || !state.jobId;
+            const aiRewriteBtn = $('aiRewriteBtn');
+            if (aiRewriteBtn) {
+                aiRewriteBtn.disabled = state.loading || !state.jobId || !state.activeSlideKey;
+            }
             $('exportBtn').disabled = state.loading || !state.jobId;
             $('presentBtn').disabled = state.loading || !state.slidespec?.slides?.length;
         }
@@ -2166,10 +2240,7 @@
                 if (result.slidespec) state.slidespec = result.slidespec;
                 state.modifiedSlides.clear();
                 updateModifiedSlidesUI();
-                const prevRes = await api(`/api/v1/reports/${encodeURIComponent(state.jobId)}/preview?regenerate_if_missing=true`);
-                const prevData = prevRes.data || prevRes;
-                state.previews = prevData.preview_urls || prevData.images || [];
-                state.previewStamp = Date.now();
+                await refreshPreviewsForCurrentReport();
                 renderSlides();
                 renderPreviewList();
                 const slide = state.slidespec.slides.find(s => s.slide_key === state.activeSlideKey);
@@ -2185,13 +2256,66 @@
             }
         };
 
+        $('aiRewriteBtn').onclick = async () => {
+            if (!state.jobId) return;
+            if (!state.activeSlideKey) {
+                return toast.warning(t('msgSelectSlideForAiRewrite'), t('toastTitleHint'));
+            }
+
+            const userPrompt = $('aiRewritePrompt').value.trim();
+            if (!userPrompt) {
+                return toast.warning(t('msgEnterAiRewritePrompt'), t('toastTitleHint'));
+            }
+
+            saveCurrentSlideModifications();
+            if (state.modifiedSlides.size > 0) {
+                return toast.warning(t('msgApplyManualChangesBeforeAiRewrite'), t('toastTitleHint'));
+            }
+
+            setLoading(true);
+            try {
+                const res = await api(`/api/v1/reports/${encodeURIComponent(state.jobId)}/slides/ai-rewrite`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        slide_key: state.activeSlideKey,
+                        user_prompt: userPrompt
+                    })
+                });
+                const result = res.data || res;
+                if (result.slidespec) {
+                    state.slidespec = result.slidespec;
+                }
+                await refreshPreviewsForCurrentReport();
+                renderSlides();
+                renderPreviewList();
+
+                const slide = state.slidespec.slides.find(s => s.slide_key === state.activeSlideKey);
+                if (slide) {
+                    renderSlideFields(slide.placeholders || {});
+                }
+
+                if ((result.updated_count || 0) > 0) {
+                    toast.success(
+                        tf('msgAiRewriteSuccess', { slide: state.activeSlideKey }),
+                        t('titleUpdateCompleted')
+                    );
+                } else {
+                    const warningText = Array.isArray(result.warnings) && result.warnings.length
+                        ? result.warnings.join('; ')
+                        : t('msgAiRewriteNoChanges');
+                    toast.warning(warningText, t('toastTitleHint'));
+                }
+            } catch (e) {
+                toast.error(e.message, t('titleUpdateFailed'));
+            } finally {
+                setLoading(false);
+            }
+        };
+
         $('refreshPreviewBtn').onclick = async () => {
             if (!state.jobId) return;
             try {
-                const prevRes = await api(`/api/v1/reports/${encodeURIComponent(state.jobId)}/preview?regenerate_if_missing=true`);
-                const prevData = prevRes.data || prevRes;
-                state.previews = prevData.preview_urls || prevData.images || [];
-                state.previewStamp = Date.now();
+                await refreshPreviewsForCurrentReport();
                 renderSlides();
                 renderPreviewList();
                 if (state.isPresenting) {

@@ -238,6 +238,131 @@ class ReportService:
 
         return SlideSpecV2.model_validate(data)
 
+    def _get_input_id_for_job(self, job_id: str) -> str:
+        """Resolve input_id from persisted job state using job_id."""
+        safe_job_id = job_id.replace(":", "_").replace("/", "_").replace("\\", "_")
+        state_path = config.JOBS_DIR / "states" / f"{safe_job_id}.json"
+
+        if state_path.exists():
+            with FileLock(state_path, timeout=10.0):
+                with state_path.open("r", encoding="utf-8") as f:
+                    job_state = json.load(f)
+            input_id = job_state.get("input_id")
+            if input_id:
+                return input_id
+
+        index_path = config.JOBS_DIR / "index.json"
+        if index_path.exists():
+            with FileLock(index_path, timeout=10.0):
+                with index_path.open("r", encoding="utf-8") as f:
+                    index = json.load(f)
+            index_item = index.get(job_id, {})
+            input_id = index_item.get("input_id")
+            if input_id:
+                return input_id
+
+        raise ValueError(
+            f"Cannot resolve input_id for job '{job_id}'. "
+            "Job metadata may have been cleaned up."
+        )
+
+    def ai_rewrite_slide(
+        self,
+        job_id: str,
+        slide_key: str,
+        user_prompt: str,
+    ) -> Dict[str, Any]:
+        """AI rewrite for a single slide using user preference prompt."""
+        try:
+            session_id, template_id = job_id.split(":", 1)
+        except ValueError as e:
+            raise ValueError("job_id must be formatted as session_id:template_id") from e
+
+        if not slide_key:
+            raise ValueError("slide_key is required")
+        if not user_prompt or not user_prompt.strip():
+            raise ValueError("user_prompt is required")
+
+        if not self.template_repo.is_v2(template_id):
+            raise ValueError(f"Template {template_id} is not V2. AI rewrite only supported for V2.")
+        if not config.settings.enable_llm:
+            raise ValueError("LLM is disabled. Set ENABLE_LLM=true to use AI rewrite.")
+
+        # Ensure latest template descriptor is used for prompt construction.
+        self.template_repo.clear_cache()
+
+        slidespec = self._load_slidespec(session_id, template_id)
+        target_slide = slidespec.get_slide(slide_key)
+        if not target_slide:
+            raise ValueError(f"Slide '{slide_key}' not found in current report")
+
+        input_id = self._get_input_id_for_job(job_id)
+        if input_id == "custom":
+            custom_input_path = self.session_manager.get_input_path(session_id)
+            if not custom_input_path.exists():
+                raise ValueError(
+                    f"Custom input.json not found for session '{session_id}'."
+                )
+            tenant_input = TenantInput.load_from_file(custom_input_path)
+        else:
+            tenant_input = self.load_input(input_id)
+
+        ai_result = self.llm_orchestrator_v2.rewrite_single_slide_v2(
+            tenant_input=tenant_input,
+            template_id=template_id,
+            slide_key=slide_key,
+            user_prompt=user_prompt,
+            current_slide_content=dict(target_slide.placeholders or {}),
+        )
+
+        rewritten_placeholders = ai_result.get("placeholders", {})
+        if rewritten_placeholders:
+            target_slide.placeholders.update(rewritten_placeholders)
+
+        # Use session-isolated paths
+        report_path = self.session_manager.get_report_path(session_id, template_id)
+        slidespec_path = self.session_manager.get_slidespec_path(session_id, template_id)
+
+        # Persist rewritten slidespec and rerender report
+        with FileLock(slidespec_path, timeout=60.0):
+            slidespec.save(slidespec_path)
+
+        with FileLock(report_path, timeout=60.0):
+            self.ppt_generator_v2.render(slidespec, report_path)
+
+        warnings = list(ai_result.get("warnings", []))
+        if not rewritten_placeholders:
+            warnings.append("AI rewrite returned no placeholders. Slide content unchanged.")
+
+        updated_tokens = ai_result.get("updated_tokens", list(rewritten_placeholders.keys()))
+        updated_count = 1 if rewritten_placeholders else 0
+        updated_slides = [slide_key] if rewritten_placeholders else []
+
+        self.audit_logger.log(
+            event="ai_rewrite_v2",
+            details={
+                "slide_key": slide_key,
+                "updated_tokens": updated_tokens,
+                "updated_count": updated_count,
+                "prompt_length": len(user_prompt.strip()),
+                "warnings": warnings,
+            },
+            job_id=job_id,
+        )
+
+        return {
+            "job_id": job_id,
+            "session_id": session_id,
+            "slide_key": slide_key,
+            "report_path": config.outputs_url_for(report_path),
+            "slidespec": slidespec.model_dump(),
+            "version": "v2",
+            "updated_slides": updated_slides,
+            "updated_count": updated_count,
+            "updated_tokens": updated_tokens,
+            "warnings": warnings,
+        }
+
     def rewrite(
         self,
         job_id: str,

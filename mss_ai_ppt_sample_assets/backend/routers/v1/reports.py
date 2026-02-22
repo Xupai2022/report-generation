@@ -8,17 +8,18 @@ import logging
 import time
 from collections import defaultdict
 
-from ...services.report_service import ReportService
+from ...services.report_service import ReportService, SlideSpecNotFoundError as ServiceSlideSpecNotFoundError
 from ...services.job_manager import JobManager
 from ...models.job_state import JobStatus
 from ...schemas.responses import SuccessResponse
-from ...schemas.requests import CreateReportRequest, UpdateSlidesRequest
+from ...schemas.requests import CreateReportRequest, UpdateSlidesRequest, AISlideRewriteRequest
 from ...exceptions import (
     InputNotFoundError,
     TemplateNotFoundError,
     SlideSpecNotFoundError,
     LLMGenerationError
 )
+from ...modules.llm_orchestrator import LLMGenerationError as OrchestratorLLMGenerationError
 from openai import RateLimitError
 
 logger = logging.getLogger(__name__)
@@ -475,4 +476,61 @@ async def update_slides(report_id: str, req: UpdateSlidesRequest):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.exception(f"Slide update failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post(
+    "/{report_id}/slides/ai-rewrite",
+    response_model=SuccessResponse,
+    summary="AI Rewrite Single Slide",
+    description="""
+    Rewrite one slide using AI with user preference instructions.
+
+    The endpoint updates only AI-generated placeholders for the selected slide,
+    then re-renders the report and returns updated slidespec.
+    """,
+    responses={
+        200: {
+            "description": "AI rewrite completed",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": {
+                            "job_id": "tenant_acme:mss_executive_v2",
+                            "slide_key": "summary",
+                            "updated_slides": ["summary"],
+                            "updated_count": 1,
+                            "updated_tokens": ["HEADLINE", "KEY_POINTS"],
+                            "warnings": []
+                        }
+                    }
+                }
+            }
+        },
+        404: {"description": "Report not found"},
+        400: {"description": "Invalid request"},
+        500: {"description": "AI generation failed"}
+    }
+)
+async def ai_rewrite_slide(report_id: str, req: AISlideRewriteRequest):
+    """AI rewrite a single slide with user preference prompt."""
+    try:
+        result = service.ai_rewrite_slide(
+            job_id=report_id,
+            slide_key=req.slide_key,
+            user_prompt=req.user_prompt,
+        )
+        logger.info(f"AI rewrite completed: report={report_id}, slide={req.slide_key}")
+        return SuccessResponse(data=result)
+    except (SlideSpecNotFoundError, ServiceSlideSpecNotFoundError) as e:
+        logger.error(f"Report not found: {e}")
+        raise HTTPException(status_code=404, detail=str(e))
+    except ValueError as e:
+        logger.error(f"Invalid AI rewrite request: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except (LLMGenerationError, OrchestratorLLMGenerationError, RateLimitError) as e:
+        logger.error(f"AI rewrite failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        logger.exception(f"AI rewrite failed unexpectedly: {e}")
         raise HTTPException(status_code=500, detail=str(e))
