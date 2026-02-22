@@ -1,20 +1,20 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MSS AI PPT | 智能报告生成器</title>
+    <title>MSS AI PPT | Intelligent Report Generator</title>
     <link rel="icon" type="image/svg+xml" href="/assets/sangfor_logo_vector.svg">
     
     <style>
         /* --- REFINED DESIGN SYSTEM - V2 --- */
         :root {
-            /* ===== Color System - Cool Grays & A Professional Blue Accent ===== */
-            --color-bg-base: #F7F7F8;           /* Page background */
-            --color-bg-surface: #FFFFFF;        /* Main content surfaces (sidebars, canvas) */
-            --color-bg-surface-2: #FDFDFD;      /* Slightly elevated surfaces */
-            --color-bg-surface-hover: #F2F2F2;  /* Subtle hover for list items */
-            --color-bg-modal: rgba(255, 255, 255, 0.85); /* Modal/glassy background */
+            /* ===== Color System - Warm neutrals & A Professional Blue Accent ===== */
+            --color-bg-base: #F5F5F5;           /* Page background */
+            --color-bg-surface: #FAFAF8;        /* Main content surfaces (sidebars, canvas) */
+            --color-bg-surface-2: #F7F7F3;      /* Slightly elevated surfaces */
+            --color-bg-surface-hover: #F1F1EB;  /* Subtle hover for list items */
+            --color-bg-modal: rgba(250, 250, 248, 0.90); /* Modal/glassy background */
             --color-bg-overlay: rgba(0, 0, 0, 0.05);
 
             --color-text-primary: #111827;      /* Main headings and text */
@@ -41,8 +41,8 @@
             --color-info-bg: #EFF6FF;
 
             /* Border System - Subtle & Clean */
-            --color-border-primary: #E5E7EB;    /* Main borders for layout */
-            --color-border-secondary: #F3F4F6;  /* Lighter borders for dividers */
+            --color-border-primary: #DFDFD8;    /* Main borders for layout */
+            --color-border-secondary: #ECECE5;  /* Lighter borders for dividers */
             --color-border-focus: #3B82F6;      /* Focus ring color */
 
             /* Shadow System - Soft, Realistic Elevation */
@@ -73,6 +73,7 @@
             --toolbar-height: 72px;
             --sidebar-width: 260px;
             --editor-width: 360px;
+            --z-tooltip: 1300;
         }
 
         /* ===== Global Resets & Base Styles ===== */
@@ -103,8 +104,8 @@
         /* ===== Scrollbar Styling ===== */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: var(--radius-full); }
-        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        ::-webkit-scrollbar-thumb { background: #cfcfc4; border-radius: var(--radius-full); }
+        ::-webkit-scrollbar-thumb:hover { background: #b2b2a7; }
 
         /* ===== Main Layout Structure ===== */
         .app-layout { display: flex; flex-direction: column; height: 100vh; }
@@ -117,7 +118,7 @@
             justify-content: space-between;
             padding: 0 var(--space-6);
             flex-shrink: 0;
-            z-index: 10;
+            z-index: 40;
         }
         .app-toolbar {
             height: var(--toolbar-height);
@@ -128,7 +129,7 @@
             justify-content: space-between;
             padding: 0 var(--space-6);
             flex-shrink: 0;
-            z-index: 9;
+            z-index: 35;
         }
         .app-body {
             flex-grow: 1;
@@ -156,13 +157,19 @@
         }
         .app-canvas {
             flex-grow: 1;
+            position: relative;
+            z-index: 20;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow: visible;
             background-color: var(--color-bg-base);
-            background-image: radial-gradient(var(--color-text-tertiary) 0.5px, transparent 0.5px);
+            background-image: radial-gradient(var(--color-border-secondary) 0.6px, transparent 0.6px);
             background-size: 16px 16px;
             background-position: -8px -8px;
+        }
+        .app-editor {
+            position: relative;
+            z-index: 10;
         }
 
         /* ===== Header Components ===== */
@@ -256,17 +263,17 @@
         
         .btn-secondary {
             background-color: var(--color-bg-surface); color: var(--color-text-primary);
-            border-color: #d8dee6;
+            border-color: #d2d2c8;
             box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
         }
         .btn-secondary:hover:not(:disabled) {
-            background-color: #f8fafc;
-            border-color: #cbd5e1;
+            background-color: #f3f3ed;
+            border-color: #c8c8bc;
             box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
         }
         .btn-secondary:active:not(:disabled) {
-            background-color: #f1f5f9;
-            border-color: #cbd5e1;
+            background-color: #ecece4;
+            border-color: #c8c8bc;
             box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
         }
 
@@ -287,12 +294,22 @@
             border-color: #bfdbfe;
             color: #1d4ed8;
         }
+        #aiRewriteTriggerBtn:hover:not(:disabled) {
+            background-color: #f3f4ff;
+            border-color: #c7d2fe;
+            color: #4338ca;
+        }
         #refreshPreviewBtn:hover:not(:disabled) {
-            background-color: #f8fafc;
-            border-color: #cbd5e1;
+            background-color: #f3f3ed;
+            border-color: #c8c8bc;
             color: #0f172a;
         }
-        .tooltip-card-btn { position: relative; }
+        .tooltip-card-btn { position: relative; z-index: 1; }
+        .icon-export-btn[data-tooltip]:hover,
+        .lang-toggle-btn[data-tooltip]:hover,
+        .tooltip-card-btn[data-tooltip]:hover {
+            z-index: var(--z-tooltip);
+        }
         .icon-export-btn svg { width: 18px; height: 18px; }
         .icon-export-btn[data-tooltip]:hover::after,
         .lang-toggle-btn[data-tooltip]:hover::after,
@@ -309,7 +326,7 @@
             padding: 5px 8px;
             border-radius: 6px;
             line-height: 1.1;
-            z-index: 20;
+            z-index: var(--z-tooltip);
             animation: tooltipFloatIn 160ms ease-out;
         }
         .icon-export-btn[data-tooltip]:hover::before,
@@ -324,7 +341,7 @@
             height: 8px;
             background: rgba(17, 24, 39, 0.94);
             rotate: 45deg;
-            z-index: 19;
+            z-index: calc(var(--z-tooltip) - 1);
             animation: tooltipFloatIn 160ms ease-out;
         }
         @keyframes tooltipFloatIn {
@@ -497,7 +514,7 @@
         }
         .preview-layout-switch {
             display: inline-flex; align-items: center; gap: var(--space-1); padding: 4px;
-            background: #eceef1; border: 1px solid #dde1e6; border-radius: 12px;
+            background: #ecece6; border: 1px solid #dcdccf; border-radius: 12px;
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
         }
         .preview-layout-btn {
@@ -532,52 +549,31 @@
             border-bottom: 1px solid var(--color-border-primary);
             display: flex; align-items: flex-start; gap: var(--space-3);
         }
-        .editor-info .icon { color: var(--color-info); flex-shrink: 0; }
+        .editor-info .icon {
+            width: 22px;
+            height: 22px;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            color: #2563eb;
+            background: rgba(37, 99, 235, 0.08);
+            border: 1px solid rgba(37, 99, 235, 0.22);
+        }
+        .editor-info .icon svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.9;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
         .editor-info .text { font-size: 12px; color: #1e40af; line-height: 1.5; }
-        .ai-rewrite-panel {
-            border-bottom: 1px solid var(--color-border-primary);
-            background: #f8fafc;
-            padding: var(--space-3) var(--space-4);
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-2);
-        }
-        .ai-rewrite-label {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--color-text-primary);
-        }
-        .ai-rewrite-input {
-            width: 100%;
-            min-height: 82px;
-            resize: vertical;
-            border: 1px solid #d7dee6;
-            border-radius: 8px;
-            padding: 9px 10px;
-            font-size: 13px;
-            line-height: 1.5;
-            color: #0f172a;
-            background: #ffffff;
-            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-        }
-        .ai-rewrite-input:hover { border-color: #b8c6d5; }
-        .ai-rewrite-input:focus {
-            outline: none;
-            border-color: #7ea4de;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
-        }
-        .ai-rewrite-actions {
-            display: flex;
-            justify-content: flex-end;
-        }
-        .ai-rewrite-hint {
-            font-size: 11px;
-            color: #64748b;
-            line-height: 1.4;
-        }
         .field-editor-shell {
             flex-grow: 1;
-            background: linear-gradient(180deg, #f8fafc 0%, #f3f6f9 100%);
+            background: linear-gradient(180deg, #f6f6f1 0%, #f1f1ea 100%);
             padding: var(--space-4);
             overflow-y: auto;
         }
@@ -587,17 +583,17 @@
             gap: var(--space-3);
         }
         .field-editor-empty {
-            border: 1px dashed #d1d5db;
+            border: 1px dashed #d6d6cb;
             border-radius: var(--radius-lg);
-            background: rgba(255, 255, 255, 0.7);
+            background: rgba(250, 250, 248, 0.78);
             color: var(--color-text-secondary);
             padding: var(--space-4);
             text-align: center;
             font-size: 13px;
         }
         .field-card {
-            border: 1px solid #dde3ea;
-            background: rgba(255, 255, 255, 0.88);
+            border: 1px solid #dddcd1;
+            background: rgba(255, 255, 255, 0.86);
             backdrop-filter: blur(2px);
             border-radius: 12px;
             box-shadow: 0 3px 10px rgba(15, 23, 42, 0.04);
@@ -605,7 +601,7 @@
             transition: border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
         }
         .field-card:hover {
-            border-color: #c5d1de;
+            border-color: #cbcbbd;
             box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
             transform: translateY(-1px);
         }
@@ -627,7 +623,7 @@
             letter-spacing: 0.02em;
             padding: 2px 8px;
             border-radius: 999px;
-            background: #eaf1f8;
+            background: #f0efe6;
         }
         .field-type {
             font-size: 11px;
@@ -637,7 +633,7 @@
         }
         .field-input {
             width: 100%;
-            border: 1px solid #d7dee6;
+            border: 1px solid #d8d7cd;
             background: #ffffff;
             border-radius: 8px;
             padding: 9px 10px;
@@ -648,7 +644,7 @@
             resize: vertical;
         }
         .field-input:hover {
-            border-color: #b8c6d5;
+            border-color: #c3c2b5;
         }
         .field-input:focus {
             outline: none;
@@ -659,7 +655,7 @@
             min-height: 108px;
             font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
             font-size: 12px;
-            background: #fbfdff;
+            background: #fcfcf9;
         }
         .field-hint {
             margin-top: 6px;
@@ -774,9 +770,9 @@
             width: min(25vw, 430px);
             min-width: 330px;
             max-width: 92vw;
-            background: #f4f4f4;
+            background: #f5f5ef;
             border-radius: 14px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid #dfdfd8;
             box-shadow: var(--shadow-2xl);
             padding: 14px 14px 12px;
             transform-origin: top center;
@@ -797,7 +793,7 @@
         .export-option {
             border: 1px solid #d1d5db;
             border-radius: 12px;
-            background: #f8fafc;
+            background: #f7f7f1;
             padding: 10px;
             cursor: pointer;
             transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
@@ -811,7 +807,7 @@
             height: 92px;
             border-radius: 8px;
             border: 1px solid rgba(0, 0, 0, 0.08);
-            background: linear-gradient(145deg, #f4f4f4 0%, #e8ebef 100%);
+            background: linear-gradient(145deg, #f5f5ef 0%, #e9e8df 100%);
             position: relative;
             overflow: hidden;
             display: flex;
@@ -890,8 +886,96 @@
             cursor: pointer;
         }
         .export-confirm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .ai-rewrite-modal {
+            width: min(34vw, 560px);
+            min-width: 400px;
+            background:
+                radial-gradient(circle at 95% 5%, rgba(180, 146, 80, 0.08) 0, transparent 50%),
+                linear-gradient(145deg, #f8f7f1 0%, #f2f1e9 100%);
+            border-color: #dddcd1;
+            padding: 16px;
+        }
+        .ai-rewrite-modal-title {
+            margin: 0 0 6px;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            color: #0f172a;
+        }
+        .ai-rewrite-modal-hint {
+            margin: 0 0 12px;
+            color: #475569;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .ai-rewrite-modal-input {
+            width: 100%;
+            min-height: 136px;
+            border: 1px solid #d3d2c6;
+            border-radius: 12px;
+            padding: 12px 14px;
+            resize: vertical;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #0f172a;
+            background: rgba(255, 255, 255, 0.88);
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+        }
+        .ai-rewrite-modal-input:hover { border-color: #bfbeb2; }
+        .ai-rewrite-modal-input:focus {
+            outline: none;
+            border-color: #7c94d8;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.14), 0 10px 22px rgba(30, 41, 59, 0.08);
+            background: #ffffff;
+        }
+        .ai-rewrite-modal-actions {
+            margin-top: 12px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+        .ai-rewrite-modal-cancel {
+            border: 1px solid #d0cec3;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #334155;
+            height: 36px;
+            min-width: 72px;
+            padding: 0 14px;
+            cursor: pointer;
+            transition: border-color var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast);
+        }
+        .ai-rewrite-modal-cancel:hover {
+            border-color: #bab8aa;
+            background: #f4f3ec;
+            color: #0f172a;
+        }
+        .ai-rewrite-modal-confirm {
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            color: #ffffff;
+            font-weight: 600;
+            height: 36px;
+            min-width: 96px;
+            padding: 0 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.22);
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast);
+        }
+        .ai-rewrite-modal-confirm:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 16px rgba(15, 23, 42, 0.24);
+            filter: brightness(1.03);
+        }
+        .ai-rewrite-modal-confirm:disabled {
+            cursor: not-allowed;
+            opacity: 0.58;
+            box-shadow: none;
+        }
         @media (max-width: 900px) {
             .export-modal { width: min(92vw, 430px); min-width: 0; }
+            .ai-rewrite-modal { width: min(92vw, 560px); min-width: 0; }
             .export-modal-subtitle { font-size: 14px; }
             .export-option-grid { grid-template-columns: 1fr; }
             .export-confirm-btn { font-size: 16px; }
@@ -901,11 +985,16 @@
         .presenter-modal {
             position: fixed;
             inset: 0;
-            z-index: 1200;
+            width: 100vw;
+            height: 100vh;
+            z-index: 5000;
             background: #05070b;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+        }
+        body.is-presenting .app-editor {
+            display: none !important;
         }
         .presenter-stage {
             flex: 1;
@@ -939,7 +1028,7 @@
 
     <div id="progressPanel" class="progress-panel">
         <div class="progress-panel-header">
-            <h3 class="progress-panel-title" data-i18n="msgGenerating">正在生成报告</h3>
+            <h3 class="progress-panel-title" data-i18n="msgGenerating">姝ｅ湪鐢熸垚鎶ュ憡</h3>
         </div>
         <div class="progress-steps-compact" id="progressStepsCompact"></div>
         <div class="progress-bar-compact">
@@ -954,13 +1043,13 @@
                 <img src="/assets/sangfor_logo_vector.svg" alt="Sangfor Logo" onerror="this.onerror=null;this.src='/ui/assets/sangfor_logo_vector.svg';">
                 <div class="title-group">
                     <h1>MSS AI PPT</h1>
-                    <span data-i18n="pageSubtitle">智能报告生成器</span>
+                    <span data-i18n="pageSubtitle">Intelligent Report Generator</span>
                 </div>
             </div>
         </div>
         <div class="header-group">
             <div class="lang-switcher">
-                <button id="langToggleBtn" class="lang-toggle-btn" type="button" onclick="toggleLanguage()" aria-label="Switch language" data-tooltip="Switch language">
+                <button id="langToggleBtn" class="lang-toggle-btn" type="button" onclick="toggleLanguage()" aria-label="切换语言" data-tooltip="切换语言">
                     <svg class="lang-toggle-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M7.2 3.1a9.3 9.3 0 0 1 13.2 10.1"></path>
                         <path d="M16.8 20.9a9.3 9.3 0 0 1-13.2-10.1"></path>
@@ -975,21 +1064,21 @@
     <div class="app-toolbar">
         <div class="toolbar-group">
             <div class="toolbar-item">
-                <label for="inputSelect" data-i18n="labelInput">输入数据</label>
-                <select id="inputSelect"><option data-i18n="msgLoading">加载中...</option></select>
+                <label for="inputSelect" data-i18n="labelInput">Input Data</label>
+                <select id="inputSelect"><option data-i18n="msgLoading">Loading...</option></select>
             </div>
             <div class="divider"></div>
             <div class="toolbar-item">
-                <label for="templateSelect" data-i18n="labelTemplate">选择模板</label>
-                <select id="templateSelect"><option data-i18n="msgLoading">加载中...</option></select>
+                <label for="templateSelect" data-i18n="labelTemplate">Select Template</label>
+                <select id="templateSelect"><option data-i18n="msgLoading">Loading...</option></select>
             </div>
         </div>
         <div class="toolbar-group">
             <label class="checkbox-group">
                 <input type="checkbox" id="useMock" checked>
-                <span data-i18n="labelUseMock">快速生成 (Mock)</span>
+                <span data-i18n="labelUseMock">Quick Generate (Mock)</span>
             </label>
-            <button id="exportBtn" class="btn btn-secondary icon-export-btn" type="button" disabled data-tooltip="下载">
+            <button id="exportBtn" class="btn btn-secondary icon-export-btn" type="button" disabled data-tooltip="Download">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path d="M12 3v11"></path>
                     <path d="M8 10l4 4 4-4"></path>
@@ -1001,7 +1090,7 @@
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3L3 14h9l-1 9 9-12h-9z"/></svg>
                 </span>
                 <span id="genSpinner" class="spinner hidden"></span>
-                <span data-i18n="btnGenerate">生成报告</span>
+                <span data-i18n="btnGenerate">Generate Report</span>
             </button>
         </div>
     </div>
@@ -1009,29 +1098,29 @@
     <main class="app-body">
         <aside class="app-sidebar">
             <div class="panel-header">
-                <h2 data-i18n="sectionSlides">幻灯片列表</h2>
+                <h2 data-i18n="sectionSlides">Slide List</h2>
                 <span id="slideCount" class="badge">0</span>
             </div>
             <div id="slidesList" class="panel-content">
                 <div class="empty-state">
                     <div class="icon">📄</div>
-                    <p class="text-sm font-medium" data-i18n="msgNoData">暂无幻灯片</p>
+                    <p class="text-sm font-medium" data-i18n="msgNoData">No slides</p>
                 </div>
             </div>
         </aside>
 
         <section class="app-canvas">
             <div class="panel-header">
-                <h2 id="activeSlideTitle" class="truncate">总览</h2>
+                <h2 id="activeSlideTitle" class="truncate" data-i18n="sectionOverview">总览</h2>
                 <div class="panel-actions">
-                    <div class="preview-layout-switch" role="group" aria-label="Preview layout switch">
+                    <div class="preview-layout-switch" role="group" aria-label="预览布局切换">
                         <button id="previewLayoutListBtn" class="preview-layout-btn active" type="button" aria-label="列表预览" title="列表预览">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <rect x="4" y="4" width="16" height="16" rx="2"></rect>
                                 <line x1="12" y1="4" x2="12" y2="20"></line>
                             </svg>
                         </button>
-                        <button id="previewLayoutTwoUpBtn" class="preview-layout-btn" type="button" aria-label="每行两张" title="每行两张">
+                        <button id="previewLayoutTwoUpBtn" class="preview-layout-btn" type="button" aria-label="双栏预览" title="双栏预览">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <rect x="4" y="4" width="6" height="6" rx="1"></rect>
                                 <rect x="14" y="4" width="6" height="6" rx="1"></rect>
@@ -1040,20 +1129,26 @@
                             </svg>
                         </button>
                     </div>
-                    <button id="presentBtn" class="btn btn-secondary icon-export-btn" type="button" disabled data-tooltip="???????" aria-label="???????">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <rect x="3.5" y="4.5" width="17" height="12" rx="2"></rect>
-                            <path d="M10 9l4 2.5-4 2.5z" fill="currentColor" stroke="none"></path>
-                            <path d="M12 16.5V20"></path>
-                            <path d="M8 20h8"></path>
-                        </svg>
-                    </button>
-                    <button id="refreshPreviewBtn" class="btn btn-secondary icon-export-btn" type="button" data-tooltip="刷新预览" aria-label="刷新预览">
+                    <button id="refreshPreviewBtn" class="btn btn-secondary icon-export-btn" type="button" disabled data-tooltip="Refresh preview" aria-label="Refresh preview">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M21 2v6h-6"></path>
                             <path d="M3 13a9 9 0 0 0 15.55 4.6L21 14"></path>
                             <path d="M3 22v-6h6"></path>
                             <path d="M21 11A9 9 0 0 0 5.45 6.4L3 10"></path>
+                        </svg>
+                    </button>
+                    <button id="aiRewriteTriggerBtn" class="btn btn-secondary icon-export-btn" type="button" disabled data-tooltip="AI rewrite current slide" aria-label="AI rewrite current slide">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 3l1.8 4.3L18 9.1l-4.2 1.8L12 15l-1.8-4.1L6 9.1l4.2-1.8L12 3z"></path>
+                            <path d="M19 14l.8 2 .2.6.6.2 2 .8-2 .8-.6.2-.2.6-.8 2-.8-2-.2-.6-.6-.2-2-.8 2-.8.6-.2.2-.6.8-2z"></path>
+                        </svg>
+                    </button>
+                    <button id="presentBtn" class="btn btn-secondary icon-export-btn" type="button" disabled data-tooltip="Play slides" aria-label="Play slides">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="3.5" y="4.5" width="17" height="12" rx="2"></rect>
+                            <path d="M10 9l4 2.5-4 2.5z" fill="currentColor" stroke="none"></path>
+                            <path d="M12 16.5V20"></path>
+                            <path d="M8 20h8"></path>
                         </svg>
                     </button>
                 </div>
@@ -1062,46 +1157,33 @@
                 <div id="previewList" class="preview-list hidden"></div>
                 <div id="emptyState" class="empty-state">
                     <div class="icon">✨</div>
-                    <h3 data-i18n="msgSelectDataAndTemplate">请选择数据和模板以开始</h3>
-                    <p class="text-sm" style="max-width: 300px;" data-i18n="appDescription">我将为您自动分析数据、编排内容并生成结构清晰、视觉专业的PPT报告。</p>
+                    <h3 data-i18n="msgSelectDataAndTemplate">Select data and template to begin</h3>
                 </div>
             </div>
             <div class="panel-footer">
-                <span id="jobIdDisplay" data-i18n="msgNoJob">任务ID: 无</span>
+                <span id="jobIdDisplay" data-i18n="msgNoJob">Job ID: None</span>
                 <span>1920 x 1080</span>
             </div>
         </section>
 
         <aside class="app-editor">
             <div class="panel-header">
-                <h2 data-i18n="editorTitle">JSON 属性编辑器</h2>
+                <h2 data-i18n="editorTitle">Content Editor</h2>
                 <button id="rewriteBtn" class="btn btn-primary btn-sm">
-                    <span data-i18n="btnApplyRegenerate">应用并重新生成</span>
+                    <span data-i18n="btnApplyRegenerate">Apply & Regenerate</span>
                 </button>
             </div>
             <div class="editor-info">
-                <span class="icon">ℹ️</span>
+                <span class="icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="9"></circle>
+                        <line x1="12" y1="10.5" x2="12" y2="16"></line>
+                        <circle cx="12" cy="7.5" r="0.9" fill="currentColor" stroke="none"></circle>
+                    </svg>
+                </span>
                 <p class="text" data-i18n="editorHint">
-                    <strong>编辑提示：</strong>只能修改字段的<strong>值</strong>，不能修改字段名。删除或重命名字段将被忽略。
+                    <strong>Edit hint:</strong> You can only modify field <strong>values</strong>; field names cannot be changed.
                 </p>
-            </div>
-            <div class="ai-rewrite-panel">
-                <label for="aiRewritePrompt" class="ai-rewrite-label" data-i18n="labelAiRewritePrompt">AI重写偏好</label>
-                <textarea
-                    id="aiRewritePrompt"
-                    class="ai-rewrite-input"
-                    rows="4"
-                    maxlength="2000"
-                    data-i18n-placeholder="placeholderAiRewritePrompt"
-                ></textarea>
-                <div class="ai-rewrite-actions">
-                    <button id="aiRewriteBtn" class="btn btn-secondary btn-sm" type="button">
-                        <span data-i18n="btnAiRewriteCurrentSlide">AI重写当前页</span>
-                    </button>
-                </div>
-                <div class="ai-rewrite-hint" data-i18n="msgAiRewriteHint">
-                    选择当前页并输入偏好，系统会将你的要求加入提示词后重写该页AI内容。
-                </div>
             </div>
             <div id="fieldEditorShell" class="field-editor-shell">
                 <div id="slideFields" class="field-editor-list"></div>
@@ -1111,53 +1193,64 @@
     </main>
 
     <div id="exportModalOverlay" class="export-modal-overlay">
-        <div class="export-modal" role="dialog" aria-modal="true" aria-label="Export options">
-            <p id="exportModalSubtitle" class="export-modal-subtitle">可选择导出方式</p>
+        <div id="exportModal" class="export-modal" role="dialog" aria-modal="true" aria-label="导出选项">
+            <p id="exportModalSubtitle" class="export-modal-subtitle">Choose export format</p>
             <div class="export-option-grid">
-                <div id="exportOptionPpt" class="export-option selected" data-format="ppt" role="button" tabindex="0" aria-label="导出PPT">
+                <div id="exportOptionPpt" class="export-option selected" data-format="ppt" role="button" tabindex="0" aria-label="导出 PPT">
                     <div class="export-thumb export-thumb-ppt">
                         <div class="export-file-mark"></div>
                     </div>
                 </div>
-                <div id="exportOptionPdf" class="export-option" data-format="pdf" role="button" tabindex="0" aria-label="导出PDF">
+                <div id="exportOptionPdf" class="export-option" data-format="pdf" role="button" tabindex="0" aria-label="导出 PDF">
                     <div class="export-thumb export-thumb-pdf">
                         <div class="export-file-mark"></div>
                     </div>
                 </div>
             </div>
             <div class="export-modal-actions">
-                <button id="exportConfirmBtn" class="export-confirm-btn" type="button">导出</button>
+                <button id="exportConfirmBtn" class="export-confirm-btn" type="button">瀵煎嚭</button>
             </div>
         </div>
     </div>
 
+    <div id="aiRewriteModalOverlay" class="export-modal-overlay">
+        <div id="aiRewriteModal" class="export-modal ai-rewrite-modal" role="dialog" aria-modal="true" aria-label="AI 重写">
+            <p id="aiRewriteModalTitle" class="ai-rewrite-modal-title">AI rewrite current slide</p>
+            <p id="aiRewriteModalHint" class="ai-rewrite-modal-hint">Describe how you want this slide rewritten (audience, tone, focus, structure, constraints).</p>
+            <textarea id="aiRewritePrompt" class="ai-rewrite-modal-input" rows="6" maxlength="2000"></textarea>
+            <div class="ai-rewrite-modal-actions">
+                <button id="aiRewriteCancelBtn" class="ai-rewrite-modal-cancel" type="button" data-i18n="btnCancel">Cancel</button>
+                <button id="aiRewriteConfirmBtn" class="ai-rewrite-modal-confirm" type="button">Rewrite</button>
+            </div>
+        </div>
+    </div>
     <div id="ratingCard" class="rating-card" style="display: none;">
         <div class="rating-card-header">
-            <h4 data-i18n="ratingTitle">为这份报告评分</h4>
+            <h4 data-i18n="ratingTitle">Rate this report</h4>
             <button class="rating-card-close" onclick="closeRatingCard()">&times;</button>
         </div>
         <div class="rating-card-body">
-            <p data-i18n="ratingPrompt">PPT已开始下载，请问这份报告是否基本可用？</p>
+            <p data-i18n="ratingPrompt">Download has started. Is this report basically usable?</p>
             <div class="rating-buttons">
                 <button class="rating-btn" data-rating="liked" onclick="selectRating('liked')">
                     <span class="rating-icon">👍</span>
-                    <span data-i18n="ratingLiked">满意</span>
+                    <span data-i18n="ratingLiked">婊℃剰</span>
                 </button>
                 <button class="rating-btn" data-rating="disliked" onclick="selectRating('disliked')">
                     <span class="rating-icon">👎</span>
-                    <span data-i18n="ratingDisliked">不满意</span>
+                    <span data-i18n="ratingDisliked">Not Good</span>
                 </button>
             </div>
             <div id="ratingCommentSection" style="display: none;">
                 <label for="ratingComment">
-                    <span data-i18n="ratingCommentLabel">请告诉我们具体的问题</span>
-                    <span class="rating-required">(必填，至少10个字)</span>
+                    <span data-i18n="ratingCommentLabel">璇峰憡璇夋垜浠叿浣撶殑闂</span>
+                    <span class="rating-required">(required, at least 10 characters)</span>
                 </label>
                 <textarea id="ratingComment" rows="3" maxlength="500" data-i18n-placeholder="ratingCommentPlaceholder"></textarea>
                 <div class="rating-char-count"><span id="ratingCharCount">0</span> / 500</div>
             </div>
             <div class="rating-actions" id="ratingActions">
-                <button class="btn btn-primary" id="submitRatingBtn" onclick="submitRating()" style="display: none;" data-i18n="ratingSubmit">提交评分</button>
+                <button class="btn btn-primary" id="submitRatingBtn" onclick="submitRating()" style="display: none;" data-i18n="ratingSubmit">鎻愪氦璇勫垎</button>
             </div>
             <div id="ratingError" class="rating-error" style="display: none;"></div>
         </div>
@@ -1166,7 +1259,7 @@
     <div id="presenterModal" class="presenter-modal hidden" aria-hidden="true">
         <div class="presenter-stage">
             <img id="presenterImage" class="presenter-image hidden" alt="Slide preview">
-            <div id="presenterEmpty" class="presenter-empty">Preview is not ready for this slide.</div>
+            <div id="presenterEmpty" class="presenter-empty" data-i18n="msgPreviewNotReadyForSlide">当前幻灯片预览尚未就绪。</div>
         </div>
     </div>
     
@@ -1176,10 +1269,42 @@
         let translations = {};
         const i18nFallback = {
             'zh-CN': {
-                btnPresentSlides: '播放幻灯片',
-                presentBtnTitle: '全屏播放幻灯片'
+                sectionOverview: '总览',
+                editorPlaceholder: '// 选择幻灯片以编辑属性...',
+                tooltipSwitchToEnglish: '切换到英文',
+                tooltipSwitchToChinese: '切换到中文',
+                btnCancel: '取消',
+                labelPreviewList: '列表预览',
+                labelPreviewTwoUp: '双栏预览',
+                msgChooseExportFormat: '选择导出格式',
+                btnExport: '导出',
+                msgNoSlidesForPresentation: '当前没有可播放的幻灯片',
+                msgPreviewNotReadyForSlide: '当前幻灯片预览尚未就绪。',
+                ariaExportOptions: '导出选项',
+                ariaAiRewrite: 'AI 重写',
+                ariaPreviewLayoutSwitch: '预览布局切换',
+                ariaExportPpt: '导出 PPT',
+                ariaExportPdf: '导出 PDF',
+                btnPresentSlides: 'Play Slides',
+                presentBtnTitle: 'Start slideshow in fullscreen'
             },
             'en-US': {
+                sectionOverview: 'Overview',
+                editorPlaceholder: '// Select a slide to edit properties...',
+                tooltipSwitchToEnglish: 'Switch to English',
+                tooltipSwitchToChinese: 'Switch to Chinese',
+                btnCancel: 'Cancel',
+                labelPreviewList: 'List Preview',
+                labelPreviewTwoUp: '2-Up Preview',
+                msgChooseExportFormat: 'Choose export format',
+                btnExport: 'Export',
+                msgNoSlidesForPresentation: 'No slides available for presentation',
+                msgPreviewNotReadyForSlide: 'Preview is not ready for this slide.',
+                ariaExportOptions: 'Export options',
+                ariaAiRewrite: 'AI rewrite',
+                ariaPreviewLayoutSwitch: 'Preview layout switch',
+                ariaExportPpt: 'Export PPT',
+                ariaExportPdf: 'Export PDF',
                 btnPresentSlides: 'Play Slides',
                 presentBtnTitle: 'Start slideshow in fullscreen'
             }
@@ -1227,7 +1352,7 @@
             const toggleBtn = document.getElementById('langToggleBtn');
             if (!toggleBtn) return;
             const nextLang = currentLang === 'zh-CN' ? 'en-US' : 'zh-CN';
-            const tip = nextLang === 'en-US' ? 'Switch to English' : '切换到中文';
+            const tip = nextLang === 'en-US' ? t('tooltipSwitchToEnglish') : t('tooltipSwitchToChinese');
             toggleBtn.dataset.lang = currentLang;
             toggleBtn.setAttribute('aria-label', tip);
             toggleBtn.setAttribute('data-tooltip', tip);
@@ -1275,6 +1400,12 @@
             updateModifiedSlidesUI();
             updatePreviewLayoutSwitchText();
             updateExportCopy();
+
+            // Update dynamically rendered empty editor placeholder text
+            document.querySelectorAll('.field-editor-empty').forEach(el => {
+                el.textContent = t('editorPlaceholder');
+            });
+
             if (state.activeSlideKey && state.slidespec?.slides) {
                 const slide = state.slidespec.slides.find(s => s.slide_key === state.activeSlideKey);
                 if (slide) {
@@ -1393,7 +1524,7 @@
             const toastEl = document.createElement('div');
             toastEl.className = `toast toast-${type}`;
 
-            const icons = { success: '✓', error: '✕', warning: '!', info: 'ℹ️' };
+            const icons = { success: 'OK', error: 'X', warning: '!', info: 'i' };
 
             toastEl.innerHTML = `
                 <div class="toast-icon">${icons[type] || icons.info}</div>
@@ -1483,7 +1614,7 @@
                 <div class="progress-step-compact ${step.status}" data-step-id="${step.id}">
                     <div class="step-icon-compact">
                         ${step.status === 'active' ? '<div class="step-spinner-compact"></div>' :
-                          step.status === 'completed' ? '✓' : (idx + 1)}
+                          step.status === 'completed' ? '√' : (idx + 1)}
                     </div>
                     <div class="step-label-compact">${t(step.label)}</div>
                 </div>
@@ -1705,13 +1836,12 @@
             const listBtn = $('previewLayoutListBtn');
             const twoUpBtn = $('previewLayoutTwoUpBtn');
             if (!listBtn || !twoUpBtn) return;
-            const labels = currentLang === 'en-US'
-                ? { list: 'List Preview', twoUp: '2-Up Preview' }
-                : { list: '列表预览', twoUp: '每行两张' };
-            listBtn.title = labels.list;
-            listBtn.setAttribute('aria-label', labels.list);
-            twoUpBtn.title = labels.twoUp;
-            twoUpBtn.setAttribute('aria-label', labels.twoUp);
+            const listLabel = t('labelPreviewList');
+            const twoUpLabel = t('labelPreviewTwoUp');
+            listBtn.title = listLabel;
+            listBtn.setAttribute('aria-label', listLabel);
+            twoUpBtn.title = twoUpLabel;
+            twoUpBtn.setAttribute('aria-label', twoUpLabel);
         }
 
         function updatePreviewLayoutButtons() {
@@ -1761,23 +1891,35 @@
 
         function updateActiveSlideTitle() {
             if (state.previewLayout === 'two-up') {
-                $('activeSlideTitle').textContent = '总览';
+                $('activeSlideTitle').textContent = t('sectionOverview');
                 return;
             }
             const activeIndex = state.slidespec?.slides?.findIndex(s => s.slide_key === state.activeSlideKey) ?? -1;
             const totalSlides = state.slidespec?.slides?.length || 0;
-            $('activeSlideTitle').textContent = activeIndex >= 0 ? `${activeIndex + 1} / ${totalSlides}` : '总览';
+            $('activeSlideTitle').textContent = activeIndex >= 0 ? `${activeIndex + 1} / ${totalSlides}` : t('sectionOverview');
         }
 
         function updateExportCopy() {
-            const isEn = currentLang === 'en-US';
-            $('exportBtn').setAttribute('data-tooltip', isEn ? 'Download' : '下载');
-            $('presentBtn').setAttribute('data-tooltip', isEn ? 'Start slideshow in fullscreen' : '全屏播放幻灯片');
-            $('presentBtn').setAttribute('aria-label', isEn ? 'Start slideshow in fullscreen' : '全屏播放幻灯片');
-            $('refreshPreviewBtn').setAttribute('data-tooltip', isEn ? 'Refresh Preview' : '刷新预览');
-            $('refreshPreviewBtn').setAttribute('aria-label', isEn ? 'Refresh Preview' : '刷新预览');
-            $('exportModalSubtitle').textContent = isEn ? 'Choose export format' : '可选择导出方式';
-            $('exportConfirmBtn').textContent = isEn ? 'Export' : '导出';
+            $('exportBtn').setAttribute('data-tooltip', t('btnDownload'));
+            $('exportBtn').setAttribute('aria-label', t('btnDownload'));
+            document.querySelector('.preview-layout-switch')?.setAttribute('aria-label', t('ariaPreviewLayoutSwitch'));
+            $('presentBtn').setAttribute('data-tooltip', t('presentBtnTitle'));
+            $('presentBtn').setAttribute('aria-label', t('presentBtnTitle'));
+            $('aiRewriteTriggerBtn').setAttribute('data-tooltip', t('btnAiRewriteCurrentSlide'));
+            $('aiRewriteTriggerBtn').setAttribute('aria-label', t('btnAiRewriteCurrentSlide'));
+            $('refreshPreviewBtn').setAttribute('data-tooltip', t('btnRefreshPreview'));
+            $('refreshPreviewBtn').setAttribute('aria-label', t('btnRefreshPreview'));
+            $('exportOptionPpt').setAttribute('aria-label', t('ariaExportPpt'));
+            $('exportOptionPdf').setAttribute('aria-label', t('ariaExportPdf'));
+            $('exportModal').setAttribute('aria-label', t('ariaExportOptions'));
+            $('aiRewriteModal').setAttribute('aria-label', t('ariaAiRewrite'));
+            $('exportModalSubtitle').textContent = t('msgChooseExportFormat');
+            $('exportConfirmBtn').textContent = t('btnExport');
+            $('aiRewriteModalTitle').textContent = t('btnAiRewriteCurrentSlide');
+            $('aiRewriteModalHint').textContent = t('msgAiRewriteHint');
+            $('aiRewritePrompt').placeholder = t('placeholderAiRewritePrompt');
+            $('aiRewriteCancelBtn').textContent = t('btnCancel');
+            $('aiRewriteConfirmBtn').textContent = t('btnAiRewriteCurrentSlide');
         }
 
         function setExportFormat(format) {
@@ -1801,6 +1943,44 @@
         function positionExportModal() {
             const btn = $('exportBtn');
             const modal = document.querySelector('#exportModalOverlay .export-modal');
+            if (!btn || !modal) return;
+
+            const btnRect = btn.getBoundingClientRect();
+            const modalRect = modal.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const gap = 10;
+
+            let left = btnRect.left + (btnRect.width / 2) - (modalRect.width / 2);
+            const minLeft = 8;
+            const maxLeft = viewportWidth - modalRect.width - 8;
+            left = Math.max(minLeft, Math.min(left, maxLeft));
+
+            let top = btnRect.bottom + gap;
+            const maxTop = viewportHeight - modalRect.height - 8;
+            top = Math.min(top, maxTop);
+
+            modal.style.left = `${left}px`;
+            modal.style.top = `${Math.max(8, top)}px`;
+        }
+
+        function openAiRewriteModal() {
+            if (!state.jobId) return;
+            if (!state.activeSlideKey) {
+                return toast.warning(t('msgSelectSlideForAiRewrite'), t('toastTitleHint'));
+            }
+            $('aiRewriteModalOverlay').classList.add('active');
+            positionAiRewriteModal();
+            setTimeout(() => $('aiRewritePrompt').focus(), 0);
+        }
+
+        function closeAiRewriteModal() {
+            $('aiRewriteModalOverlay').classList.remove('active');
+        }
+
+        function positionAiRewriteModal() {
+            const btn = $('aiRewriteTriggerBtn');
+            const modal = document.querySelector('#aiRewriteModalOverlay .ai-rewrite-modal');
             if (!btn || !modal) return;
 
             const btnRect = btn.getBoundingClientRect();
@@ -2038,10 +2218,15 @@
         function syncActionButtons() {
             $('generateBtn').disabled = state.loading;
             $('rewriteBtn').disabled = state.loading || !state.jobId;
-            const aiRewriteBtn = $('aiRewriteBtn');
-            if (aiRewriteBtn) {
-                aiRewriteBtn.disabled = state.loading || !state.jobId || !state.activeSlideKey;
+            const aiRewriteTriggerBtn = $('aiRewriteTriggerBtn');
+            if (aiRewriteTriggerBtn) {
+                aiRewriteTriggerBtn.disabled = state.loading || !state.jobId || !state.activeSlideKey;
             }
+            const aiRewriteConfirmBtn = $('aiRewriteConfirmBtn');
+            if (aiRewriteConfirmBtn) {
+                aiRewriteConfirmBtn.disabled = state.loading || !state.jobId || !state.activeSlideKey;
+            }
+            $('refreshPreviewBtn').disabled = state.loading || !state.jobId;
             $('exportBtn').disabled = state.loading || !state.jobId;
             $('presentBtn').disabled = state.loading || !state.slidespec?.slides?.length;
         }
@@ -2091,10 +2276,11 @@
 
         async function startPresentation(startIndex = 0, requestFullscreen = false) {
             if (!getSlideCount()) {
-                toast.warning('No slides available for presentation', t('toastTitleHint'));
+                toast.warning(t('msgNoSlidesForPresentation'), t('toastTitleHint'));
                 return;
             }
             state.isPresenting = true;
+            document.body.classList.add('is-presenting');
             state.presentIndex = clampPresentIndex(startIndex);
             $('presenterModal').classList.remove('hidden');
             $('presenterModal').setAttribute('aria-hidden', 'false');
@@ -2108,6 +2294,7 @@
             state.isPresenting = false;
             $('presenterModal').classList.add('hidden');
             $('presenterModal').setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('is-presenting');
             if (exitBrowserFullscreen && document.fullscreenElement) {
                 try {
                     await document.exitFullscreen();
@@ -2218,12 +2405,19 @@
         $('exportModalOverlay').addEventListener('click', (event) => {
             if (event.target === $('exportModalOverlay')) closeExportModal();
         });
+        $('aiRewriteModalOverlay').addEventListener('click', (event) => {
+            if (event.target === $('aiRewriteModalOverlay')) closeAiRewriteModal();
+        });
         window.addEventListener('resize', () => {
             if ($('exportModalOverlay').classList.contains('active')) positionExportModal();
+            if ($('aiRewriteModalOverlay').classList.contains('active')) positionAiRewriteModal();
         });
         window.addEventListener('scroll', () => {
             if ($('exportModalOverlay').classList.contains('active')) positionExportModal();
+            if ($('aiRewriteModalOverlay').classList.contains('active')) positionAiRewriteModal();
         }, true);
+        $('aiRewriteTriggerBtn').onclick = () => openAiRewriteModal();
+        $('aiRewriteCancelBtn').onclick = () => closeAiRewriteModal();
 
         $('rewriteBtn').onclick = async () => {
             if (!state.jobId) return;
@@ -2256,7 +2450,7 @@
             }
         };
 
-        $('aiRewriteBtn').onclick = async () => {
+        $('aiRewriteConfirmBtn').onclick = async () => {
             if (!state.jobId) return;
             if (!state.activeSlideKey) {
                 return toast.warning(t('msgSelectSlideForAiRewrite'), t('toastTitleHint'));
@@ -2272,6 +2466,7 @@
                 return toast.warning(t('msgApplyManualChangesBeforeAiRewrite'), t('toastTitleHint'));
             }
 
+            closeAiRewriteModal();
             setLoading(true);
             try {
                 const res = await api(`/api/v1/reports/${encodeURIComponent(state.jobId)}/slides/ai-rewrite`, {
@@ -2299,6 +2494,7 @@
                         tf('msgAiRewriteSuccess', { slide: state.activeSlideKey }),
                         t('titleUpdateCompleted')
                     );
+                    closeAiRewriteModal();
                 } else {
                     const warningText = Array.isArray(result.warnings) && result.warnings.length
                         ? result.warnings.join('; ')
@@ -2342,6 +2538,11 @@
             if (event.key === 'Escape' && $('exportModalOverlay').classList.contains('active')) {
                 event.preventDefault();
                 closeExportModal();
+                return;
+            }
+            if (event.key === 'Escape' && $('aiRewriteModalOverlay').classList.contains('active')) {
+                event.preventDefault();
+                closeAiRewriteModal();
                 return;
             }
             if (!state.isPresenting) return;
@@ -2433,3 +2634,4 @@
     </script>
 </body>
 </html>
+
