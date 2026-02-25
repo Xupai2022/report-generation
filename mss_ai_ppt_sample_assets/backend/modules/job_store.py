@@ -26,6 +26,7 @@ from mss_ai_ppt_sample_assets.backend.models.job_state import JobState, JobStatu
 from mss_ai_ppt_sample_assets.backend.modules.file_lock import FileLock
 
 logger = logging.getLogger(__name__)
+RESTART_INTERRUPTED_ERROR_CODE = "RESTART_INTERRUPTED"
 
 
 class JobStore:
@@ -418,6 +419,41 @@ class JobStore:
             logger.info(f"Cleaned up {cleaned_count} old jobs (older than {days} days)")
 
         return cleaned_count
+
+    def mark_running_jobs_failed(self, error_message: str) -> int:
+        """Mark all running jobs as failed.
+
+        Useful during startup recovery after an unclean shutdown/restart.
+
+        Args:
+            error_message: Failure reason to persist in job state
+
+        Returns:
+            Number of jobs marked as failed
+        """
+        running_jobs = self.list_jobs(status=JobStatus.RUNNING, limit=0)
+        failed_count = 0
+
+        for job in running_jobs:
+            try:
+                self.update_job(
+                    job.job_id,
+                    {
+                        "status": JobStatus.FAILED,
+                        "completed_at": datetime.now(timezone.utc),
+                        "last_error": error_message,
+                        "error_code": RESTART_INTERRUPTED_ERROR_CODE,
+                        "message": "Task interrupted by service restart. Please regenerate."
+                    },
+                )
+                failed_count += 1
+            except Exception as e:
+                logger.warning(f"Failed to mark running job as failed: {job.job_id}, error={e}")
+
+        if failed_count > 0:
+            logger.info(f"Marked {failed_count} running jobs as failed during startup recovery")
+
+        return failed_count
 
     def list_jobs_filtered(
         self,

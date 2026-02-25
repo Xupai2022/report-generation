@@ -671,6 +671,7 @@
         .toast {
             width: 380px; display: flex; align-items: flex-start; gap: var(--space-3);
             background: var(--color-bg-surface); padding: var(--space-4);
+            border: 1px solid rgba(148, 163, 184, 0.26);
             border-radius: var(--radius-lg); box-shadow: var(--shadow-xl);
             animation: slideInRight 0.3s ease;
         }
@@ -683,9 +684,44 @@
         .toast-content { display: flex; flex-direction: column; gap: var(--space-1); }
         .toast-title { font-weight: 600; color: var(--color-text-primary); }
         .toast-message { font-size: 13px; color: var(--color-text-secondary); }
+        .toast-action-row { margin-top: var(--space-2); display: flex; }
+        .toast-action-btn {
+            height: 30px;
+            border: 1px solid #cbd5e1;
+            background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+            color: #0f172a;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 0 12px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        .toast-action-btn:hover {
+            border-color: #94a3b8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
+        }
         .toast-close {
             margin-left: auto; background: none; border: none; cursor: pointer;
             color: var(--color-text-tertiary); font-size: 16px;
+        }
+        .toast.toast-critical {
+            background: linear-gradient(180deg, #fff9f9 0%, #fff4f4 100%);
+            border-color: rgba(220, 38, 38, 0.22);
+            box-shadow: 0 12px 30px rgba(127, 29, 29, 0.14);
+        }
+        .toast.toast-critical .toast-message {
+            color: #7f1d1d;
+        }
+        .toast.toast-critical .toast-action-btn {
+            border-color: #fca5a5;
+            background: linear-gradient(180deg, #dc2626 0%, #b91c1c 100%);
+            color: #ffffff;
+        }
+        .toast.toast-critical .toast-action-btn:hover {
+            border-color: #ef4444;
+            box-shadow: 0 6px 14px rgba(185, 28, 28, 0.25);
         }
         .toast.toast-success .toast-icon { background-color: var(--color-success-bg); color: var(--color-success); }
         .toast.toast-error .toast-icon { background-color: var(--color-error-bg); color: var(--color-error); }
@@ -1507,7 +1543,9 @@
             presentIndex: 0,
             presentLastWheelAt: 0,
             previewLayout: 'list',
-            exportFormat: 'ppt'
+            exportFormat: 'ppt',
+            generationInProgress: false,
+            statusPollTimer: null
         };
 
         const $ = (id) => document.getElementById(id);
@@ -1517,12 +1555,18 @@
             const {
                 type = 'info',  // 'success', 'error', 'warning', 'info'
                 title = '',
-                duration = 4000
+                duration = 4000,
+                actionLabel = '',
+                onAction = null,
+                variant = ''
             } = options;
 
             const container = $('toastContainer');
             const toastEl = document.createElement('div');
             toastEl.className = `toast toast-${type}`;
+            if (variant) {
+                toastEl.classList.add(`toast-${variant}`);
+            }
 
             const icons = { success: 'OK', error: 'X', warning: '!', info: 'i' };
 
@@ -1531,6 +1575,7 @@
                 <div class="toast-content">
                     ${title ? `<div class="toast-title">${title}</div>` : ''}
                     <div class="toast-message">${message}</div>
+                    ${actionLabel ? `<div class="toast-action-row"><button class="toast-action-btn">${actionLabel}</button></div>` : ''}
                 </div>
                 <button class="toast-close">&times;</button>
             `;
@@ -1542,6 +1587,13 @@
             };
 
             toastEl.querySelector('.toast-close').onclick = remove;
+            const actionBtn = toastEl.querySelector('.toast-action-btn');
+            if (actionBtn && typeof onAction === 'function') {
+                actionBtn.onclick = () => {
+                    remove();
+                    onAction();
+                };
+            }
             if (duration > 0) {
                 setTimeout(remove, duration);
             }
@@ -1561,11 +1613,20 @@
             console.log('Connecting to WebSocket:', wsUrl);
 
             state.websocket = new WebSocket(wsUrl);
-            state.websocket.onopen = () => { console.log('WebSocket connected'); state.wsReady = true; };
+            state.websocket.onopen = () => {
+                console.log('WebSocket connected');
+                state.wsReady = true;
+                if (state.generationInProgress && state.jobId) {
+                    startJobStatusPolling();
+                }
+            };
             state.websocket.onerror = (error) => { console.error('WebSocket error:', error); state.wsReady = false; };
             state.websocket.onclose = () => {
                 console.log('WebSocket closed, reconnecting in 3s...');
                 state.wsReady = false;
+                if (state.generationInProgress && state.jobId) {
+                    startJobStatusPolling();
+                }
                 setTimeout(initWebSocket, 3000);
             };
             state.websocket.onmessage = (event) => {
@@ -1647,7 +1708,49 @@
             $('progressPercentageCompact').textContent = Math.round(progress) + '%';
         }
 
+        function stopJobStatusPolling() {
+            if (state.statusPollTimer) {
+                clearInterval(state.statusPollTimer);
+                state.statusPollTimer = null;
+            }
+        }
+
+        async function checkCurrentJobStatus() {
+            if (!state.generationInProgress || !state.jobId) return;
+            try {
+                const res = await api(`/api/v1/jobs/${encodeURIComponent(state.jobId)}/status`);
+                const job = res.data || res;
+                if (!job || !job.status) return;
+
+                if (job.status === 'failed' || job.status === 'cancelled') {
+                    handleGenerationFailed({
+                        error: job.last_error || t('errorUnknown'),
+                        error_code: job.error_code || null
+                    });
+                    return;
+                }
+
+                if (job.status === 'completed') {
+                    state.generationInProgress = false;
+                    stopJobStatusPolling();
+                    state.sessionId = null;
+                    hideProgressPanel();
+                    toast.success(t('msgSuccess'), t('toastTitleHint'));
+                }
+            } catch (e) {
+                console.warn('Failed to poll job status:', e);
+            }
+        }
+
+        function startJobStatusPolling() {
+            if (!state.generationInProgress || !state.jobId || state.statusPollTimer) return;
+            state.statusPollTimer = setInterval(checkCurrentJobStatus, 2000);
+            checkCurrentJobStatus();
+        }
+
         async function handleGenerationComplete(result) {
+            state.generationInProgress = false;
+            stopJobStatusPolling();
             state.progressSteps.forEach(s => s.status = 'completed');
             renderProgressSteps();
             updateProgressBar(100);
@@ -1693,10 +1796,31 @@
             hideProgressPanel();
         }
 
+        function requestRegenerateFromToast() {
+            localStorage.removeItem('generateCooldownEnd');
+            checkAndRestoreCooldown();
+            setTimeout(() => $('generateBtn').click(), 0);
+        }
+
 	    function handleGenerationFailed(result) {
+            state.generationInProgress = false;
+            stopJobStatusPolling();
             state.sessionId = null;
             console.log('Job failed, cleared session_id for retry.');
-	        toast.error(result.error || t('errorUnknown'), t('msgError'));
+            const isRestartInterrupted = result?.error_code === 'RESTART_INTERRUPTED';
+            const baseError = result?.error || t('errorUnknown');
+            if (isRestartInterrupted) {
+                showToast(t('msgRestartInterrupted'), {
+                    type: 'error',
+                    title: t('msgError'),
+                    duration: 0,
+                    actionLabel: t('btnRegenerateNow'),
+                    onAction: requestRegenerateFromToast,
+                    variant: 'critical'
+                });
+            } else {
+                toast.error(`${baseError} ${t('msgRegenerateAfterError')}`, t('msgError'));
+            }
 	        hideProgressPanel();
 	    }
 
@@ -2377,6 +2501,9 @@
             });
             const result = res.data || res;
             if (result.status === 'running') {
+                state.jobId = result.job_id || state.jobId;
+                state.generationInProgress = true;
+                stopJobStatusPolling();
                 toast.info(t('msgGeneratingPleaseWait'), t('toastTitleHint'));
             } else if (result.status === 'completed' && result.from_cache) {
                 toast.success(t('msgUsingCachedResult'), t('toastTitleHint'));

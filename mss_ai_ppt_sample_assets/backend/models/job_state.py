@@ -107,6 +107,7 @@ class JobState(BaseModel):
     retry_count: int = Field(default=0, ge=0, description="Number of retry attempts")
     max_retries: int = Field(default=3, ge=0, description="Maximum retry attempts")
     last_error: Optional[str] = Field(default=None, description="Last error message")
+    error_code: Optional[str] = Field(default=None, description="Machine-readable error code")
 
     # Results
     report_path: Optional[str] = Field(default=None, description="Path to generated report file")

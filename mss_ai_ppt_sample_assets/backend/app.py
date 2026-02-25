@@ -7,7 +7,10 @@ import asyncio
 import mimetypes
 
 from mss_ai_ppt_sample_assets.backend.services.report_service import ReportService
-from mss_ai_ppt_sample_assets.backend.services.job_manager import JobManager
+from mss_ai_ppt_sample_assets.backend.services.job_manager import (
+    JobManager,
+    RESTART_INTERRUPTED_ERROR_MESSAGE,
+)
 from mss_ai_ppt_sample_assets.backend.modules.job_store import JobStore
 from mss_ai_ppt_sample_assets.backend import config
 from mss_ai_ppt_sample_assets.backend.websocket_support import WebSocketManager
@@ -170,6 +173,15 @@ async def startup_cleanup():
         from mss_ai_ppt_sample_assets.backend.modules.file_lock import cleanup_stale_locks
         cleanup_stale_locks(config.OUTPUTS_DIR, max_age_seconds=300)  # 5 minutes
         logger.info("Startup cleanup: stale locks cleaned")
+
+        # Mark interrupted running jobs as failed after restart.
+        interrupted_count = job_store.mark_running_jobs_failed(
+            RESTART_INTERRUPTED_ERROR_MESSAGE
+        )
+        if interrupted_count > 0:
+            logger.info(
+                f"Startup recovery: marked {interrupted_count} interrupted running jobs as failed"
+            )
 
         # Clean up old jobs (older than configured retention period)
         job_cleaned_count = job_store.cleanup_old_jobs(days=config.settings.job_retention_days)

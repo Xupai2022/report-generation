@@ -16,6 +16,13 @@ from mss_ai_ppt_sample_assets.backend.services.report_service import ReportServi
 
 logger = logging.getLogger(__name__)
 
+RESTART_INTERRUPTED_ERROR_PREFIX = "SERVER_RESTART_INTERRUPTED"
+RESTART_INTERRUPTED_ERROR_CODE = "RESTART_INTERRUPTED"
+RESTART_INTERRUPTED_ERROR_MESSAGE = (
+    f"{RESTART_INTERRUPTED_ERROR_PREFIX}: Service restarted during processing. "
+    "Please regenerate a new task."
+)
+
 
 class JobManager:
     """Manages report generation job lifecycle.
@@ -55,14 +62,33 @@ class JobManager:
         Returns:
             JobState: Created or existing job state
         """
+        def is_restart_interrupted_failed(job: JobState) -> bool:
+            return (
+                job.status == JobStatus.FAILED
+                and (
+                    job.error_code == RESTART_INTERRUPTED_ERROR_CODE
+                    or (
+                        isinstance(job.last_error, str)
+                        and job.last_error.startswith(RESTART_INTERRUPTED_ERROR_PREFIX)
+                    )
+                )
+            )
+
         # Check for existing job via idempotency key
         if idempotency_key:
             existing = self.store.find_by_idempotency_key(idempotency_key)
             if existing:
-                self.logger.info(
-                    f"Found existing job for idempotency_key={idempotency_key}: {existing.job_id}"
-                )
-                return existing
+                if is_restart_interrupted_failed(existing):
+                    # Force a fresh task when previous run was interrupted by restart.
+                    self.logger.info(
+                        f"Idempotent job {existing.job_id} was restart-interrupted; creating a new job"
+                    )
+                    session_id = None
+                else:
+                    self.logger.info(
+                        f"Found existing job for idempotency_key={idempotency_key}: {existing.job_id}"
+                    )
+                    return existing
 
         # Generate session ID if not provided
         if not session_id:
