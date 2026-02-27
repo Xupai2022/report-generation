@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Dict, List, Set
@@ -86,48 +87,152 @@ class ExcelDataExtractor:
     CLASSIC_REQUIRED_SHEET = "数据统计"
 
     @staticmethod
+    def _unwrap_cell(value: Any) -> tuple[Any, str]:
+        if hasattr(value, "value") and hasattr(value, "number_format"):
+            return value.value, str(value.number_format or "")
+        return value, ""
+
+    @staticmethod
     def _has_value(value: Any) -> bool:
-        if value is None:
+        raw_value, _ = ExcelDataExtractor._unwrap_cell(value)
+        if raw_value is None:
             return False
-        if isinstance(value, str):
-            return bool(value.strip())
+        if isinstance(raw_value, str):
+            return bool(raw_value.strip())
         return True
 
     @staticmethod
+    def _decimal_places_from_number_format(number_format: str) -> int | None:
+        if not number_format:
+            return None
+
+        fmt = number_format.split(";")[0].strip()
+        if not fmt or fmt.lower() == "general":
+            return None
+
+        # Remove literal/text parts and Excel fill/alignment directives.
+        fmt = re.sub(r'"[^"]*"', "", fmt)
+        fmt = re.sub(r"\\.", "", fmt)
+        fmt = re.sub(r"_.", "", fmt)
+        fmt = re.sub(r"\*.", "", fmt)
+
+        decimal_match = re.search(r"\.([0#]+)", fmt)
+        if decimal_match:
+            return len(decimal_match.group(1))
+        if re.search(r"[0#]", fmt):
+            return 0
+        return None
+
+    @staticmethod
+    def _format_numeric_for_text(value: float, number_format: str) -> str:
+        decimals = ExcelDataExtractor._decimal_places_from_number_format(number_format)
+        is_percent = "%" in number_format
+        normalized = ExcelDataExtractor._normalize_number(value)
+
+        if is_percent:
+            if decimals is None:
+                decimals = 2
+            decimals = min(decimals, 2)
+            percent_value = ExcelDataExtractor._normalize_number(float(normalized) * 100)
+            if isinstance(percent_value, int):
+                return f"{percent_value}%"
+            return f"{percent_value:.{decimals}f}%"
+
+        if decimals is not None:
+            decimals = min(decimals, 2)
+            if decimals == 0:
+                return str(int(round(float(normalized))))
+            return f"{float(normalized):.{decimals}f}"
+
+        if isinstance(normalized, int):
+            return str(normalized)
+        return f"{float(normalized):.2f}".rstrip("0").rstrip(".")
+
+    @staticmethod
+    def _normalize_number(value: Any) -> Any:
+        """Normalize numeric value: keep integers, round non-integers to max 2 decimals."""
+        if isinstance(value, bool):
+            return value
+        if not isinstance(value, (int, float)):
+            return value
+
+        rounded = round(float(value), 2)
+        if rounded.is_integer():
+            return int(rounded)
+        return rounded
+
+    @staticmethod
+    def _format_numbers_for_output(value: Any) -> Any:
+        """Recursively format numeric payload for JSON output.
+
+        Rule:
+        - Integers remain numeric.
+        - Non-integer floats are rendered as fixed 2-decimal strings.
+        """
+        if isinstance(value, dict):
+            return {k: ExcelDataExtractor._format_numbers_for_output(v) for k, v in value.items()}
+        if isinstance(value, list):
+            return [ExcelDataExtractor._format_numbers_for_output(v) for v in value]
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, int):
+            return value
+        if isinstance(value, float):
+            rounded = round(value, 2)
+            if rounded.is_integer():
+                return int(rounded)
+            return f"{rounded:.2f}"
+        return value
+
+    @staticmethod
     def _to_text(value: Any, default: str = "") -> str:
-        if value is None:
+        raw_value, number_format = ExcelDataExtractor._unwrap_cell(value)
+
+        if raw_value is None:
             return default
-        if isinstance(value, (datetime, date)):
-            return value.strftime("%Y-%m-%d")
-        text = str(value).strip()
+        if isinstance(raw_value, (datetime, date)):
+            return raw_value.strftime("%Y-%m-%d")
+        if isinstance(raw_value, (int, float)) and not isinstance(raw_value, bool):
+            return ExcelDataExtractor._format_numeric_for_text(float(raw_value), number_format)
+
+        text = str(raw_value).strip()
         return text if text else default
 
     @staticmethod
     def _to_number(value: Any, default: float = 0) -> float:
-        if value is None:
-            return default
-        if isinstance(value, (int, float)):
-            return value
+        raw_value, _ = ExcelDataExtractor._unwrap_cell(value)
 
-        text = str(value).strip()
+        if raw_value is None:
+            return default
+        if isinstance(raw_value, (int, float)):
+            return ExcelDataExtractor._normalize_number(raw_value)
+
+        text = str(raw_value).strip()
         if text in {"", "None", "#DIV/0!", "#N/A"}:
             return default
 
         if text.endswith("%"):
             try:
-                return float(text[:-1]) / 100
+                return ExcelDataExtractor._normalize_number(float(text[:-1]) / 100)
             except Exception:
                 return default
 
         try:
             if "." in text:
-                return float(text)
-            return float(int(text))
+                return ExcelDataExtractor._normalize_number(float(text))
+            return ExcelDataExtractor._normalize_number(float(int(text)))
         except Exception:
             return default
 
     @staticmethod
     def _to_pct(value: Any) -> str:
+        raw_value, number_format = ExcelDataExtractor._unwrap_cell(value)
+        if isinstance(raw_value, (int, float)) and "%" in number_format:
+            decimals = ExcelDataExtractor._decimal_places_from_number_format(number_format)
+            if decimals is None:
+                decimals = 2
+            return f"{raw_value * 100:.{decimals}f}%"
+
         n = ExcelDataExtractor._to_number(value, 0)
         if n <= 1:
             return f"{round(n * 100, 2)}%"
@@ -216,8 +321,8 @@ class ExcelDataExtractor:
             "template_id": "mss_classic_ops",
         }
 
-        raw_period_start = ws["L1"].value
-        raw_period_end = ws["M1"].value
+        raw_period_start = ws["L1"]
+        raw_period_end = ws["M1"]
         period: Dict[str, Any] = {}
 
         if ExcelDataExtractor._has_value(raw_period_start):
@@ -241,10 +346,10 @@ class ExcelDataExtractor:
         ExcelDataExtractor._add_section(output, "cover", cover)
 
         architecture: Dict[str, Any] = {}
-        ExcelDataExtractor._put_text(architecture, "AF_count", ws["D3"].value)
-        ExcelDataExtractor._put_text(architecture, "STA_count", ws["D4"].value)
-        ExcelDataExtractor._put_text(architecture, "EDR_count", ws["D5"].value)
-        ExcelDataExtractor._put_text(architecture, "TSS_count", ws["D6"].value)
+        ExcelDataExtractor._put_text(architecture, "AF_count", ws["D3"])
+        ExcelDataExtractor._put_text(architecture, "STA_count", ws["D4"])
+        ExcelDataExtractor._put_text(architecture, "EDR_count", ws["D5"])
+        ExcelDataExtractor._put_text(architecture, "TSS_count", ws["D6"])
         ExcelDataExtractor._add_section(output, "Architecture", architecture)
 
         deliverables: Dict[str, Any] = {}
@@ -265,24 +370,31 @@ class ExcelDataExtractor:
             "mayday": "G15",
         }
         for token, addr in deliverables_map.items():
-            ExcelDataExtractor._put_text(deliverables, token, ws[addr].value)
+            ExcelDataExtractor._put_text(deliverables, token, ws[addr])
         # P7: primary mapping is G16/G17. Fallback to G17/G18 for legacy-filled sheets.
-        if ExcelDataExtractor._has_value(ws["G16"].value):
-            ExcelDataExtractor._put_text(deliverables, "biweekly_threat", ws["G16"].value)
-        elif ExcelDataExtractor._has_value(ws["G17"].value):
-            ExcelDataExtractor._put_text(deliverables, "biweekly_threat", ws["G17"].value)
+        if ExcelDataExtractor._has_value(ws["G16"]):
+            ExcelDataExtractor._put_text(deliverables, "biweekly_threat", ws["G16"])
+        elif ExcelDataExtractor._has_value(ws["G17"]):
+            ExcelDataExtractor._put_text(deliverables, "biweekly_threat", ws["G17"])
 
-        if ExcelDataExtractor._has_value(ws["G18"].value):
-            ExcelDataExtractor._put_text(deliverables, "phishing_poster", ws["G18"].value)
-        elif ExcelDataExtractor._has_value(ws["G17"].value):
-            ExcelDataExtractor._put_text(deliverables, "phishing_poster", ws["G17"].value)
+        if ExcelDataExtractor._has_value(ws["G18"]):
+            ExcelDataExtractor._put_text(deliverables, "phishing_poster", ws["G18"])
+        elif ExcelDataExtractor._has_value(ws["G17"]):
+            ExcelDataExtractor._put_text(deliverables, "phishing_poster", ws["G17"])
         ExcelDataExtractor._add_section(output, "deliverables", deliverables)
 
         coverage_summary: Dict[str, Any] = {}
-        ExcelDataExtractor._put_pct(coverage_summary, "AF_coverage", ws["L22"].value)
-        ExcelDataExtractor._put_pct(coverage_summary, "aes_coverage", ws["L24"].value)
-        ExcelDataExtractor._put_pct(coverage_summary, "probe_coverage", ws["L23"].value)
+        ExcelDataExtractor._put_pct(coverage_summary, "AF_coverage", ws["L22"])
+        ExcelDataExtractor._put_pct(coverage_summary, "aes_coverage", ws["L24"])
+        ExcelDataExtractor._put_pct(coverage_summary, "probe_coverage", ws["L23"])
         coverage_map = {
+            "cybersecurity_incident": "C21",
+            "proactive_protection": "D21",
+            "incident_count1": "E21",
+            "closure_rate1": "F21",
+            "incident_count2": "G21",
+            "closure_rate2": "H21",
+            "response_time": "I21",
             "alert_manual": "L26",
             "alert_auto": "L25",
             "mss_risk": "J27",
@@ -310,20 +422,17 @@ class ExcelDataExtractor:
             "TSS_count": "D6",
         }
         for token, addr in coverage_map.items():
-            ExcelDataExtractor._put_text(coverage_summary, token, ws[addr].value)
+            ExcelDataExtractor._put_text(coverage_summary, token, ws[addr])
         ExcelDataExtractor._add_section(output, "coverage_summary", coverage_summary)
 
         protection_overview: Dict[str, Any] = {}
         protection_map = {
-            "vuln_protect": "C34",
-            "alert_judgment": "D34",
-            "alert_response": "E34",
-            "threat_contain": "F34",
-            "af_block": "D95",
-            "edr_risk": "D114",
-            "policy_check": "D88",
+            "af_block": "D35",
+            "edr_risk": "D36",
+            "policy_check": "D37",
+            "vuln_protect": "D38",
             "surface": "D39",
-            "asset": "D40",
+            "scanning": "D40",
             "server": "D41",
             "pc": "D42",
             "vuln_high": "D43",
@@ -332,23 +441,23 @@ class ExcelDataExtractor:
             "vuln_closed": "D46",
             "weekly": "D47",
             "monthly": "D48",
-            "xdr_log": "D117",
-            "xdr_alert": "D118",
-            "xdr_incident": "D119",
+            "alert_judgment": "D34",
+            "alert_response": "E34",
+            "threat_contain": "F34",
+            "xdr_log": "G35",
+            "xdr_alert": "G36",
+            "xdr_incident": "G37",
             "mss_push": "G38",
+            "mss_latency": "G39",
             "xdr_auto": "G40",
             "mss_handle": "G41",
             "emergency_handle": "G42",
             "incident_contain": "G43",
         }
         for token, addr in protection_map.items():
-            ExcelDataExtractor._put_text(protection_overview, token, ws[addr].value)
-        if ExcelDataExtractor._has_value(ws["D87"].value):
-            ExcelDataExtractor._put_text(protection_overview, "mss_latency", ws["D87"].value)
-        elif ExcelDataExtractor._has_value(ws["G39"].value):
-            ExcelDataExtractor._put_text(protection_overview, "mss_latency", ws["G39"].value)
-        if "xdr_auto" not in protection_overview and ExcelDataExtractor._has_value(ws["D124"].value):
-            ExcelDataExtractor._put_text(protection_overview, "xdr_auto", ws["D124"].value)
+            ExcelDataExtractor._put_text(protection_overview, token, ws[addr])
+        if "xdr_auto" not in protection_overview and ExcelDataExtractor._has_value(ws["D124"]):
+            ExcelDataExtractor._put_text(protection_overview, "xdr_auto", ws["D124"])
         ExcelDataExtractor._add_section(output, "protection_overview", protection_overview)
 
         incident_effectiveness: Dict[str, Any] = {}
@@ -356,12 +465,12 @@ class ExcelDataExtractor:
             "incident_total": "C51",
             "response_avg": "D51",
             "handle_avg": "E51",
-            "incident_closed": "D45",
+            "incident_closed": "F51",
             "trust_assurance": "F51",
             "security_trust": "D51",
         }
         for token, addr in incident_map.items():
-            ExcelDataExtractor._put_text(incident_effectiveness, token, ws[addr].value)
+            ExcelDataExtractor._put_text(incident_effectiveness, token, ws[addr])
 
         response_timeliness = ExcelDataExtractor._read_labeled_pairs(ws, 53, 57, 6, 7)
         if response_timeliness["labels"]:
@@ -370,7 +479,7 @@ class ExcelDataExtractor:
 
         trend_cols = ExcelDataExtractor._read_month_columns(ws, 60, 3, 12)
         if trend_cols:
-            response_trend_months = [ExcelDataExtractor._to_text(ws.cell(60, c).value) for c in trend_cols]
+            response_trend_months = [ExcelDataExtractor._to_text(ws.cell(60, c)) for c in trend_cols]
             response_trend_values = [
                 ExcelDataExtractor._to_number(ws.cell(61, c).value, 0) for c in trend_cols
             ]
@@ -410,7 +519,7 @@ class ExcelDataExtractor:
             "asset_identify": "D68",
         }
         for token, addr in asset_map.items():
-            ExcelDataExtractor._put_text(asset_management, token, ws[addr].value)
+            ExcelDataExtractor._put_text(asset_management, token, ws[addr])
         ExcelDataExtractor._add_section(output, "asset_management", asset_management)
 
         vulnerability_effectiveness: Dict[str, Any] = {}
@@ -419,50 +528,77 @@ class ExcelDataExtractor:
             "internet_closed": "D77",
             "admin_weak": "E77",
             "vuln_closed": "F77",
+            "scanning": "D40",
         }
         for token, addr in vuln_map.items():
-            ExcelDataExtractor._put_text(vulnerability_effectiveness, token, ws[addr].value)
-        if ExcelDataExtractor._has_value(ws["D64"].value) or ExcelDataExtractor._has_value(ws["D65"].value):
-            asset_total = (
-                ExcelDataExtractor._to_number(ws["D64"].value, 0)
-                + ExcelDataExtractor._to_number(ws["D65"].value, 0)
-            )
-            vulnerability_effectiveness["asset"] = ExcelDataExtractor._to_text(asset_total)
+            ExcelDataExtractor._put_text(vulnerability_effectiveness, token, ws[addr])
 
         vuln_dist = ExcelDataExtractor._read_labeled_pairs(ws, 80, 82, 3, 4)
         if vuln_dist["labels"]:
             vuln_dist_obj = {"categories": vuln_dist["labels"], "values": vuln_dist["values"]}
             vulnerability_effectiveness["vulnerability_distribution"] = vuln_dist_obj
             vulnerability_effectiveness["P14_pie"] = vuln_dist_obj
+
+        # Preserve additional P14 columns regardless of current downstream usage.
+        vuln_closed_loop_counts = ExcelDataExtractor._read_labeled_pairs(ws, 80, 82, 3, 5)
+        if vuln_closed_loop_counts["labels"]:
+            vulnerability_effectiveness["closed_loop_counts"] = {
+                "categories": vuln_closed_loop_counts["labels"],
+                "values": vuln_closed_loop_counts["values"],
+            }
+
+        closed_loop_rate_labels: List[str] = []
+        closed_loop_rate_values: List[str] = []
+        for r in range(80, 83):
+            raw_label = ws.cell(r, 3)
+            raw_rate = ws.cell(r, 6)
+            if not ExcelDataExtractor._has_value(raw_label) and not ExcelDataExtractor._has_value(raw_rate):
+                continue
+            closed_loop_rate_labels.append(ExcelDataExtractor._to_text(raw_label))
+            closed_loop_rate_values.append(ExcelDataExtractor._to_pct(raw_rate))
+        if closed_loop_rate_labels:
+            vulnerability_effectiveness["closed_loop_rates"] = {
+                "categories": closed_loop_rate_labels,
+                "values": closed_loop_rate_values,
+            }
         ExcelDataExtractor._add_section(output, "vulnerability_effectiveness", vulnerability_effectiveness)
 
         threat_effectiveness: Dict[str, Any] = {}
+        # Always preserve raw monthly rows C97:N100 (12 values each) in input JSON.
+        # Keep these under threat_trend for a single coherent trend payload.
+        raw_cols = range(3, 15)  # C..N
+        threat_trend: Dict[str, Any] = {
+            "internal_lateral_attack_counts": [
+                ExcelDataExtractor._to_number(ws.cell(97, c).value, 0) for c in raw_cols
+            ],
+            "alert_counts": [
+                ExcelDataExtractor._to_number(ws.cell(98, c).value, 0) for c in raw_cols
+            ],
+            "valid_incident_counts": [
+                ExcelDataExtractor._to_number(ws.cell(99, c).value, 0) for c in raw_cols
+            ],
+            "risk_host_counts": [
+                ExcelDataExtractor._to_number(ws.cell(100, c).value, 0) for c in raw_cols
+            ],
+        }
+
         month_cols = ExcelDataExtractor._read_month_columns(ws, 94, 3, 13)
         if month_cols:
-            months = [ExcelDataExtractor._to_text(ws.cell(94, c).value) for c in month_cols]
+            months = [ExcelDataExtractor._to_text(ws.cell(94, c)) for c in month_cols]
             external_attacks = [ExcelDataExtractor._to_number(ws.cell(95, c).value, 0) for c in month_cols]
             malicious_outbound = [ExcelDataExtractor._to_number(ws.cell(96, c).value, 0) for c in month_cols]
             alerts_monthly = [ExcelDataExtractor._to_number(ws.cell(98, c).value, 0) for c in month_cols]
             incidents_monthly = [ExcelDataExtractor._to_number(ws.cell(99, c).value, 0) for c in month_cols]
 
-            end_month = period.get("end_month")
-            if end_month and end_month in months:
-                idx = months.index(end_month)
-                threat_effectiveness["xdr_attack"] = ExcelDataExtractor._to_text(external_attacks[idx])
-                if idx < len(alerts_monthly):
-                    threat_effectiveness["threat_alert"] = ExcelDataExtractor._to_text(alerts_monthly[idx])
-                if idx < len(incidents_monthly):
-                    threat_effectiveness["mss_ticket"] = ExcelDataExtractor._to_text(incidents_monthly[idx])
+            threat_trend["months"] = months
+            threat_trend["external_attacks"] = external_attacks
+            threat_trend["malicious_outbound"] = malicious_outbound
 
-            threat_trend = {
-                "months": months,
-                "external_attacks": external_attacks,
-                "malicious_outbound": malicious_outbound,
-            }
-            threat_effectiveness["threat_trend"] = threat_trend
-            threat_effectiveness["P15_line"] = threat_trend
+        threat_effectiveness["threat_trend"] = threat_trend
+        threat_effectiveness["P15_line"] = threat_trend
 
         threat_map = {
+            "xdr_attack": "D84",
             "threat_alert": "D85",
             "mss_ticket": "D86",
             "ticket_response": "D87",
@@ -472,7 +608,7 @@ class ExcelDataExtractor:
             "threat_asset": "D91",
         }
         for token, addr in threat_map.items():
-            ExcelDataExtractor._put_text(threat_effectiveness, token, ws[addr].value)
+            ExcelDataExtractor._put_text(threat_effectiveness, token, ws[addr])
         ExcelDataExtractor._add_section(output, "threat_effectiveness", threat_effectiveness)
 
         critical_assurance: Dict[str, Any] = {}
@@ -482,7 +618,7 @@ class ExcelDataExtractor:
             "availability_assure": "D104",
         }
         for token, addr in critical_map.items():
-            ExcelDataExtractor._put_text(critical_assurance, token, ws[addr].value)
+            ExcelDataExtractor._put_text(critical_assurance, token, ws[addr])
 
         posture_rows = []
         for r in range(103, 110):
@@ -508,6 +644,39 @@ class ExcelDataExtractor:
 
         ExcelDataExtractor._add_section(output, "critical_assurance", critical_assurance)
 
+        platform_effectiveness: Dict[str, Any] = {}
+        platform_map = {
+            "fw_attack": "D111",
+            "fw_auto": "D112",
+            "fw_coverage": "D113",
+            "aes_risk": "D114",
+            "host_handle": "D115",
+            "server_coverage": "D116",
+            "xdr_log": "D117",
+            "alert_aggregate": "D118",
+            "incident_intel": "D119",
+            "component_offline": "D121",
+            "component_log": "D122",
+            "component_policy": "D123",
+            "component_auto": "D124",
+        }
+        for token, addr in platform_map.items():
+            ExcelDataExtractor._put_text(platform_effectiveness, token, ws[addr])
+
+        platform_extra_map = {
+            "aes_trust_risk_count": "F114",
+            "agent_install_count": "F115",
+            "asset_total_count": "F116",
+            "xdr_avg_monthly_log_count": "F117",
+            "xdr_avg_monthly_alert_count": "F118",
+            "xdr_avg_monthly_incident_count": "F119",
+        }
+        for token, addr in platform_extra_map.items():
+            ExcelDataExtractor._put_text(platform_effectiveness, token, ws[addr])
+
+        ExcelDataExtractor._add_section(output, "platform_effectiveness", platform_effectiveness)
+
+        output = ExcelDataExtractor._format_numbers_for_output(output)
         return ExcelDataExtractor._remove_ai_generated_fields(output)
 
     @staticmethod

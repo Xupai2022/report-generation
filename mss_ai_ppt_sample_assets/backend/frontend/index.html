@@ -582,6 +582,16 @@
             border-color: #8fb2e8;
             box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.14), 0 10px 22px rgba(15, 23, 42, 0.09);
         }
+        .field-card.restored {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.24), 0 10px 22px rgba(15, 23, 42, 0.09);
+            animation: restoredPulse 0.9s ease;
+        }
+        @keyframes restoredPulse {
+            0% { transform: translateY(0); }
+            35% { transform: translateY(-1px); }
+            100% { transform: translateY(0); }
+        }
         .field-header {
             display: flex;
             align-items: baseline;
@@ -1241,7 +1251,7 @@
             <div id="ratingCommentSection" style="display: none;">
                 <label for="ratingComment">
                     <span data-i18n="ratingCommentLabel">璇峰憡璇夋垜浠叿浣撶殑闂</span>
-                    <span class="rating-required">(required, at least 10 characters)</span>
+                    <span class="rating-required" data-i18n="ratingCommentRequiredHint">(required, at least 10 characters)</span>
                 </label>
                 <textarea id="ratingComment" rows="3" maxlength="500" data-i18n-placeholder="ratingCommentPlaceholder"></textarea>
                 <div class="rating-char-count"><span id="ratingCharCount">0</span> / 500</div>
@@ -1506,7 +1516,8 @@
             previewLayout: 'list',
             exportFormat: 'ppt',
             generationInProgress: false,
-            statusPollTimer: null
+            statusPollTimer: null,
+            lastSaveHadAutoRestore: false
         };
 
         const $ = (id) => document.getElementById(id);
@@ -1810,7 +1821,11 @@
             const res = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...opts });
             if (!res.ok) {
                 const errorData = await res.json().catch(() => null);
-                const error = new Error(errorData?.error?.message || res.statusText);
+                const error = new Error(
+                    errorData?.error?.message ||
+                    errorData?.detail ||
+                    res.statusText
+                );
                 error.data = errorData;
                 throw error;
             }
@@ -2110,6 +2125,105 @@
             return value !== null && typeof value === 'object';
         }
 
+        function isPlainObject(value) {
+            return value !== null && typeof value === 'object' && !Array.isArray(value);
+        }
+
+        function isChartLikeObject(value) {
+            if (!isPlainObject(value)) return false;
+            const keys = Object.keys(value);
+            return (
+                keys.includes('categories') ||
+                keys.includes('series') ||
+                keys.includes('values') ||
+                keys.includes('months') ||
+                keys.includes('attack_counts') ||
+                keys.includes('defense_rates') ||
+                keys.includes('external_attacks') ||
+                keys.includes('malicious_outbound')
+            );
+        }
+
+        function normalizeStructuredValueForEditing(value, inChartPayload = false) {
+            if (Array.isArray(value)) {
+                return value.map(item => normalizeStructuredValueForEditing(item, inChartPayload));
+            }
+
+            if (!isPlainObject(value)) {
+                return value;
+            }
+
+            const currentIsChartPayload = inChartPayload || isChartLikeObject(value);
+            const normalized = {};
+            for (const [k, v] of Object.entries(value)) {
+                if (currentIsChartPayload && k === 'position') continue;
+                normalized[k] = normalizeStructuredValueForEditing(v, currentIsChartPayload);
+            }
+            return normalized;
+        }
+
+        function collectStructuredKeySignatures(value, path = '$', out = new Map()) {
+            if (Array.isArray(value)) {
+                value.forEach(item => collectStructuredKeySignatures(item, `${path}[]`, out));
+                return out;
+            }
+
+            if (!isPlainObject(value)) {
+                return out;
+            }
+
+            const signature = Object.keys(value).sort().join('|');
+            if (!out.has(path)) out.set(path, new Set());
+            out.get(path).add(signature);
+
+            for (const [k, v] of Object.entries(value)) {
+                collectStructuredKeySignatures(v, `${path}.${k}`, out);
+            }
+            return out;
+        }
+
+        function hasSameStructuredKeys(originalValue, editedValue) {
+            const left = collectStructuredKeySignatures(originalValue);
+            const right = collectStructuredKeySignatures(editedValue);
+
+            if (left.size !== right.size) return false;
+
+            for (const [path, leftSet] of left.entries()) {
+                const rightSet = right.get(path);
+                if (!rightSet || leftSet.size !== rightSet.size) return false;
+                for (const sig of leftSet.values()) {
+                    if (!rightSet.has(sig)) return false;
+                }
+            }
+            return true;
+        }
+
+        function restoreStructuredKeysByTemplate(templateValue, editedValue) {
+            if (Array.isArray(templateValue)) {
+                if (!Array.isArray(editedValue)) return templateValue;
+                if (templateValue.length === 0) return editedValue;
+                return editedValue.map((item, idx) => {
+                    const templateItem = templateValue[Math.min(idx, templateValue.length - 1)];
+                    return restoreStructuredKeysByTemplate(templateItem, item);
+                });
+            }
+
+            if (isPlainObject(templateValue)) {
+                if (!isPlainObject(editedValue)) return templateValue;
+                const restored = {};
+                const editedEntries = Object.entries(editedValue);
+                Object.entries(templateValue).forEach(([templateKey, templateChild], idx) => {
+                    const editedChild = idx < editedEntries.length
+                        ? editedEntries[idx][1]
+                        : templateChild;
+                    restored[templateKey] = restoreStructuredKeysByTemplate(templateChild, editedChild);
+                });
+                return restored;
+            }
+
+            return typeof editedValue === 'undefined' ? templateValue : editedValue;
+        }
+
         function getValueTypeLabel(value) {
             if (Array.isArray(value)) return 'array';
             if (value === null) return 'null';
@@ -2118,7 +2232,7 @@
 
         function stringifyValueForInput(value) {
             if (isStructuredValue(value)) {
-                return JSON.stringify(value, null, 2);
+                return JSON.stringify(normalizeStructuredValueForEditing(value), null, 2);
             }
             if (value === null || typeof value === 'undefined') return '';
             return String(value);
@@ -2201,13 +2315,15 @@
             if (kind === 'null') {
                 if (!trimmed || trimmed === 'null') return null;
                 try {
-                    return JSON.parse(raw);
+                    const parsed = JSON.parse(raw);
+                    return normalizeStructuredValueForEditing(parsed);
                 } catch {
                     return raw;
                 }
             }
             try {
-                return JSON.parse(raw);
+                const parsed = JSON.parse(raw);
+                return normalizeStructuredValueForEditing(parsed);
             } catch {
                 throw new Error(tf('errorInvalidStructuredField', { field: key }));
             }
@@ -2219,6 +2335,18 @@
                 if (input.dataset.fieldKey === key) return input;
             }
             return null;
+        }
+
+        function flashRestoredFields(fieldKeys = []) {
+            fieldKeys.forEach((key) => {
+                const card = document.querySelector(`.field-card[data-field-key="${key}"]`);
+                if (!card) return;
+                card.classList.remove('restored');
+                // Force reflow so repeated restores can replay the animation.
+                void card.offsetWidth;
+                card.classList.add('restored');
+                setTimeout(() => card.classList.remove('restored'), 1300);
+            });
         }
 
         function updateActiveState(key, scrollRightView) {
@@ -2247,29 +2375,58 @@
         }
 
         function saveCurrentSlideModifications() {
-            if (!state.activeSlideKey) return;
+            if (!state.activeSlideKey) return true;
             try {
+                state.lastSaveHadAutoRestore = false;
                 const slide = state.slidespec.slides.find(s => s.slide_key === state.activeSlideKey);
-                if (!slide) return;
+                if (!slide) return true;
                 const originalContent = slide.placeholders || {};
+                const normalizedOriginalContent = Object.fromEntries(
+                    Object.entries(originalContent).map(([k, v]) => [k, normalizeStructuredValueForEditing(v)])
+                );
                 const protectedContent = {};
+                const restoredFields = [];
 
-                for (const [originalKey, originalValue] of Object.entries(originalContent)) {
+                for (const [originalKey, originalValue] of Object.entries(normalizedOriginalContent)) {
                     const input = findEditorInputByKey(originalKey);
                     if (!input) {
                         protectedContent[originalKey] = originalValue;
                         continue;
                     }
-                    protectedContent[originalKey] = parseEditedValue(input.value, originalValue, originalKey);
+                    const parsedValue = parseEditedValue(input.value, originalValue, originalKey);
+
+                    if (isStructuredValue(originalValue) && isStructuredValue(parsedValue)) {
+                        const normalizedEdited = normalizeStructuredValueForEditing(parsedValue);
+                        if (!hasSameStructuredKeys(originalValue, normalizedEdited)) {
+                            const restoredValue = restoreStructuredKeysByTemplate(originalValue, normalizedEdited);
+                            protectedContent[originalKey] = restoredValue;
+                            input.value = stringifyValueForInput(restoredValue);
+                            restoredFields.push(originalKey);
+                        } else {
+                            protectedContent[originalKey] = normalizedEdited;
+                        }
+                    } else {
+                        protectedContent[originalKey] = parsedValue;
+                    }
                 }
 
-                if (JSON.stringify(protectedContent) !== JSON.stringify(originalContent)) {
+                if (restoredFields.length > 0) {
+                    state.lastSaveHadAutoRestore = true;
+                    flashRestoredFields(restoredFields);
+                    toast.warning(t('msgStructuredKeysAutoRestored'), t('toastTitleHint'));
+                }
+
+                if (JSON.stringify(protectedContent) !== JSON.stringify(normalizedOriginalContent)) {
                     state.modifiedSlides.set(state.activeSlideKey, protectedContent);
                 } else {
                     state.modifiedSlides.delete(state.activeSlideKey);
                 }
+                return true;
             } catch (e) {
+                state.lastSaveHadAutoRestore = false;
+                state.modifiedSlides.delete(state.activeSlideKey);
                 toast.error(e.message || t('errorInvalidJsonCannotSave'), t('titleSaveFailed'));
+                return false;
             }
         }
         
@@ -2515,8 +2672,12 @@
 
         $('rewriteBtn').onclick = async () => {
             if (!state.jobId) return;
-            saveCurrentSlideModifications();
-            if (state.modifiedSlides.size === 0) { return toast.warning(t('msgNoChangesToApply'), t('toastTitleHint')); }
+            const saved = saveCurrentSlideModifications();
+            if (!saved) return;
+            if (state.modifiedSlides.size === 0) {
+                if (state.lastSaveHadAutoRestore) return;
+                return toast.warning(t('msgNoChangesToApply'), t('toastTitleHint'));
+            }
 
             setLoading(true);
             try {
@@ -2555,7 +2716,8 @@
                 return toast.warning(t('msgEnterAiRewritePrompt'), t('toastTitleHint'));
             }
 
-            saveCurrentSlideModifications();
+            const saved = saveCurrentSlideModifications();
+            if (!saved) return;
             if (state.modifiedSlides.size > 0) {
                 return toast.warning(t('msgApplyManualChangesBeforeAiRewrite'), t('toastTitleHint'));
             }

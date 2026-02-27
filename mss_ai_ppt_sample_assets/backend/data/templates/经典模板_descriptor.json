@@ -216,7 +216,7 @@
       "title": "服务覆盖总览",
       "placeholders": [
         {
-          "token": "AF_coverage",
+          "token": "af_coverage",
           "type": "text",
           "ai_generate": false,
           "default": "直接取数失败",
@@ -410,6 +410,55 @@
           "ai_generate": false,
           "default": "直接取数失败",
           "source": "coverage_summary.TSS_count"
+        },
+        {
+          "token": "cybersecurity_incident",
+          "type": "text",
+          "ai_generate": false,
+          "default": "直接取数失败",
+          "source": "coverage_summary.cybersecurity_incident"
+        },
+        {
+          "token": "proactive_protection",
+          "type": "text",
+          "ai_generate": false,
+          "default": "直接取数失败",
+          "source": "coverage_summary.proactive_protection"
+        },
+        {
+          "token": "incident_count1",
+          "type": "text",
+          "ai_generate": false,
+          "default": "直接取数失败",
+          "source": "coverage_summary.incident_count1"
+        },
+        {
+          "token": "closure_rate1",
+          "type": "text",
+          "ai_generate": false,
+          "default": "直接取数失败",
+          "source": "coverage_summary.closure_rate1"
+        },
+        {
+          "token": "incident_count2",
+          "type": "text",
+          "ai_generate": false,
+          "default": "直接取数失败",
+          "source": "coverage_summary.incident_count2"
+        },
+        {
+          "token": "closure_rate2",
+          "type": "text",
+          "ai_generate": false,
+          "default": "直接取数失败",
+          "source": "coverage_summary.closure_rate1"
+        },
+        {
+          "token": "response_time",
+          "type": "text",
+          "ai_generate": false,
+          "default": "直接取数失败",
+          "source": "coverage_summary.response_time"
         }
       ]
     },
@@ -482,11 +531,11 @@
           "source": "protection_overview.surface"
         },
         {
-          "token": "asset",
+          "token": "scanning",
           "type": "text",
           "ai_generate": false,
           "default": "直接取数失败",
-          "source": "protection_overview.asset"
+          "source": "protection_overview.scanning"
         },
         {
           "token": "server",
@@ -651,16 +700,16 @@
         {
           "token": "trust_assurance",
           "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "incident_effectiveness.trust_assurance"
+          "ai_generate": true,
+          "ai_instruction": "信任",
+          "max_length": 100
         },
         {
           "token": "security_trust",
           "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "incident_effectiveness.security_trust"
+          "ai_generate": true,
+          "ai_instruction": "信任",
+          "max_length": 100
         },
         {
           "token": "P11_bar",
@@ -895,11 +944,11 @@
           "source": "vulnerability_effectiveness.vuln_closed"
         },
         {
-          "token": "asset",
+          "token": "scanning",
           "type": "text",
           "ai_generate": false,
           "default": "直接取数失败",
-          "source": "vulnerability_effectiveness.asset"
+          "source": "vulnerability_effectiveness.scanning"
         },
         {
           "token": "P14_pie",
@@ -1085,79 +1134,92 @@
         {
           "token": "fw_attack",
           "type": "text",
-          "ai_generate": true,
+          "ai_generate": false,
+          "source": "platform_effectiveness.fw_attack",
           "default": "直接取数失败"
         },
         {
           "token": "aes_risk",
           "type": "text",
-          "ai_generate": true,
+          "ai_generate": false,
+          "source": "platform_effectiveness.aes_risk",
           "default": "直接取数失败"
         },
         {
           "token": "xdr_log",
           "type": "text",
-          "ai_generate": true,
+          "ai_generate": false,
+          "source": "platform_effectiveness.xdr_log",
           "default": "直接取数失败"
         },
         {
           "token": "fw_auto",
           "type": "text",
-          "ai_generate": true,
+          "ai_generate": false,
+          "source": "platform_effectiveness.fw_auto",
           "default": "直接取数失败"
         },
         {
           "token": "host_handle",
           "type": "text",
-          "ai_generate": true,
+          "ai_generate": false,
+          "source": "platform_effectiveness.host_handle",
           "default": "直接取数失败"
         },
         {
           "token": "alert_aggregate",
           "type": "text",
-          "ai_generate": true,
+          "ai_generate": false,
+          "source": "platform_effectiveness.alert_aggregate",
           "default": "直接取数失败"
         },
         {
           "token": "fw_coverage",
           "type": "text",
-          "ai_generate": true,
+          "ai_generate": false,
+          "source": "platform_effectiveness.fw_coverage",
           "default": "直接取数失败"
         },
         {
           "token": "server_coverage",
           "type": "text",
-          "ai_generate": true,
+          "ai_generate": false,
+          "source": "platform_effectiveness.server_coverage",
           "default": "直接取数失败"
         },
         {
           "token": "incident_intel",
           "type": "text",
-          "ai_generate": true,
+          "ai_generate": false,
+          "source": "platform_effectiveness.incident_intel",
           "default": "直接取数失败"
         },
         {
           "token": "component_offline",
           "type": "text",
-          "ai_generate": true,
+          "ai_generate": false,
+          "source": "platform_effectiveness.component_offline",
           "default": "直接取数失败"
         },
         {
           "token": "component_log",
           "type": "text",
-          "ai_generate": true,
+          "ai_generate": false,
+          "source": "platform_effectiveness.component_log",
           "default": "直接取数失败"
         },
         {
           "token": "component_policy",
           "type": "text",
-          "ai_generate": true,
+          "ai_generate": false,
+          "source": "platform_effectiveness.component_policy",
           "default": "直接取数失败"
         },
         {
           "token": "component_auto",
           "type": "text",
-          "ai_generate": true,
+          "ai_generate": false,
+          "source": "platform_effectiveness.component_auto",
           "default": "直接取数失败"
         },
         {

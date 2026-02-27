@@ -177,6 +177,27 @@ class LLMOrchestratorV2:
 
         return str(value)
 
+    @staticmethod
+    def _coerce_number(value: Any) -> Optional[float]:
+        """Best-effort conversion to float for chart payload normalization."""
+        if isinstance(value, bool):
+            return None
+        if isinstance(value, (int, float)):
+            return float(value)
+        if isinstance(value, str):
+            text = value.strip().replace(",", "")
+            if not text:
+                return None
+            is_percent = text.endswith("%")
+            if is_percent:
+                text = text[:-1].strip()
+            try:
+                number = float(text)
+            except ValueError:
+                return None
+            return number / 100.0 if is_percent else number
+        return None
+
     def _extract_chart_data(
         self,
         tenant_input: TenantInput,
@@ -204,9 +225,7 @@ class LLMOrchestratorV2:
             logger.warning(f"No data found at {data_source}")
             return {}
 
-        result = {
-            'position': chart_config.get('position')
-        }
+        result = {}
 
         if chart_type == 'P11_bar':
             # Expect source_data to have 'labels' and 'values' or similar structure
@@ -332,21 +351,32 @@ class LLMOrchestratorV2:
                 attack_counts = source_data.get('attack_counts', [])
                 defense_rates = source_data.get('defense_rates', [])
 
+                normalized_attacks = []
+                for count in attack_counts:
+                    number = self._coerce_number(count)
+                    if number is None:
+                        normalized_attacks.append(0)
+                    elif number.is_integer():
+                        normalized_attacks.append(int(number))
+                    else:
+                        normalized_attacks.append(number)
+
                 # Ensure defense_rates are in decimal format (0.0-1.0)
                 # If they come as percentages (0-100), convert them
                 normalized_rates = []
                 for rate in defense_rates:
-                    if isinstance(rate, (int, float)):
+                    number = self._coerce_number(rate)
+                    if number is not None:
                         # If rate > 1, assume it's percentage (e.g., 100 = 100%)
-                        if rate > 1:
-                            normalized_rates.append(rate / 100.0)
+                        if number > 1:
+                            normalized_rates.append(number / 100.0)
                         else:
-                            normalized_rates.append(rate)
+                            normalized_rates.append(number)
                     else:
                         normalized_rates.append(0)
 
                 result['categories'] = categories
-                result['attack_counts'] = attack_counts
+                result['attack_counts'] = normalized_attacks
                 result['defense_rates'] = normalized_rates
             else:
                 logger.warning(f"Combo chart data source {data_source} is not a dict")

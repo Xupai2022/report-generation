@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import logging
+from copy import deepcopy
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 
 from mss_ai_ppt_sample_assets.backend.models.slidespec import SlideSpecV2
 from mss_ai_ppt_sample_assets.backend.modules.template_loader import TemplateRepository
@@ -110,6 +111,101 @@ class PPTGeneratorV2:
             # Add more specific chart types here
         }
 
+    def _replace_tokens_in_paragraph(
+        self,
+        paragraph,
+        placeholder_pairs: List[Tuple[str, str]]
+    ) -> Tuple[bool, str]:
+        """Replace placeholders in a paragraph while preserving run-level styling."""
+        if not placeholder_pairs:
+            return False, paragraph.text or ""
+
+        runs = list(paragraph.runs)
+        if not runs:
+            paragraph_text = paragraph.text or ""
+            replaced_text = paragraph_text
+            for placeholder, replacement in placeholder_pairs:
+                if placeholder in replaced_text:
+                    replaced_text = replaced_text.replace(placeholder, replacement)
+
+            if replaced_text == paragraph_text:
+                return False, paragraph_text
+
+            paragraph.text = replaced_text
+            return True, replaced_text
+
+        run_texts = [run.text or "" for run in runs]
+        paragraph_text = "".join(run_texts)
+        if not paragraph_text:
+            return False, paragraph_text
+
+        if not any(placeholder in paragraph_text for placeholder, _ in placeholder_pairs):
+            return False, paragraph_text
+
+        # Map each source character to the run index it came from.
+        char_run_indices: List[int] = []
+        for run_idx, run_text in enumerate(run_texts):
+            char_run_indices.extend([run_idx] * len(run_text))
+
+        # Keep a copy of each run's XML style (<a:rPr>) for accurate style cloning.
+        run_styles = [deepcopy(run._r.rPr) if run._r.rPr is not None else None for run in runs]
+
+        segments: List[Tuple[str, int]] = []
+        changed = False
+        i = 0
+        while i < len(paragraph_text):
+            matched = False
+            for placeholder, replacement in placeholder_pairs:
+                if paragraph_text.startswith(placeholder, i):
+                    changed = True
+                    matched = True
+                    style_idx = char_run_indices[i] if char_run_indices else 0
+                    if replacement:
+                        if segments and segments[-1][1] == style_idx:
+                            prev_text, _ = segments[-1]
+                            segments[-1] = (prev_text + replacement, style_idx)
+                        else:
+                            segments.append((replacement, style_idx))
+                    i += len(placeholder)
+                    break
+
+            if matched:
+                continue
+
+            style_idx = char_run_indices[i] if char_run_indices else 0
+            ch = paragraph_text[i]
+            if segments and segments[-1][1] == style_idx:
+                prev_text, _ = segments[-1]
+                segments[-1] = (prev_text + ch, style_idx)
+            else:
+                segments.append((ch, style_idx))
+            i += 1
+
+        if not changed:
+            return False, paragraph_text
+
+        paragraph.clear()
+
+        if not segments:
+            empty_run = paragraph.add_run()
+            if run_styles and run_styles[0] is not None:
+                if empty_run._r.rPr is not None:
+                    empty_run._r.remove(empty_run._r.rPr)
+                empty_run._r.insert(0, deepcopy(run_styles[0]))
+            return True, ""
+
+        for text, style_idx in segments:
+            new_run = paragraph.add_run()
+            new_run.text = text
+            style_xml = run_styles[style_idx] if style_idx < len(run_styles) else None
+            if style_xml is not None:
+                if new_run._r.rPr is not None:
+                    new_run._r.remove(new_run._r.rPr)
+                new_run._r.insert(0, deepcopy(style_xml))
+
+        replaced_text = "".join(text for text, _ in segments)
+        return True, replaced_text
+
     def _replace_tokens_in_shape(self, shape, mapping: Dict[str, str]) -> None:
         """Replace {{TOKEN}} placeholders in shape text."""
         if not mapping:
@@ -124,27 +220,17 @@ class PPTGeneratorV2:
         if not shape.has_text_frame:
             return
 
+        placeholder_pairs: List[Tuple[str, str]] = []
+        for token, value in mapping.items():
+            placeholder = f"{{{{{token}}}}}"
+            replacement = "" if value is None else str(value)
+            placeholder_pairs.append((placeholder, replacement))
+        placeholder_pairs.sort(key=lambda x: len(x[0]), reverse=True)
+
         for paragraph in shape.text_frame.paragraphs:
-            runs = list(paragraph.runs)
-            paragraph_text = "".join(run.text for run in runs) if runs else (paragraph.text or "")
-            replaced_text = paragraph_text
-
-            for token, value in mapping.items():
-                placeholder = f"{{{{{token}}}}}"
-                replacement = "" if value is None else str(value)
-                if placeholder in replaced_text:
-                    replaced_text = replaced_text.replace(placeholder, replacement)
-
-            if replaced_text == paragraph_text:
+            changed, replaced_text = self._replace_tokens_in_paragraph(paragraph, placeholder_pairs)
+            if not changed:
                 continue
-
-            # Placeholder tokens can be split across runs (e.g. "{{", "TOKEN", "}}").
-            if runs:
-                runs[0].text = replaced_text
-                for run in runs[1:]:
-                    run.text = ""
-            else:
-                paragraph.text = replaced_text
 
             # Apply formatting for long/multiline generated content.
             if '\n' in replaced_text or len(replaced_text) > 50:

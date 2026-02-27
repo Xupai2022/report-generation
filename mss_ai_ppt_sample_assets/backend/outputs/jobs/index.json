@@ -1818,5 +1818,775 @@
     "template_id": "mss_classic_ops",
     "input_id": "classic_ops_dataxlsx",
     "rating": null
+  },
+  "7c76ccbb_20260227102931914000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T02:29:32.274518+00:00",
+    "updated_at": "2026-02-27T02:29:34.690337+00:00",
+    "completed_at": "2026-02-27T02:29:34.669429+00:00",
+    "session_id": "7c76ccbb_20260227102931914000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "d3ceee58_20260227103025729000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T02:30:25.739426+00:00",
+    "updated_at": "2026-02-27T02:30:27.076131+00:00",
+    "completed_at": "2026-02-27T02:30:27.071128+00:00",
+    "session_id": "d3ceee58_20260227103025729000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "4046f4a3_20260227103546197000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T02:35:46.221617+00:00",
+    "updated_at": "2026-02-27T02:35:53.029886+00:00",
+    "completed_at": "2026-02-27T02:35:53.021889+00:00",
+    "session_id": "4046f4a3_20260227103546197000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "7f5bbe2a_20260227103721386000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T02:37:21.696713+00:00",
+    "updated_at": "2026-02-27T03:01:09.179400+00:00",
+    "completed_at": "2026-02-27T02:37:25.160990+00:00",
+    "session_id": "7f5bbe2a_20260227103721386000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": "disliked"
+  },
+  "b32162fe_20260227103838202000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T02:38:38.522145+00:00",
+    "updated_at": "2026-02-27T02:38:42.344292+00:00",
+    "completed_at": "2026-02-27T02:38:42.337535+00:00",
+    "session_id": "b32162fe_20260227103838202000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "564fc79c_20260227104101081000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T02:41:01.396265+00:00",
+    "updated_at": "2026-02-27T02:41:05.080757+00:00",
+    "completed_at": "2026-02-27T02:41:05.076374+00:00",
+    "session_id": "564fc79c_20260227104101081000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "73b1e8c4_20260227104338041000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T02:43:38.365244+00:00",
+    "updated_at": "2026-02-27T02:43:42.521062+00:00",
+    "completed_at": "2026-02-27T02:43:42.501353+00:00",
+    "session_id": "73b1e8c4_20260227104338041000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "29e86ad7_20260227104440210000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T02:44:40.216671+00:00",
+    "updated_at": "2026-02-27T02:44:43.961174+00:00",
+    "completed_at": "2026-02-27T02:44:43.944769+00:00",
+    "session_id": "29e86ad7_20260227104440210000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "adcbfc85_20260227104752585000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T02:47:52.900561+00:00",
+    "updated_at": "2026-02-27T02:47:56.625641+00:00",
+    "completed_at": "2026-02-27T02:47:56.618095+00:00",
+    "session_id": "adcbfc85_20260227104752585000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "b350f8c2_20260227105016819000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T02:50:17.129725+00:00",
+    "updated_at": "2026-02-27T02:50:20.547502+00:00",
+    "completed_at": "2026-02-27T02:50:20.539066+00:00",
+    "session_id": "b350f8c2_20260227105016819000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "529ea6e7_20260227105910131000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T02:59:10.455923+00:00",
+    "updated_at": "2026-02-27T02:59:14.479019+00:00",
+    "completed_at": "2026-02-27T02:59:14.474520+00:00",
+    "session_id": "529ea6e7_20260227105910131000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "50a4d634_20260227110028651000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T03:00:28.658665+00:00",
+    "updated_at": "2026-02-27T03:00:32.712589+00:00",
+    "completed_at": "2026-02-27T03:00:32.705564+00:00",
+    "session_id": "50a4d634_20260227110028651000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "af62e0c4_20260227112613661000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T03:26:13.984541+00:00",
+    "updated_at": "2026-02-27T03:33:41.112666+00:00",
+    "completed_at": "2026-02-27T03:26:18.132948+00:00",
+    "session_id": "af62e0c4_20260227112613661000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": "liked"
+  },
+  "425dfb70_20260227113051820000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T03:30:52.137859+00:00",
+    "updated_at": "2026-02-27T03:30:55.996637+00:00",
+    "completed_at": "2026-02-27T03:30:55.982052+00:00",
+    "session_id": "425dfb70_20260227113051820000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "92caf7e1_20260227113138950000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T03:31:38.956659+00:00",
+    "updated_at": "2026-02-27T03:31:42.924753+00:00",
+    "completed_at": "2026-02-27T03:31:42.917746+00:00",
+    "session_id": "92caf7e1_20260227113138950000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "6984cac9_20260227113319572000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T03:33:19.891550+00:00",
+    "updated_at": "2026-02-27T03:33:23.550900+00:00",
+    "completed_at": "2026-02-27T03:33:23.542568+00:00",
+    "session_id": "6984cac9_20260227113319572000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "29e29776_20260227113405604000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T03:34:05.921999+00:00",
+    "updated_at": "2026-02-27T03:34:09.814802+00:00",
+    "completed_at": "2026-02-27T03:34:09.810804+00:00",
+    "session_id": "29e29776_20260227113405604000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "48c07432_20260227113500868000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T03:35:00.874260+00:00",
+    "updated_at": "2026-02-27T03:35:04.152340+00:00",
+    "completed_at": "2026-02-27T03:35:04.146839+00:00",
+    "session_id": "48c07432_20260227113500868000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "6d8c2671_20260227113542838000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T03:35:42.846247+00:00",
+    "updated_at": "2026-02-27T03:35:46.502358+00:00",
+    "completed_at": "2026-02-27T03:35:46.496418+00:00",
+    "session_id": "6d8c2671_20260227113542838000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "91f9902c_20260227113810788000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T03:38:11.104399+00:00",
+    "updated_at": "2026-02-27T03:38:14.799244+00:00",
+    "completed_at": "2026-02-27T03:38:14.790977+00:00",
+    "session_id": "91f9902c_20260227113810788000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "f067dbc5_20260227113929997000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T03:39:30.320035+00:00",
+    "updated_at": "2026-02-27T03:39:33.958399+00:00",
+    "completed_at": "2026-02-27T03:39:33.945823+00:00",
+    "session_id": "f067dbc5_20260227113929997000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "f51b0a64_20260227114027319000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T03:40:27.327135+00:00",
+    "updated_at": "2026-02-27T03:40:30.857593+00:00",
+    "completed_at": "2026-02-27T03:40:30.851130+00:00",
+    "session_id": "f51b0a64_20260227114027319000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "31a29fdf_20260227114121341000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T03:41:21.346259+00:00",
+    "updated_at": "2026-02-27T03:41:24.848290+00:00",
+    "completed_at": "2026-02-27T03:41:24.843708+00:00",
+    "session_id": "31a29fdf_20260227114121341000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "6a1fdd10_20260227114328765000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T03:43:29.080904+00:00",
+    "updated_at": "2026-02-27T03:43:34.423538+00:00",
+    "completed_at": "2026-02-27T03:43:34.412094+00:00",
+    "session_id": "6a1fdd10_20260227114328765000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "97ca49a4_20260227114559471000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T03:45:59.796836+00:00",
+    "updated_at": "2026-02-27T03:46:06.516651+00:00",
+    "completed_at": "2026-02-27T03:46:06.507018+00:00",
+    "session_id": "97ca49a4_20260227114559471000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "4f4788af_20260227114839653000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T03:48:39.968084+00:00",
+    "updated_at": "2026-02-27T03:48:43.814273+00:00",
+    "completed_at": "2026-02-27T03:48:43.805688+00:00",
+    "session_id": "4f4788af_20260227114839653000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "476505c7_20260227114918326000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T03:49:18.330955+00:00",
+    "updated_at": "2026-02-27T03:50:02.320335+00:00",
+    "completed_at": "2026-02-27T03:49:21.887648+00:00",
+    "session_id": "476505c7_20260227114918326000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": "liked"
+  },
+  "23df1eb1_20260227114958701000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T03:49:58.706740+00:00",
+    "updated_at": "2026-02-27T03:50:02.952423+00:00",
+    "completed_at": "2026-02-27T03:50:02.946408+00:00",
+    "session_id": "23df1eb1_20260227114958701000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "529e3a0b_20260227115043733000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T03:50:44.054923+00:00",
+    "updated_at": "2026-02-27T03:50:48.255472+00:00",
+    "completed_at": "2026-02-27T03:50:48.249045+00:00",
+    "session_id": "529e3a0b_20260227115043733000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "a1ee3370_20260227115146974000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T03:51:47.299476+00:00",
+    "updated_at": "2026-02-27T03:51:51.034477+00:00",
+    "completed_at": "2026-02-27T03:51:51.024983+00:00",
+    "session_id": "a1ee3370_20260227115146974000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "8baa7d67_20260227115325758000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T03:53:26.071870+00:00",
+    "updated_at": "2026-02-27T03:53:30.221152+00:00",
+    "completed_at": "2026-02-27T03:53:30.211988+00:00",
+    "session_id": "8baa7d67_20260227115325758000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "f78e03e9_20260227115452382000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T03:54:52.703677+00:00",
+    "updated_at": "2026-02-27T03:54:57.056418+00:00",
+    "completed_at": "2026-02-27T03:54:57.051439+00:00",
+    "session_id": "f78e03e9_20260227115452382000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "cb084e0d_20260227120111838000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T04:01:12.161780+00:00",
+    "updated_at": "2026-02-27T04:01:16.671654+00:00",
+    "completed_at": "2026-02-27T04:01:16.661673+00:00",
+    "session_id": "cb084e0d_20260227120111838000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "fc37ea37_20260227120318518000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T04:03:18.826458+00:00",
+    "updated_at": "2026-02-27T04:03:22.341855+00:00",
+    "completed_at": "2026-02-27T04:03:22.335175+00:00",
+    "session_id": "fc37ea37_20260227120318518000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "371487fa_20260227120803751000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T04:08:04.063429+00:00",
+    "updated_at": "2026-02-27T04:08:08.270872+00:00",
+    "completed_at": "2026-02-27T04:08:08.262515+00:00",
+    "session_id": "371487fa_20260227120803751000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "78541f0f_20260227120919047000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T04:09:19.363075+00:00",
+    "updated_at": "2026-02-27T04:09:23.315598+00:00",
+    "completed_at": "2026-02-27T04:09:23.309597+00:00",
+    "session_id": "78541f0f_20260227120919047000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "d914991f_20260227141959510000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T06:19:59.822217+00:00",
+    "updated_at": "2026-02-27T06:20:04.241477+00:00",
+    "completed_at": "2026-02-27T06:20:04.234063+00:00",
+    "session_id": "d914991f_20260227141959510000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "6abb6efc_20260227142313911000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T06:23:13.917823+00:00",
+    "updated_at": "2026-02-27T06:23:17.483710+00:00",
+    "completed_at": "2026-02-27T06:23:17.478431+00:00",
+    "session_id": "6abb6efc_20260227142313911000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "7a996fa3_20260227142418095000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T06:24:18.415214+00:00",
+    "updated_at": "2026-02-27T06:24:22.549626+00:00",
+    "completed_at": "2026-02-27T06:24:22.539965+00:00",
+    "session_id": "7a996fa3_20260227142418095000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "68e310ac_20260227142522415000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T06:25:22.421075+00:00",
+    "updated_at": "2026-02-27T06:25:26.043423+00:00",
+    "completed_at": "2026-02-27T06:25:26.034321+00:00",
+    "session_id": "68e310ac_20260227142522415000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "870724cb_20260227142639823000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T06:26:40.143400+00:00",
+    "updated_at": "2026-02-27T06:26:43.748688+00:00",
+    "completed_at": "2026-02-27T06:26:43.740623+00:00",
+    "session_id": "870724cb_20260227142639823000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "3b9c8d54_20260227143732056000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T06:37:32.405560+00:00",
+    "updated_at": "2026-02-27T06:37:38.296507+00:00",
+    "completed_at": "2026-02-27T06:37:38.284506+00:00",
+    "session_id": "3b9c8d54_20260227143732056000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "03d1a435_20260227143917808000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T06:39:18.133010+00:00",
+    "updated_at": "2026-02-27T06:39:21.984216+00:00",
+    "completed_at": "2026-02-27T06:39:21.978201+00:00",
+    "session_id": "03d1a435_20260227143917808000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "1fa7ae9a_20260227144057225000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T06:40:57.246875+00:00",
+    "updated_at": "2026-02-27T06:41:01.754456+00:00",
+    "completed_at": "2026-02-27T06:41:01.749794+00:00",
+    "session_id": "1fa7ae9a_20260227144057225000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "3c75277d_20260227144723418000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T06:47:23.768073+00:00",
+    "updated_at": "2026-02-27T06:47:29.504542+00:00",
+    "completed_at": "2026-02-27T06:47:29.495895+00:00",
+    "session_id": "3c75277d_20260227144723418000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "ca599461_20260227145330448000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T06:53:30.774435+00:00",
+    "updated_at": "2026-02-27T06:53:39.183036+00:00",
+    "completed_at": "2026-02-27T06:53:39.169377+00:00",
+    "session_id": "ca599461_20260227145330448000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "b35aac87_20260227145435786000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T06:54:36.110097+00:00",
+    "updated_at": "2026-02-27T06:54:42.662451+00:00",
+    "completed_at": "2026-02-27T06:54:42.654927+00:00",
+    "session_id": "b35aac87_20260227145435786000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "5b01efc5_20260227145522474000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T06:55:22.799508+00:00",
+    "updated_at": "2026-02-27T06:55:29.196295+00:00",
+    "completed_at": "2026-02-27T06:55:29.186125+00:00",
+    "session_id": "5b01efc5_20260227145522474000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "e046488e_20260227150010729000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T07:00:11.075137+00:00",
+    "updated_at": "2026-02-27T07:00:16.638443+00:00",
+    "completed_at": "2026-02-27T07:00:16.595360+00:00",
+    "session_id": "e046488e_20260227150010729000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "0af90fd1_20260227150328329000:mss_classic_ops": {
+    "status": "failed",
+    "created_at": "2026-02-27T07:03:28.341718+00:00",
+    "updated_at": "2026-02-27T07:03:34.544859+00:00",
+    "completed_at": "2026-02-27T07:03:34.541859+00:00",
+    "session_id": "0af90fd1_20260227150328329000",
+    "template_id": "mss_classic_ops",
+    "input_id": "excel_report_2025-12",
+    "rating": null
+  },
+  "f20bac61_20260227150402393000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T07:04:02.704279+00:00",
+    "updated_at": "2026-02-27T07:04:06.405916+00:00",
+    "completed_at": "2026-02-27T07:04:06.396914+00:00",
+    "session_id": "f20bac61_20260227150402393000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "070450c7_20260227150731602000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T07:07:31.614285+00:00",
+    "updated_at": "2026-02-27T07:07:35.059875+00:00",
+    "completed_at": "2026-02-27T07:07:35.053956+00:00",
+    "session_id": "070450c7_20260227150731602000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "79fce4f2_20260227151453873000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T07:14:53.879344+00:00",
+    "updated_at": "2026-02-27T07:14:57.440154+00:00",
+    "completed_at": "2026-02-27T07:14:57.434365+00:00",
+    "session_id": "79fce4f2_20260227151453873000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "7d1d1fbd_20260227151659398000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T07:16:59.417463+00:00",
+    "updated_at": "2026-02-27T07:17:05.872361+00:00",
+    "completed_at": "2026-02-27T07:17:05.864827+00:00",
+    "session_id": "7d1d1fbd_20260227151659398000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "9245207c_20260227151835202000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T07:18:35.208438+00:00",
+    "updated_at": "2026-02-27T07:18:39.082125+00:00",
+    "completed_at": "2026-02-27T07:18:39.073626+00:00",
+    "session_id": "9245207c_20260227151835202000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "a0470061_20260227152734971000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T07:27:35.294914+00:00",
+    "updated_at": "2026-02-27T07:27:39.517808+00:00",
+    "completed_at": "2026-02-27T07:27:39.511529+00:00",
+    "session_id": "a0470061_20260227152734971000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "05a6ec92_20260227153410515000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T07:34:10.831653+00:00",
+    "updated_at": "2026-02-27T07:34:14.565266+00:00",
+    "completed_at": "2026-02-27T07:34:14.557226+00:00",
+    "session_id": "05a6ec92_20260227153410515000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "9b9e846d_20260227154221859000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T07:42:21.870159+00:00",
+    "updated_at": "2026-02-27T07:42:25.970014+00:00",
+    "completed_at": "2026-02-27T07:42:25.964980+00:00",
+    "session_id": "9b9e846d_20260227154221859000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "fa9413b2_20260227154745379000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T07:47:45.710272+00:00",
+    "updated_at": "2026-02-27T07:47:49.471384+00:00",
+    "completed_at": "2026-02-27T07:47:49.467428+00:00",
+    "session_id": "fa9413b2_20260227154745379000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "67a9e5b1_20260227155025005000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T07:50:25.019723+00:00",
+    "updated_at": "2026-02-27T07:50:29.802227+00:00",
+    "completed_at": "2026-02-27T07:50:29.797485+00:00",
+    "session_id": "67a9e5b1_20260227155025005000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "00938a1e_20260227155151793000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T07:51:52.116679+00:00",
+    "updated_at": "2026-02-27T07:51:57.934100+00:00",
+    "completed_at": "2026-02-27T07:51:57.926600+00:00",
+    "session_id": "00938a1e_20260227155151793000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "7a6743e0_20260227160224804000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T08:02:25.150363+00:00",
+    "updated_at": "2026-02-27T08:02:29.932163+00:00",
+    "completed_at": "2026-02-27T08:02:29.923843+00:00",
+    "session_id": "7a6743e0_20260227160224804000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "24e9c4e1_20260227161133614000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T08:11:33.957133+00:00",
+    "updated_at": "2026-02-27T08:11:40.213424+00:00",
+    "completed_at": "2026-02-27T08:11:40.206793+00:00",
+    "session_id": "24e9c4e1_20260227161133614000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "8f1072a1_20260227161254989000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T08:12:55.321326+00:00",
+    "updated_at": "2026-02-27T08:13:01.339324+00:00",
+    "completed_at": "2026-02-27T08:13:01.329397+00:00",
+    "session_id": "8f1072a1_20260227161254989000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "6703a3b5_20260227161524225000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T08:15:24.553307+00:00",
+    "updated_at": "2026-02-27T08:15:29.687850+00:00",
+    "completed_at": "2026-02-27T08:15:29.673396+00:00",
+    "session_id": "6703a3b5_20260227161524225000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "d16edc0f_20260227163659481000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T08:36:59.835240+00:00",
+    "updated_at": "2026-02-27T08:37:07.968462+00:00",
+    "completed_at": "2026-02-27T08:37:07.961550+00:00",
+    "session_id": "d16edc0f_20260227163659481000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "d017d53e_20260227163815310000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T08:38:15.624097+00:00",
+    "updated_at": "2026-02-27T08:38:20.088036+00:00",
+    "completed_at": "2026-02-27T08:38:20.080517+00:00",
+    "session_id": "d017d53e_20260227163815310000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "9e4626dc_20260227164024542000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T08:40:24.860407+00:00",
+    "updated_at": "2026-02-27T08:40:29.163186+00:00",
+    "completed_at": "2026-02-27T08:40:29.157187+00:00",
+    "session_id": "9e4626dc_20260227164024542000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "275e7aca_20260227164208278000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T08:42:08.284533+00:00",
+    "updated_at": "2026-02-27T08:42:12.538393+00:00",
+    "completed_at": "2026-02-27T08:42:12.533898+00:00",
+    "session_id": "275e7aca_20260227164208278000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "2fcfce75_20260227164943186000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T08:49:43.545083+00:00",
+    "updated_at": "2026-02-27T08:49:53.959111+00:00",
+    "completed_at": "2026-02-27T08:49:53.942984+00:00",
+    "session_id": "2fcfce75_20260227164943186000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "9a614583_20260227165242295000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T08:52:42.642449+00:00",
+    "updated_at": "2026-02-27T08:52:49.171550+00:00",
+    "completed_at": "2026-02-27T08:52:49.162643+00:00",
+    "session_id": "9a614583_20260227165242295000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "c2a3b2fa_20260227165511240000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T08:55:11.574956+00:00",
+    "updated_at": "2026-02-27T08:55:17.272316+00:00",
+    "completed_at": "2026-02-27T08:55:17.264672+00:00",
+    "session_id": "c2a3b2fa_20260227165511240000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "51ad7449_20260227172342849000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T09:23:43.189058+00:00",
+    "updated_at": "2026-02-27T09:23:48.415961+00:00",
+    "completed_at": "2026-02-27T09:23:48.411835+00:00",
+    "session_id": "51ad7449_20260227172342849000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "6aa5ca0d_20260227173032394000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T09:30:32.402196+00:00",
+    "updated_at": "2026-02-27T09:30:36.772444+00:00",
+    "completed_at": "2026-02-27T09:30:36.764944+00:00",
+    "session_id": "6aa5ca0d_20260227173032394000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "ca8c27c1_20260227174142540000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T09:41:42.851681+00:00",
+    "updated_at": "2026-02-27T09:41:47.280695+00:00",
+    "completed_at": "2026-02-27T09:41:47.276694+00:00",
+    "session_id": "ca8c27c1_20260227174142540000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "d2564ac3_20260227174909155000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T09:49:09.476356+00:00",
+    "updated_at": "2026-02-27T09:49:13.558031+00:00",
+    "completed_at": "2026-02-27T09:49:13.549532+00:00",
+    "session_id": "d2564ac3_20260227174909155000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "4101ec03_20260227175025278000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-27T09:50:25.599542+00:00",
+    "updated_at": "2026-02-27T09:50:30.955520+00:00",
+    "completed_at": "2026-02-27T09:50:30.948021+00:00",
+    "session_id": "4101ec03_20260227175025278000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
   }
 }

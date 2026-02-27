@@ -5,7 +5,7 @@ import logging
 import shutil
 import time
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any, Dict, Set, Union
 
 from mss_ai_ppt_sample_assets.backend import config
 from mss_ai_ppt_sample_assets.backend.models.inputs import TenantInput
@@ -25,6 +25,7 @@ from mss_ai_ppt_sample_assets.backend.modules.preview_generator import (
     PPTPreviewGenerator,
     sanitize_job_id,
 )
+from mss_ai_ppt_sample_assets.backend.modules.excel_handler import ExcelDataExtractor
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +60,58 @@ class ReportService:
             items = json.load(f).get("datasets", [])
         return {item["id"]: item for item in items}
 
+    @staticmethod
+    def _collect_structured_key_signatures(
+        value: Any,
+        path: str,
+        out: Dict[str, Set[str]]
+    ) -> None:
+        if isinstance(value, list):
+            for item in value:
+                ReportService._collect_structured_key_signatures(item, f"{path}[]", out)
+            return
+
+        if not isinstance(value, dict):
+            return
+
+        signature = "|".join(sorted(value.keys()))
+        out.setdefault(path, set()).add(signature)
+
+        for key, child in value.items():
+            ReportService._collect_structured_key_signatures(child, f"{path}.{key}", out)
+
+    @staticmethod
+    def _has_same_structured_keys(old_value: Any, new_value: Any) -> bool:
+        old_map: Dict[str, Set[str]] = {}
+        new_map: Dict[str, Set[str]] = {}
+        ReportService._collect_structured_key_signatures(old_value, "$", old_map)
+        ReportService._collect_structured_key_signatures(new_value, "$", new_map)
+        return old_map == new_map
+
+    @staticmethod
+    def _strip_position_fields(value: Any) -> Any:
+        if isinstance(value, list):
+            return [ReportService._strip_position_fields(item) for item in value]
+        if isinstance(value, dict):
+            return {
+                k: ReportService._strip_position_fields(v)
+                for k, v in value.items()
+                if k != "position"
+            }
+        return value
+
+    def _get_chart_tokens_by_slide(self, template_id: str) -> Dict[str, Set[str]]:
+        descriptor = self.template_repo.get_descriptor_v2(template_id)
+        chart_types = {"P11_bar", "P11_line", "P11_pie", "P13_pie", "P14_pie", "P15_line", "P16_combo"}
+        result: Dict[str, Set[str]] = {}
+        for slide in descriptor.slides:
+            chart_tokens = {
+                ph.token for ph in slide.placeholders
+                if ph.type in chart_types
+            }
+            result[slide.slide_key] = chart_tokens
+        return result
+
     def _slidespec_path(self, input_id: str, template_id: str) -> Path:
         return config.SLIDESPECS_DIR / f"{input_id}_{template_id}.json"
 
@@ -84,6 +137,54 @@ class ReportService:
     def load_input(self, input_id: str) -> TenantInput:
         path = self._get_input_path(input_id)
         return TenantInput.load_from_file(path)
+
+    def _resolve_excel_source_path(self, input_id: str, session_id: str) -> Path | None:
+        """Resolve preferred Excel source for runtime parsing.
+
+        Priority:
+        1) Session uploaded Excel (`outputs/sessions/{session_id}/uploaded.xlsx`)
+        2) Catalog-provided excel_file (if configured)
+        3) Built-in classic workbook (`data/data.xlsx`) for classic_ops input
+        """
+        session_dir = self.session_manager.get_session_dir(session_id)
+        session_excel = session_dir / "uploaded.xlsx"
+        if session_excel.exists():
+            return session_excel
+
+        entry = self.inputs_catalog.get(input_id) or {}
+        excel_file = entry.get("excel_file")
+        if excel_file:
+            excel_path = Path(excel_file)
+            if not excel_path.is_absolute():
+                excel_path = (config.DATA_DIR / excel_path).resolve()
+            if excel_path.exists():
+                return excel_path
+
+        if input_id == "classic_ops_dataxlsx":
+            default_excel = config.DATA_DIR / "data.xlsx"
+            if default_excel.exists():
+                return default_excel
+
+        return None
+
+    def _load_input_from_excel_runtime(self, input_id: str, session_id: str) -> TenantInput:
+        """Parse input from Excel at generation time and persist session intermediate JSON."""
+        excel_path = self._resolve_excel_source_path(input_id, session_id)
+        if not excel_path:
+            raise InputNotFoundError(
+                f"No Excel source found for input_id '{input_id}'. "
+                "Expected session uploaded.xlsx or configured excel_file."
+            )
+
+        parsed = ExcelDataExtractor.extract_data(excel_path)
+
+        # Keep JSON only as this-run intermediate artifact under session directory.
+        input_path = self.session_manager.get_input_path(session_id)
+        with input_path.open("w", encoding="utf-8") as f:
+            json.dump(parsed, f, ensure_ascii=False, indent=2)
+
+        logger.info("Input parsed from Excel at runtime: %s -> %s", excel_path, input_path)
+        return TenantInput(raw=parsed)
 
     def generate(
         self, input_id: str, template_id: str, use_mock: bool = False, session_id: str = None, ws_manager=None, event_loop=None
@@ -114,8 +215,18 @@ class ReportService:
             session_id = self.session_manager.generate_session_id()
             logger.debug(f"Generated new session ID: {session_id}")
 
-        tenant_input = self.load_input(input_id)
-        logger.debug(f"Loaded input data: {len(tenant_input.raw)} keys")
+        # Classic ops must always parse from Excel at runtime.
+        if template_id == "mss_classic_ops" or input_id == "classic_ops_dataxlsx":
+            tenant_input = self._load_input_from_excel_runtime(input_id, session_id)
+            logger.debug(
+                "Loaded runtime Excel input for classic flow: template=%s, input=%s, keys=%s",
+                template_id,
+                input_id,
+                len(tenant_input.raw),
+            )
+        else:
+            tenant_input = self.load_input(input_id)
+            logger.debug(f"Loaded input data: {len(tenant_input.raw)} keys")
 
         return self._generate_v2(input_id, template_id, tenant_input, session_id=session_id, use_mock=use_mock, ws_manager=ws_manager, event_loop=event_loop)
 
@@ -396,6 +507,7 @@ class ReportService:
 
         # Load slidespec
         slidespec = self._load_slidespec(session_id, template_id)
+        chart_tokens_by_slide = self._get_chart_tokens_by_slide(template_id)
 
         # Normalize to batch mode internally
         if has_single:
@@ -413,7 +525,33 @@ class ReportService:
 
             slide = slidespec.get_slide(key)
             if slide:
-                slide.placeholders.update(content)
+                if not isinstance(content, dict):
+                    raise ValueError(f"Slide '{key}' new_content must be a JSON object.")
+
+                chart_tokens = chart_tokens_by_slide.get(key, set())
+                normalized_updates: Dict[str, Any] = {}
+
+                for token, edited_value in content.items():
+                    if token not in slide.placeholders:
+                        raise ValueError(
+                            f"Slide '{key}' contains unknown token '{token}'. "
+                            "Adding/removing placeholder keys is not allowed."
+                        )
+
+                    original_value = slide.placeholders.get(token)
+                    if token in chart_tokens:
+                        normalized_original = self._strip_position_fields(original_value)
+                        normalized_edited = self._strip_position_fields(edited_value)
+                        if not self._has_same_structured_keys(normalized_original, normalized_edited):
+                            raise ValueError(
+                                "Structured JSON keys are locked. "
+                                "Only value changes are allowed; key add/remove/rename is forbidden."
+                            )
+                        normalized_updates[token] = normalized_edited
+                    else:
+                        normalized_updates[token] = edited_value
+
+                slide.placeholders.update(normalized_updates)
                 updated_slides.append(key)
             else:
                 not_found_slides.append(key)
