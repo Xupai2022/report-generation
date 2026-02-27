@@ -117,10 +117,6 @@ class ReportService:
         tenant_input = self.load_input(input_id)
         logger.debug(f"Loaded input data: {len(tenant_input.raw)} keys")
 
-        # Ensure we only handle V2
-        if not self.template_repo.is_v2(template_id):
-             raise ValueError(f"Template {template_id} is not a V2 template. Only V2 templates are supported.")
-
         return self._generate_v2(input_id, template_id, tenant_input, session_id=session_id, use_mock=use_mock, ws_manager=ws_manager, event_loop=event_loop)
 
     def _generate_v2(
@@ -283,8 +279,6 @@ class ReportService:
         if not user_prompt or not user_prompt.strip():
             raise ValueError("user_prompt is required")
 
-        if not self.template_repo.is_v2(template_id):
-            raise ValueError(f"Template {template_id} is not V2. AI rewrite only supported for V2.")
         if not config.settings.enable_llm:
             raise ValueError("LLM is disabled. Set ENABLE_LLM=true to use AI rewrite.")
 
@@ -389,9 +383,6 @@ class ReportService:
             session_id, template_id = job_id.split(":", 1)
         except ValueError as e:
             raise ValueError("job_id must be formatted as session_id:template_id") from e
-
-        if not self.template_repo.is_v2(template_id):
-            raise ValueError(f"Template {template_id} is not V2. Rewrite only supported for V2.")
 
         # Validate input mode
         has_single = slide_key is not None and new_content is not None

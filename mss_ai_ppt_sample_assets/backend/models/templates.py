@@ -20,7 +20,7 @@ class PlaceholderDefinition(BaseModel):
         # Specific chart types
         "P11_bar",  # Response time bar chart (处置时间柱状图)
         "P11_line",  # Monthly incident trend line chart (月度事件趋势折线图)
-        "P12_pie",  # Threat type distribution donut chart (威胁类型分布饼图)
+        "P11_pie",  # Threat type distribution donut chart (威胁类型分布饼图)
         "P13_pie",  # Asset distribution donut chart (资产类型分布饼图)
         "P14_pie",  # Severity distribution donut chart (告警严重程度分布饼图)
         "P15_line",  # Monthly threats trend line chart (月度威胁趋势折线图)
@@ -132,8 +132,8 @@ class TemplateDescriptorV2(BaseModel):
 # ============================================================================
 
 def is_v2_template(template_id: str) -> bool:
-    """Check if a template is V2 (AI-driven) based on its ID."""
-    return "_v2" in template_id
+    """Template version gating is disabled; all catalog templates are handled uniformly."""
+    return True
 
 
 def load_template_descriptor(path: Path) -> TemplateDescriptorV2:

@@ -11,7 +11,10 @@
         "executive"
       ],
       "slides_count": 8,
-      "features": ["ai_generated_content", "rich_insights"]
+      "features": [
+        "ai_generated_content",
+        "rich_insights"
+      ]
     },
     {
       "template_id": "mss_technical_v2",
@@ -24,7 +27,27 @@
         "security_ops"
       ],
       "slides_count": 10,
-      "features": ["ai_generated_content", "deep_analysis", "technical_details"]
+      "features": [
+        "ai_generated_content",
+        "deep_analysis",
+        "technical_details"
+      ]
+    },
+    {
+      "template_id": "mss_classic_ops",
+      "name": "MSS运营服务总结（经典版）",
+      "version": "1.0.0",
+      "descriptor_file": "经典模板_descriptor.json",
+      "pptx_file": "经典模板.pptx",
+      "recommended_audience": [
+        "management",
+        "operations"
+      ],
+      "slides_count": 25,
+      "features": [
+        "excel_driven_content",
+        "classic_layout"
+      ]
     }
   ]
 }

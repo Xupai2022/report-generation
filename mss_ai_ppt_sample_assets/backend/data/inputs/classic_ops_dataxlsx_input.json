@@ -1,0 +1,422 @@
+{
+  "schema_version": "1.0",
+  "template_id": "mss_classic_ops",
+  "period": {
+    "start": "2025-03-01",
+    "start_month": "2025-03",
+    "end": "2025-11-01",
+    "end_month": "2025-11"
+  },
+  "cover": {
+    "PERIOD_start": "2025-03-01",
+    "PERIOD_end": "2025-11-01"
+  },
+  "Architecture": {
+    "AF_count": "10",
+    "STA_count": "5",
+    "EDR_count": "98",
+    "TSS_count": "1"
+  },
+  "deliverables": {
+    "kickoff_ppt": "1份",
+    "first_analysis": "1份",
+    "vuln_evidence": "4份",
+    "vuln_list": "4份",
+    "asset_inventory": "1份",
+    "incident_tracking": "12份",
+    "incident_response": "XX份",
+    "attack_surface": "1份",
+    "sec_ops_weekly": "56份",
+    "analysis_monthly": "12份",
+    "sec_ops_quarterly": "4 份",
+    "nationalday": "1份",
+    "springfestival": "1份",
+    "mayday": "1份",
+    "biweekly_threat": "X 份",
+    "phishing_poster": "X 份"
+  },
+  "coverage_summary": {
+    "AF_coverage": "100%",
+    "aes_coverage": "98.0%",
+    "probe_coverage": "100%",
+    "alert_manual": "11",
+    "alert_auto": "11",
+    "mss_risk": "11",
+    "nonmss_risk": "11",
+    "alert_inner": "10365",
+    "incident_inner": "33",
+    "handling_inner": "1",
+    "response_inner": "25.4666666666667",
+    "alert_outer": "11",
+    "incident_outer": "11",
+    "handling_outer": "11",
+    "response_outer": "11",
+    "business_system": "201",
+    "server_asset": "125",
+    "pc_asset": "31",
+    "log_count": "11",
+    "log_rate": "11",
+    "alert_count": "11",
+    "alert_rate": "11",
+    "incident_count": "11",
+    "asset_count": "11",
+    "AF_count": "10",
+    "STA_count": "5",
+    "EDR_count": "98",
+    "TSS_count": "1"
+  },
+  "protection_overview": {
+    "vuln_protect": "0.53125",
+    "alert_judgment": "1",
+    "alert_response": "25.4666666666667",
+    "threat_contain": "1",
+    "af_block": "35890",
+    "edr_risk": "11",
+    "policy_check": "11",
+    "surface": "11",
+    "asset": "11",
+    "server": "125",
+    "pc": "31",
+    "vuln_high": "32",
+    "surface_risk": "11",
+    "incident_closed": "33",
+    "vuln_closed": "23",
+    "weekly": "56份",
+    "monthly": "12份",
+    "xdr_log": "13",
+    "xdr_alert": "14",
+    "xdr_incident": "15",
+    "mss_push": "6",
+    "xdr_auto": "11",
+    "mss_handle": "6",
+    "emergency_handle": "11",
+    "incident_contain": "10.1975841049398",
+    "mss_latency": "28"
+  },
+  "incident_effectiveness": {
+    "incident_total": "33",
+    "response_avg": "25.4666666666667",
+    "handle_avg": "572.016666666667",
+    "incident_closed": "33",
+    "trust_assurance": "1",
+    "security_trust": "25.4666666666667",
+    "response_timeliness": {
+      "labels": [
+        "识别",
+        "响应",
+        "遏制",
+        "处置",
+        "闭环"
+      ],
+      "values": [
+        6.41666666666667,
+        25.4666666666667,
+        10.1975841049398,
+        572.016666666667,
+        625.383333333333
+      ]
+    },
+    "P11_bar": {
+      "labels": [
+        "识别",
+        "响应",
+        "遏制",
+        "处置",
+        "闭环"
+      ],
+      "values": [
+        6.41666666666667,
+        25.4666666666667,
+        10.1975841049398,
+        572.016666666667,
+        625.383333333333
+      ]
+    },
+    "response_trend": {
+      "months": [
+        "2025-03",
+        "2025-04",
+        "2025-05",
+        "2025-06",
+        "2025-07",
+        "2025-08",
+        "2025-09",
+        "2025-10",
+        "2025-11",
+        "2025-12"
+      ],
+      "avg_response_minutes": [
+        26.6,
+        15.25,
+        0,
+        18,
+        10.6666666666667,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "P11_line": {
+      "months": [
+        "2025-03",
+        "2025-04",
+        "2025-05",
+        "2025-06",
+        "2025-07",
+        "2025-08",
+        "2025-09",
+        "2025-10",
+        "2025-11",
+        "2025-12"
+      ],
+      "avg_response_minutes": [
+        26.6,
+        15.25,
+        0,
+        18,
+        10.6666666666667,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "incident_distribution": {
+      "categories": [
+        "挖矿",
+        "僵尸网络",
+        "木马",
+        "账号爆破",
+        "代理工具"
+      ],
+      "values": [
+        76,
+        39,
+        31,
+        26,
+        11
+      ]
+    },
+    "P11_pie": {
+      "categories": [
+        "挖矿",
+        "僵尸网络",
+        "木马",
+        "账号爆破",
+        "代理工具"
+      ],
+      "values": [
+        76,
+        39,
+        31,
+        26,
+        11
+      ]
+    }
+  },
+  "asset_management": {
+    "intranet_server": "100",
+    "intranet_network": "30",
+    "intranet_iot": "10",
+    "intranet_mss": "100",
+    "rootdomain_internet": "11",
+    "subdomain_internet": "11",
+    "web_asset": "11",
+    "nonweb_asset": "11",
+    "login_entry": "11",
+    "server_total": "125",
+    "pc_total": "31",
+    "internet_entry": "61",
+    "internet_port": "161",
+    "asset_identify": "12"
+  },
+  "vulnerability_effectiveness": {
+    "vuln_high": "31",
+    "internet_closed": "185",
+    "admin_weak": "11",
+    "vuln_closed": "0.71875",
+    "asset": "156",
+    "vulnerability_distribution": {
+      "categories": [
+        "高危漏洞",
+        "中危漏洞",
+        "低危漏洞"
+      ],
+      "values": [
+        2537,
+        3633,
+        3284
+      ]
+    },
+    "P14_pie": {
+      "categories": [
+        "高危漏洞",
+        "中危漏洞",
+        "低危漏洞"
+      ],
+      "values": [
+        2537,
+        3633,
+        3284
+      ]
+    }
+  },
+  "threat_effectiveness": {
+    "xdr_attack": "5696",
+    "threat_alert": "9630",
+    "mss_ticket": "0",
+    "threat_trend": {
+      "months": [
+        "2025-03",
+        "2025-04",
+        "2025-05",
+        "2025-06",
+        "2025-07",
+        "2025-08",
+        "2025-09",
+        "2025-10",
+        "2025-11",
+        "2025-12",
+        "2026-01"
+      ],
+      "external_attacks": [
+        64198,
+        35890,
+        12478,
+        5613,
+        704,
+        902,
+        2412,
+        1362,
+        5696,
+        9140,
+        4126
+      ],
+      "malicious_outbound": [
+        770729,
+        665038,
+        1739364,
+        616425,
+        394727,
+        333492,
+        194377,
+        82013,
+        141130,
+        197098,
+        186542
+      ]
+    },
+    "P15_line": {
+      "months": [
+        "2025-03",
+        "2025-04",
+        "2025-05",
+        "2025-06",
+        "2025-07",
+        "2025-08",
+        "2025-09",
+        "2025-10",
+        "2025-11",
+        "2025-12",
+        "2026-01"
+      ],
+      "external_attacks": [
+        64198,
+        35890,
+        12478,
+        5613,
+        704,
+        902,
+        2412,
+        1362,
+        5696,
+        9140,
+        4126
+      ],
+      "malicious_outbound": [
+        770729,
+        665038,
+        1739364,
+        616425,
+        394727,
+        333492,
+        194377,
+        82013,
+        141130,
+        197098,
+        186542
+      ]
+    },
+    "ticket_response": "28",
+    "policy_check": "11",
+    "policy_optimized": "11",
+    "threat_intel": "46",
+    "threat_asset": "11"
+  },
+  "critical_assurance": {
+    "duty_critical": "7",
+    "incident_critical": "0",
+    "availability_assure": "1",
+    "posture_comparison": {
+      "categories": [
+        "中秋（24/9/15-9/17）",
+        "国庆（24/10/1-10/7）",
+        "元旦（25/1/1）",
+        "春节（25/1/23-2/5）",
+        "清明（25/4/4-4/6）",
+        "五一（25/5/1-5/5）",
+        "端午（25/5/31-6/2）"
+      ],
+      "attack_counts": [
+        9623,
+        28655,
+        3461,
+        16440,
+        2238,
+        7218,
+        5570
+      ],
+      "defense_rates": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "P16_combo": {
+      "categories": [
+        "中秋（24/9/15-9/17）",
+        "国庆（24/10/1-10/7）",
+        "元旦（25/1/1）",
+        "春节（25/1/23-2/5）",
+        "清明（25/4/4-4/6）",
+        "五一（25/5/1-5/5）",
+        "端午（25/5/31-6/2）"
+      ],
+      "attack_counts": [
+        9623,
+        28655,
+        3461,
+        16440,
+        2238,
+        7218,
+        5570
+      ],
+      "defense_rates": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  }
+}

@@ -242,11 +242,11 @@ class LLMOrchestratorV2:
                 logger.warning(f"Bar chart data source {data_source} is neither dict nor list")
                 return {}
 
-        elif chart_type in ('P12_pie', 'P13_pie', 'P14_pie'):
+        elif chart_type in ('P11_pie', 'P13_pie', 'P14_pie'):
             # Expect source_data to be a dict like {'high': 52, 'medium': 473, 'low': 816}
-            # or a dict with 'categories' and 'values' arrays for P12_pie/P13_pie/P14_pie
+            # or a dict with 'categories' and 'values' arrays for P11_pie/P13_pie/P14_pie
             if isinstance(source_data, dict):
-                # Check if it's the P12_pie/P13_pie/P14_pie format with categories and values arrays
+                # Check if it's the P11_pie/P13_pie/P14_pie format with categories and values arrays
                 if 'categories' in source_data and 'values' in source_data:
                     result['categories'] = source_data['categories']
                     result['values'] = source_data['values']
@@ -437,7 +437,7 @@ class LLMOrchestratorV2:
                 result[slide_key] = {}
 
             # Handle chart placeholders
-            if placeholder.type in ('P11_bar', 'P11_line', 'P12_pie', 'P13_pie', 'P14_pie', 'P15_line', 'P16_combo') and placeholder.chart_config:
+            if placeholder.type in ('P11_bar', 'P11_line', 'P11_pie', 'P13_pie', 'P14_pie', 'P15_line', 'P16_combo') and placeholder.chart_config:
                 chart_data = self._extract_chart_data(
                     tenant_input,
                     placeholder.chart_config,

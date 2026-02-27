@@ -544,33 +544,6 @@
         .empty-state h3 { font-size: 16px; font-weight: 500; color: var(--color-text-primary); }
 
         /* ===== Right Editor Panel ===== */
-        .editor-info {
-            padding: var(--space-3) var(--space-4); background-color: var(--color-info-bg);
-            border-bottom: 1px solid var(--color-border-primary);
-            display: flex; align-items: flex-start; gap: var(--space-3);
-        }
-        .editor-info .icon {
-            width: 22px;
-            height: 22px;
-            flex-shrink: 0;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 999px;
-            color: #2563eb;
-            background: rgba(37, 99, 235, 0.08);
-            border: 1px solid rgba(37, 99, 235, 0.22);
-        }
-        .editor-info .icon svg {
-            width: 14px;
-            height: 14px;
-            stroke: currentColor;
-            fill: none;
-            stroke-width: 1.9;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-        .editor-info .text { font-size: 12px; color: #1e40af; line-height: 1.5; }
         .field-editor-shell {
             flex-grow: 1;
             background: linear-gradient(180deg, #f6f6f1 0%, #f1f1ea 100%);
@@ -1209,18 +1182,6 @@
                     <span data-i18n="btnApplyRegenerate">Apply & Regenerate</span>
                 </button>
             </div>
-            <div class="editor-info">
-                <span class="icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="9"></circle>
-                        <line x1="12" y1="10.5" x2="12" y2="16"></line>
-                        <circle cx="12" cy="7.5" r="0.9" fill="currentColor" stroke="none"></circle>
-                    </svg>
-                </span>
-                <p class="text" data-i18n="editorHint">
-                    <strong>Edit hint:</strong> You can only modify field <strong>values</strong>; field names cannot be changed.
-                </p>
-            </div>
             <div id="fieldEditorShell" class="field-editor-shell">
                 <div id="slideFields" class="field-editor-list"></div>
             </div>
@@ -1762,6 +1723,8 @@
             if (result.job_id) {
                 state.jobId = result.job_id;
                 state.slidespec = result.slidespec;
+                state.previews = [];
+                state.previewStamp = Date.now();
                 $('jobIdDisplay').textContent = `${t('msgJobId')}: ${result.job_id}`;
                 syncActionButtons();
                 state.activeSlideKey = result.slidespec?.slides?.[0]?.slide_key;
@@ -1930,7 +1893,7 @@
                 <div class="slide-view-item" id="view-${s.slide_key}" data-key="${s.slide_key}" data-index="${idx}">
                     <div class="preview-frame">
                         <div class="preview-page-badge">${idx + 1} / ${slides.length}</div>
-                        ${imgUrl ? `<img src="${imgUrl}?t=${Date.now()}" class="preview-card" loading="lazy">` :
+                        ${imgUrl ? `<img src="${imgUrl}?t=${state.previewStamp}" class="preview-card" loading="lazy">` :
                                    `<div class="placeholder-card">${t('msgGeneratingPreview')}</div>`}
                     </div>
                 </div>`;
@@ -2503,6 +2466,10 @@
             if (result.status === 'running') {
                 state.jobId = result.job_id || state.jobId;
                 state.generationInProgress = true;
+                state.previews = [];
+                state.previewStamp = Date.now();
+                renderSlides();
+                renderPreviewList();
                 stopJobStatusPolling();
                 toast.info(t('msgGeneratingPleaseWait'), t('toastTitleHint'));
             } else if (result.status === 'completed' && result.from_cache) {

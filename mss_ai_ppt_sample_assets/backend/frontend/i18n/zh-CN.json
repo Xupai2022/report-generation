@@ -76,7 +76,6 @@
   "msgPage": "页",
   "msgGeneratingPreview": "生成预览中...",
   "editorTitle": "内容编辑器",
-  "editorHint": "编辑提示：只能修改字段值，不能修改字段名（如 TITLE、SUBTITLE 等）。删除或重命名字段将被忽略。",
   "editorPlaceholder": "// 选择幻灯片以编辑属性...",
   "editorFooter": "键值编辑",
   "editorStructuredHint": "结构化内容请保持合法 JSON 格式。",

@@ -75,7 +75,6 @@
   "msgPageNumber": "Page",
   "msgPage": "",
   "editorTitle": "Content Editor",
-  "editorHint": "Edit Hint: You can only modify field values, not field names (e.g., TITLE, SUBTITLE). Deleting or renaming fields will be ignored.",
   "editorPlaceholder": "// Select a slide to edit properties...",
   "editorFooter": "Key-Value Fields",
   "editorStructuredHint": "Structured value: keep valid JSON format for this field.",

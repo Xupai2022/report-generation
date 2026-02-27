@@ -71,8 +71,8 @@
           }
         },
         {
-          "token": "P12_pie",
-          "type": "P12_pie",
+          "token": "P11_pie",
+          "type": "P11_pie",
           "ai_generate": false,
           "chart_config": {
             "data_source": "threat_distribution",

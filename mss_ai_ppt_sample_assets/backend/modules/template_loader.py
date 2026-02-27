@@ -43,11 +43,11 @@ class TemplateRepository:
         return [t for t in self._catalog if not t.get("deprecated", False)]
 
     def list_v2_templates(self) -> List[Dict]:
-        """List only V2 (AI-driven) templates."""
+        """Backwards-compatible API: returns all templates."""
         return [t for t in self._catalog if is_v2_template(t["template_id"])]
 
     def get_descriptor_v2(self, template_id: str) -> TemplateDescriptorV2:
-        """Get V2 template descriptor.
+        """Get template descriptor.
 
         Args:
             template_id: Template ID (should be a V2 template)
@@ -57,7 +57,6 @@ class TemplateRepository:
 
         Raises:
             TemplateNotFoundError: If template not found
-            ValueError: If template is not V2 format
         """
         if template_id in self._descriptor_cache:
             return self._descriptor_cache[template_id]
@@ -65,9 +64,6 @@ class TemplateRepository:
         entry = self._get_catalog_entry(template_id)
         descriptor_path = self.base_dir / entry["descriptor_file"]
         descriptor = load_template_descriptor(descriptor_path)
-
-        if not isinstance(descriptor, TemplateDescriptorV2):
-            raise ValueError(f"Template {template_id} is not a V2 template")
 
         self._descriptor_cache[template_id] = descriptor
         return descriptor
@@ -89,5 +85,5 @@ class TemplateRepository:
         return entry
 
     def is_v2(self, template_id: str) -> bool:
-        """Check if a template is V2 format."""
+        """Backwards-compatible API: always returns True."""
         return is_v2_template(template_id)

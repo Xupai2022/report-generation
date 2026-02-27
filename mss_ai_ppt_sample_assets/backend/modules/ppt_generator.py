@@ -102,7 +102,7 @@ class PPTGeneratorV2:
         self._chart_renderers = {
             'P11_bar': self._render_p11_bar,
             'P11_line': self._render_p11_line,
-            'P12_pie': self._render_p12_pie,
+            'P11_pie': self._render_p11_pie,
             'P13_pie': self._render_p13_pie,
             'P14_pie': self._render_p14_pie,
             'P15_line': self._render_p15_line,
@@ -112,31 +112,46 @@ class PPTGeneratorV2:
 
     def _replace_tokens_in_shape(self, shape, mapping: Dict[str, str]) -> None:
         """Replace {{TOKEN}} placeholders in shape text."""
+        if not mapping:
+            return
+
+        # Group shapes do not expose text directly; recurse into child shapes.
+        if shape.shape_type == 6:  # GROUP
+            for sub_shape in shape.shapes:
+                self._replace_tokens_in_shape(sub_shape, mapping)
+            return
+
         if not shape.has_text_frame:
             return
-        
-        shape_modified = False
+
         for paragraph in shape.text_frame.paragraphs:
-            for run in paragraph.runs:
-                text = run.text
-                for token, value in mapping.items():
-                    placeholder = f"{{{{{token}}}}}"
-                    if placeholder in text:
-                        run.text = text.replace(placeholder, str(value) if value else "")
-                        text = run.text
-                        shape_modified = True
-            
-            # Apply formatting if modified and text is substantial (multiline or long)
-            # This helps avoid "crowded" look for generated content
-            if shape_modified:
-                # Re-check text content after replacement
-                p_text = paragraph.text
-                if '\n' in p_text or len(p_text) > 50:
-                    paragraph.line_spacing = 1.25
-                    paragraph.space_after = self._Pt(6)
-                    # Ensure wrapping is on for long text
-                    if shape.text_frame.word_wrap is None:
-                        shape.text_frame.word_wrap = True
+            runs = list(paragraph.runs)
+            paragraph_text = "".join(run.text for run in runs) if runs else (paragraph.text or "")
+            replaced_text = paragraph_text
+
+            for token, value in mapping.items():
+                placeholder = f"{{{{{token}}}}}"
+                replacement = "" if value is None else str(value)
+                if placeholder in replaced_text:
+                    replaced_text = replaced_text.replace(placeholder, replacement)
+
+            if replaced_text == paragraph_text:
+                continue
+
+            # Placeholder tokens can be split across runs (e.g. "{{", "TOKEN", "}}").
+            if runs:
+                runs[0].text = replaced_text
+                for run in runs[1:]:
+                    run.text = ""
+            else:
+                paragraph.text = replaced_text
+
+            # Apply formatting for long/multiline generated content.
+            if '\n' in replaced_text or len(replaced_text) > 50:
+                paragraph.line_spacing = 1.25
+                paragraph.space_after = self._Pt(6)
+                if shape.text_frame.word_wrap is None:
+                    shape.text_frame.word_wrap = True
 
     def _render_native_table(
         self,
@@ -716,13 +731,13 @@ class PPTGeneratorV2:
             except Exception as e:
                 logger.error(f"Failed to remove placeholder: {e}")
 
-    def _render_p12_pie(
+    def _render_p11_pie(
         self,
         slide,
         chart_data: Dict[str, Any],
         token: str = None
     ) -> None:
-        """Render P12 donut pie chart (威胁类型分布饼图).
+        """Render P11 donut pie chart (威胁类型分布饼图).
 
         This function looks for an existing chart in the slide and updates its data,
         preserving the manually configured layout and legend position.
@@ -744,14 +759,14 @@ class PPTGeneratorV2:
             token: Token name to locate the placeholder (e.g., "P12_PIE_CHART")
         """
         if not chart_data or 'categories' not in chart_data or 'values' not in chart_data:
-            logger.warning("Invalid P12_pie chart data format")
+            logger.warning("Invalid P11_pie chart data format")
             return
 
         categories = chart_data['categories']
         values = chart_data['values']
 
         if not categories or not values or len(categories) != len(values):
-            logger.warning("Invalid or mismatched P12_pie chart data")
+            logger.warning("Invalid or mismatched P11_pie chart data")
             return
 
         # Find placeholder position first (if token provided)
@@ -814,7 +829,7 @@ class PPTGeneratorV2:
                                 # No placeholder, just use first chart found
                                 chart = temp_chart
                                 chart_shape = shape
-                                logger.info(f"Found pie/doughnut chart for P12_pie (no placeholder)")
+                                logger.info(f"Found pie/doughnut chart for P11_pie (no placeholder)")
                                 break
                     except Exception as chart_error:
                         # This shape has a chart but it's external or inaccessible
@@ -876,20 +891,20 @@ class PPTGeneratorV2:
                     chart.legend.font.name = "微软雅黑"
                     chart.legend.font.color.rgb = self._RGBColor(51, 51, 51)
 
-                logger.info(f"Updated existing P12_pie donut chart with {len(categories)} categories")
+                logger.info(f"Updated existing P11_pie donut chart with {len(categories)} categories")
 
             except Exception as e:
                 logger.error(f"Failed to update chart: {e}")
                 # Don't return - continue to remove placeholder
         else:
-            logger.warning("No existing chart found in slide for P12_pie")
+            logger.warning("No existing chart found in slide for P11_pie")
 
         # Remove the placeholder text box if we found it earlier
         if placeholder_shape_to_remove:
             try:
                 sp = placeholder_shape_to_remove.element
                 sp.getparent().remove(sp)
-                logger.info(f"Successfully removed placeholder text box for P12_pie")
+                logger.info(f"Successfully removed placeholder text box for P11_pie")
             except Exception as e:
                 logger.error(f"Failed to remove placeholder: {e}")
 

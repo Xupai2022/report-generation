@@ -31,6 +31,14 @@
       "tenant_name": "示例科技公司",
       "period": "2025-12",
       "notes": "从Excel提取的数据（当前为模拟数据）"
+    },
+    {
+      "id": "classic_ops_dataxlsx",
+      "file": "classic_ops_dataxlsx_input.json",
+      "tenant_id": "tenant_classic_demo",
+      "tenant_name": "????????",
+      "period": "from-dataxlsx",
+      "notes": "? backend/data/data.xlsx ???? slide_key ??????"
     }
   ]
 }
