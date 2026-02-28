@@ -1153,6 +1153,20 @@
           "default": "直接取数失败"
         },
         {
+          "token": "xdr_alert",
+          "type": "text",
+          "ai_generate": false,
+          "source": "platform_effectiveness.xdr_avg_monthly_alert_count",
+          "default": "??????"
+        },
+        {
+          "token": "xdr_incident",
+          "type": "text",
+          "ai_generate": false,
+          "source": "platform_effectiveness.xdr_avg_monthly_incident_count",
+          "default": "??????"
+        },
+        {
           "token": "fw_auto",
           "type": "text",
           "ai_generate": false,
@@ -1220,6 +1234,27 @@
           "type": "text",
           "ai_generate": false,
           "source": "platform_effectiveness.component_auto",
+          "default": "直接取数失败"
+        },
+        {
+          "token": "aes_trust",
+          "type": "text",
+          "ai_generate": false,
+          "source": "platform_effectiveness.aes_trust_risk_count",
+          "default": "直接取数失败"
+        },
+        {
+          "token": "agent_install",
+          "type": "text",
+          "ai_generate": false,
+          "source": "platform_effectiveness.agent_install_count",
+          "default": "直接取数失败"
+        },
+        {
+          "token": "asset_total",
+          "type": "text",
+          "ai_generate": false,
+          "source": "platform_effectiveness.asset_total_count",
           "default": "直接取数失败"
         },
         {

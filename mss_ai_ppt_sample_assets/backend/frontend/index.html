@@ -304,7 +304,17 @@
             border-color: #c8c8bc;
             color: #0f172a;
         }
-        .tooltip-card-btn { position: relative; z-index: 1; }
+        .tooltip-card-btn {
+            position: relative;
+            z-index: 1;
+            --tooltip-offset: 8px;
+            --tooltip-arrow-offset: 3px;
+        }
+        /* Align layout-switch tooltips with neighboring 40px icon buttons. */
+        .preview-layout-btn.tooltip-card-btn {
+            --tooltip-offset: 18px;
+            --tooltip-arrow-offset: 13px;
+        }
         .icon-export-btn[data-tooltip]:hover,
         .lang-toggle-btn[data-tooltip]:hover,
         .tooltip-card-btn[data-tooltip]:hover {
@@ -317,7 +327,7 @@
             content: attr(data-tooltip);
             position: absolute;
             left: 50%;
-            top: calc(100% + 8px);
+            top: calc(100% + var(--tooltip-offset, 8px));
             transform: translateX(-50%);
             white-space: nowrap;
             background: rgba(17, 24, 39, 0.94);
@@ -335,7 +345,7 @@
             content: "";
             position: absolute;
             left: 50%;
-            top: calc(100% + 3px);
+            top: calc(100% + var(--tooltip-arrow-offset, 3px));
             transform: translateX(-50%);
             width: 8px;
             height: 8px;
@@ -1133,13 +1143,13 @@
                 <h2 id="activeSlideTitle" class="truncate" data-i18n="sectionOverview">总览</h2>
                 <div class="panel-actions">
                     <div class="preview-layout-switch" role="group" aria-label="预览布局切换">
-                        <button id="previewLayoutListBtn" class="preview-layout-btn active" type="button" aria-label="列表预览" title="列表预览">
+                        <button id="previewLayoutListBtn" class="preview-layout-btn tooltip-card-btn active" type="button" aria-label="列表预览" data-tooltip="列表预览">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <rect x="4" y="4" width="16" height="16" rx="2"></rect>
                                 <line x1="12" y1="4" x2="12" y2="20"></line>
                             </svg>
                         </button>
-                        <button id="previewLayoutTwoUpBtn" class="preview-layout-btn" type="button" aria-label="双栏预览" title="双栏预览">
+                        <button id="previewLayoutTwoUpBtn" class="preview-layout-btn tooltip-card-btn" type="button" aria-label="双栏预览" data-tooltip="双栏预览">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <rect x="4" y="4" width="6" height="6" rx="1"></rect>
                                 <rect x="14" y="4" width="6" height="6" rx="1"></rect>
@@ -1419,6 +1429,8 @@
                     const editorContent = state.modifiedSlides.get(state.activeSlideKey) || slide.placeholders || {};
                     renderSlideFields(editorContent);
                 }
+                renderSlides();
+                renderPreviewList();
             }
         }
 
@@ -1434,6 +1446,44 @@
                 return translations[key];
             }
             return originalName; // Fallback to original name
+        }
+
+        function getSlideDisplayName(slide) {
+            if (!slide) return '';
+            // Chinese mode prefers human-readable slide title from descriptor.
+            if (currentLang === 'zh-CN') {
+                const title = (slide.title || '').trim();
+                if (title) return title;
+                const mappedTitle = state.slideTitlesByKey?.[slide.slide_key];
+                if (mappedTitle) return mappedTitle;
+            }
+            // English mode always uses stable technical key.
+            return slide.slide_key || '';
+        }
+
+        function getTemplateIdFromJobId(jobId) {
+            if (!jobId || typeof jobId !== 'string') return '';
+            const sep = jobId.indexOf(':');
+            if (sep < 0 || sep >= jobId.length - 1) return '';
+            return jobId.slice(sep + 1);
+        }
+
+        async function loadTemplateSlideTitles(templateId) {
+            if (!templateId) return;
+            try {
+                const res = await api(`/api/v1/templates/${encodeURIComponent(templateId)}/slides`);
+                const data = res.data || res;
+                const map = {};
+                (data || []).forEach(item => {
+                    if (item?.slide_key && item?.title) {
+                        map[item.slide_key] = item.title;
+                    }
+                });
+                state.slideTitlesByKey = map;
+            } catch (e) {
+                console.warn('Failed to load template slide titles:', e);
+                state.slideTitlesByKey = {};
+            }
         }
 
         function updateTemplateDropdown() {
@@ -1501,6 +1551,8 @@
             slidespec: null,
             previews: [],
             previewStamp: Date.now(),
+            currentTemplateId: null,
+            slideTitlesByKey: {},
             activeSlideKey: null,
             loading: false,
             isClickScrolling: false, // flag to prevent intersection observer conflict
@@ -1733,6 +1785,8 @@
 
             if (result.job_id) {
                 state.jobId = result.job_id;
+                state.currentTemplateId = getTemplateIdFromJobId(result.job_id);
+                await loadTemplateSlideTitles(state.currentTemplateId);
                 state.slidespec = result.slidespec;
                 state.previews = [];
                 state.previewStamp = Date.now();
@@ -1881,7 +1935,7 @@
                         <div class="slide-num">${idx + 1}</div>
                     </div>
                     <div class="slide-meta">
-                        <div class="slide-title truncate">${s.slide_key}</div>
+                        <div class="slide-title truncate">${getSlideDisplayName(s)}</div>
                         ${state.modifiedSlides.has(s.slide_key) ? '<div class="modified-indicator"></div>' : ''}
                     </div>
                 </div>`).join('');
@@ -1940,9 +1994,9 @@
             if (!listBtn || !twoUpBtn) return;
             const listLabel = t('labelPreviewList');
             const twoUpLabel = t('labelPreviewTwoUp');
-            listBtn.title = listLabel;
+            listBtn.setAttribute('data-tooltip', listLabel);
             listBtn.setAttribute('aria-label', listLabel);
-            twoUpBtn.title = twoUpLabel;
+            twoUpBtn.setAttribute('data-tooltip', twoUpLabel);
             twoUpBtn.setAttribute('aria-label', twoUpLabel);
         }
 
