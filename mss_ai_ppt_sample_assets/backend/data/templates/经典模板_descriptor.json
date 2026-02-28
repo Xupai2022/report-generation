@@ -451,7 +451,7 @@
           "type": "text",
           "ai_generate": false,
           "default": "直接取数失败",
-          "source": "coverage_summary.closure_rate1"
+          "source": "coverage_summary.closure_rate2"
         },
         {
           "token": "response_time",

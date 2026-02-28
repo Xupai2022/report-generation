@@ -74,6 +74,13 @@ class AISlideRewriteRequest(BaseModel):
         max_length=2000,
         description="User preference/instruction for AI rewrite of the selected slide"
     )
+    target_tokens: Optional[List[str]] = Field(
+        None,
+        description=(
+            "Optional AI placeholder tokens to rewrite. "
+            "If omitted or empty, backend rewrites all ai_generate=true tokens on the slide."
+        ),
+    )
 
     @validator("user_prompt")
     def validate_user_prompt(cls, v: str):
@@ -82,14 +89,34 @@ class AISlideRewriteRequest(BaseModel):
             raise ValueError("user_prompt cannot be empty")
         return v.strip()
 
+    @validator("target_tokens", pre=True)
+    def validate_target_tokens(cls, v):
+        """Normalize target token list (trim, dedupe, drop empty)."""
+        if v is None:
+            return None
+        if not isinstance(v, list):
+            raise ValueError("target_tokens must be a list of strings")
+
+        normalized: List[str] = []
+        seen = set()
+        for item in v:
+            if not isinstance(item, str):
+                raise ValueError("target_tokens must contain only strings")
+            token = item.strip()
+            if not token or token in seen:
+                continue
+            seen.add(token)
+            normalized.append(token)
+        return normalized
+
     class Config:
         json_schema_extra = {
             "example": {
                 "slide_key": "summary",
-                "user_prompt": "请聚焦本月高风险告警的业务影响，语气更偏管理层，给出3条可执行建议。"
+                "user_prompt": "请聚焦本月高风险告警的业务影响，语气偏管理层，并给出三条可执行建议。",
+                "target_tokens": ["trust_assurance", "security_trust"]
             }
         }
-
 
 class SubmitRatingRequest(BaseModel):
     """User rating submission request."""
@@ -119,3 +146,4 @@ class SubmitRatingRequest(BaseModel):
                 "comment": "The chart colors are hard to read and data formatting needs improvement."
             }
         }
+

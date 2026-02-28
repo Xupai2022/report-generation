@@ -937,6 +937,55 @@
             font-size: 13px;
             line-height: 1.5;
         }
+        .ai-rewrite-token-group {
+            margin: 0 0 12px;
+            padding: 10px 12px;
+            border: 1px solid #d8d6c9;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.7);
+        }
+        .ai-rewrite-token-title {
+            margin: 0;
+            font-size: 12px;
+            font-weight: 600;
+            color: #0f172a;
+        }
+        .ai-rewrite-token-hint {
+            margin: 4px 0 8px;
+            font-size: 12px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+        .ai-rewrite-token-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 160px;
+            overflow: auto;
+            padding-right: 4px;
+        }
+        .ai-rewrite-token-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 3px 0;
+            font-size: 12px;
+            color: #1f2937;
+        }
+        .ai-rewrite-token-item input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            accent-color: #1d4ed8;
+            cursor: pointer;
+        }
+        .ai-rewrite-token-item code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 12px;
+            background: rgba(15, 23, 42, 0.06);
+            padding: 2px 6px;
+            border-radius: 6px;
+            color: #0f172a;
+        }
         .ai-rewrite-modal-input {
             width: 100%;
             min-height: 136px;
@@ -1234,6 +1283,11 @@
         <div id="aiRewriteModal" class="export-modal ai-rewrite-modal" role="dialog" aria-modal="true" aria-label="AI 重写">
             <p id="aiRewriteModalTitle" class="ai-rewrite-modal-title">AI rewrite current slide</p>
             <p id="aiRewriteModalHint" class="ai-rewrite-modal-hint">Describe how you want this slide rewritten (audience, tone, focus, structure, constraints).</p>
+            <div id="aiRewriteTokenGroup" class="ai-rewrite-token-group hidden">
+                <p id="aiRewriteTokenTitle" class="ai-rewrite-token-title">Choose placeholders to rewrite</p>
+                <p id="aiRewriteTokenHint" class="ai-rewrite-token-hint">Multi-select supported. If none selected, backend rewrites all AI placeholders on this slide.</p>
+                <div id="aiRewriteTokenOptions" class="ai-rewrite-token-list"></div>
+            </div>
             <textarea id="aiRewritePrompt" class="ai-rewrite-modal-input" rows="6" maxlength="2000"></textarea>
             <div class="ai-rewrite-modal-actions">
                 <button id="aiRewriteCancelBtn" class="ai-rewrite-modal-cancel" type="button" data-i18n="btnCancel">Cancel</button>
@@ -1302,6 +1356,8 @@
                 ariaPreviewLayoutSwitch: '预览布局切换',
                 ariaExportPpt: '导出 PPT',
                 ariaExportPdf: '导出 PDF',
+                labelAiRewriteTokens: '重写占位符',
+                msgAiRewriteTokensHint: '支持多选。不选时默认重写该页全部 AI 占位符。',
                 btnPresentSlides: 'Play Slides',
                 presentBtnTitle: 'Start slideshow in fullscreen'
             },
@@ -1322,6 +1378,8 @@
                 ariaPreviewLayoutSwitch: 'Preview layout switch',
                 ariaExportPpt: 'Export PPT',
                 ariaExportPdf: 'Export PDF',
+                labelAiRewriteTokens: 'Rewrite placeholders',
+                msgAiRewriteTokensHint: 'Multiple selection supported. If none selected, backend rewrites all AI placeholders on this slide.',
                 btnPresentSlides: 'Play Slides',
                 presentBtnTitle: 'Start slideshow in fullscreen'
             }
@@ -1473,16 +1531,23 @@
             try {
                 const res = await api(`/api/v1/templates/${encodeURIComponent(templateId)}/slides`);
                 const data = res.data || res;
-                const map = {};
+                const titleMap = {};
+                const tokenMap = {};
                 (data || []).forEach(item => {
-                    if (item?.slide_key && item?.title) {
-                        map[item.slide_key] = item.title;
+                    if (!item?.slide_key) return;
+                    if (item?.title) {
+                        titleMap[item.slide_key] = item.title;
                     }
+                    tokenMap[item.slide_key] = Array.isArray(item?.ai_rewrite_tokens)
+                        ? item.ai_rewrite_tokens.filter(token => typeof token === 'string' && token.trim())
+                        : [];
                 });
-                state.slideTitlesByKey = map;
+                state.slideTitlesByKey = titleMap;
+                state.slideAiTokensByKey = tokenMap;
             } catch (e) {
                 console.warn('Failed to load template slide titles:', e);
                 state.slideTitlesByKey = {};
+                state.slideAiTokensByKey = {};
             }
         }
 
@@ -1553,6 +1618,7 @@
             previewStamp: Date.now(),
             currentTemplateId: null,
             slideTitlesByKey: {},
+            slideAiTokensByKey: {},
             activeSlideKey: null,
             loading: false,
             isClickScrolling: false, // flag to prevent intersection observer conflict
@@ -1569,7 +1635,8 @@
             exportFormat: 'ppt',
             generationInProgress: false,
             statusPollTimer: null,
-            lastSaveHadAutoRestore: false
+            lastSaveHadAutoRestore: false,
+            aiRewriteSelectedTokensBySlide: {}
         };
 
         const $ = (id) => document.getElementById(id);
@@ -2073,6 +2140,8 @@
             $('exportConfirmBtn').textContent = t('btnExport');
             $('aiRewriteModalTitle').textContent = t('btnAiRewriteCurrentSlide');
             $('aiRewriteModalHint').textContent = t('msgAiRewriteHint');
+            $('aiRewriteTokenTitle').textContent = t('labelAiRewriteTokens');
+            $('aiRewriteTokenHint').textContent = t('msgAiRewriteTokensHint');
             $('aiRewritePrompt').placeholder = t('placeholderAiRewritePrompt');
             $('aiRewriteCancelBtn').textContent = t('btnCancel');
             $('aiRewriteConfirmBtn').textContent = t('btnAiRewriteCurrentSlide');
@@ -2094,6 +2163,67 @@
 
         function closeExportModal() {
             $('exportModalOverlay').classList.remove('active');
+        }
+
+        function getActiveSlideAiRewriteTokens() {
+            const slideKey = state.activeSlideKey;
+            if (!slideKey) return [];
+            const tokens = state.slideAiTokensByKey?.[slideKey];
+            if (!Array.isArray(tokens)) return [];
+            return tokens.filter(token => typeof token === 'string' && token.trim());
+        }
+
+        function collectSelectedAiRewriteTokens() {
+            const selected = [];
+            document.querySelectorAll('#aiRewriteTokenOptions input[type=\"checkbox\"]:checked').forEach(el => {
+                const token = el.value;
+                if (token && typeof token === 'string') selected.push(token);
+            });
+            return selected;
+        }
+
+        function renderAiRewriteTokenOptions() {
+            const group = $('aiRewriteTokenGroup');
+            const container = $('aiRewriteTokenOptions');
+            if (!group || !container) return;
+
+            const slideKey = state.activeSlideKey;
+            const tokens = getActiveSlideAiRewriteTokens();
+            container.innerHTML = '';
+
+            if (!slideKey || tokens.length === 0) {
+                group.classList.add('hidden');
+                return;
+            }
+
+            group.classList.remove('hidden');
+
+            const prevSelected = state.aiRewriteSelectedTokensBySlide[slideKey];
+            const selectedSet = new Set(
+                Array.isArray(prevSelected) && prevSelected.length > 0 ? prevSelected : tokens
+            );
+
+            tokens.forEach(token => {
+                const row = document.createElement('label');
+                row.className = 'ai-rewrite-token-item';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = token;
+                checkbox.checked = selectedSet.has(token);
+                checkbox.addEventListener('change', () => {
+                    state.aiRewriteSelectedTokensBySlide[slideKey] = collectSelectedAiRewriteTokens();
+                });
+
+                const tokenCode = document.createElement('code');
+                tokenCode.textContent = token;
+
+                row.appendChild(checkbox);
+                row.appendChild(tokenCode);
+                container.appendChild(row);
+            });
+
+            state.aiRewriteSelectedTokensBySlide[slideKey] = collectSelectedAiRewriteTokens();
         }
 
         function positionExportModal() {
@@ -2125,6 +2255,7 @@
             if (!state.activeSlideKey) {
                 return toast.warning(t('msgSelectSlideForAiRewrite'), t('toastTitleHint'));
             }
+            renderAiRewriteTokenOptions();
             $('aiRewriteModalOverlay').classList.add('active');
             positionAiRewriteModal();
             setTimeout(() => $('aiRewritePrompt').focus(), 0);
@@ -2779,11 +2910,13 @@
             closeAiRewriteModal();
             setLoading(true);
             try {
+                const selectedTokens = collectSelectedAiRewriteTokens();
                 const res = await api(`/api/v1/reports/${encodeURIComponent(state.jobId)}/slides/ai-rewrite`, {
                     method: 'POST',
                     body: JSON.stringify({
                         slide_key: state.activeSlideKey,
-                        user_prompt: userPrompt
+                        user_prompt: userPrompt,
+                        target_tokens: selectedTokens
                     })
                 });
                 const result = res.data || res;

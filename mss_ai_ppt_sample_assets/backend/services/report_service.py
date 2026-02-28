@@ -4,8 +4,9 @@ import json
 import logging
 import shutil
 import time
+from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, Set, Union
+from typing import Any, Dict, List, Set, Union
 
 from mss_ai_ppt_sample_assets.backend import config
 from mss_ai_ppt_sample_assets.backend.models.inputs import TenantInput
@@ -100,6 +101,144 @@ class ReportService:
             }
         return value
 
+    @staticmethod
+    def _set_nested_value(target: Dict[str, Any], path: str, value: Any) -> bool:
+        """Set a nested value by dotted path, creating intermediate containers when needed."""
+        if not path:
+            return False
+
+        parts = [part for part in path.split(".") if part]
+        if not parts:
+            return False
+
+        current: Any = target
+        for idx, part in enumerate(parts):
+            is_last = idx == len(parts) - 1
+            next_part = parts[idx + 1] if not is_last else None
+
+            if part.isdigit():
+                if not isinstance(current, list):
+                    return False
+
+                index = int(part)
+                while len(current) <= index:
+                    current.append({} if not next_part or not next_part.isdigit() else [])
+
+                if is_last:
+                    current[index] = value
+                    return True
+
+                if not isinstance(current[index], (dict, list)):
+                    current[index] = {} if not next_part or not next_part.isdigit() else []
+                current = current[index]
+                continue
+
+            if not isinstance(current, dict):
+                return False
+
+            if is_last:
+                current[part] = value
+                return True
+
+            child = current.get(part)
+            if not isinstance(child, (dict, list)):
+                child = {} if not next_part or not next_part.isdigit() else []
+                current[part] = child
+            current = child
+
+        return False
+
+    def _get_token_source_map_by_slide(self, template_id: str) -> Dict[str, Dict[str, str]]:
+        descriptor = self.template_repo.get_descriptor_v2(template_id)
+        source_map: Dict[str, Dict[str, str]] = {}
+        for slide in descriptor.slides:
+            token_map: Dict[str, str] = {}
+            for ph in slide.placeholders:
+                if ph.source:
+                    token_map[ph.token] = ph.source
+            source_map[slide.slide_key] = token_map
+        return source_map
+
+    def _read_session_input_json(self, session_id: str) -> Dict[str, Any]:
+        input_path = self.session_manager.get_input_path(session_id)
+        with FileLock(input_path, timeout=30.0):
+            with input_path.open("r", encoding="utf-8") as f:
+                return json.load(f)
+
+    def _write_session_input_json(self, session_id: str, payload: Dict[str, Any]) -> None:
+        input_path = self.session_manager.get_input_path(session_id)
+        with FileLock(input_path, timeout=30.0):
+            with input_path.open("w", encoding="utf-8") as f:
+                json.dump(payload, f, ensure_ascii=False, indent=2)
+
+    def _load_or_bootstrap_session_input(self, input_id: str, session_id: str) -> TenantInput:
+        input_path = self.session_manager.get_input_path(session_id)
+        if input_path.exists():
+            return TenantInput(raw=self._read_session_input_json(session_id))
+        return self._load_input_from_excel_runtime(input_id, session_id)
+
+    def _persist_manual_updates_to_session_input(
+        self,
+        session_id: str,
+        input_id: str,
+        template_id: str,
+        applied_updates: List[Dict[str, Any]],
+    ) -> List[str]:
+        """Sync editor-applied slide updates back into session input.json via placeholder source paths."""
+        warnings: List[str] = []
+        if not applied_updates:
+            return warnings
+
+        try:
+            source_map_by_slide = self._get_token_source_map_by_slide(template_id)
+        except Exception as e:
+            logger.warning("Failed to build source mapping for template %s: %s", template_id, e)
+            warnings.append("Unable to sync session input.json due to template mapping error.")
+            return warnings
+
+        try:
+            tenant_input = self._load_or_bootstrap_session_input(input_id, session_id)
+        except Exception as e:
+            logger.warning("Failed to load/initialize session input.json for session %s: %s", session_id, e)
+            warnings.append("Unable to sync session input.json for this session.")
+            return warnings
+
+        raw = deepcopy(tenant_input.raw)
+        persisted_count = 0
+
+        for slide_update in applied_updates:
+            slide_key = slide_update.get("slide_key")
+            new_content = slide_update.get("new_content")
+            if not slide_key or not isinstance(new_content, dict):
+                continue
+
+            token_source_map = source_map_by_slide.get(slide_key, {})
+            for token, edited_value in new_content.items():
+                source_path = token_source_map.get(token)
+                if not source_path:
+                    # AI-only fields without source stay in slidespec only.
+                    continue
+                if self._set_nested_value(raw, source_path, edited_value):
+                    persisted_count += 1
+                else:
+                    logger.warning(
+                        "Failed to apply edited token to input.json: session=%s slide=%s token=%s source=%s",
+                        session_id,
+                        slide_key,
+                        token,
+                        source_path,
+                    )
+
+        if persisted_count > 0:
+            self._write_session_input_json(session_id, raw)
+            logger.info(
+                "Persisted %s edited values to session input.json for session %s",
+                persisted_count,
+                session_id,
+            )
+
+        return warnings
+
     def _get_chart_tokens_by_slide(self, template_id: str) -> Dict[str, Set[str]]:
         descriptor = self.template_repo.get_descriptor_v2(template_id)
         chart_types = {"P11_bar", "P11_line", "P11_pie", "P13_pie", "P14_pie", "P15_line", "P16_combo"}
@@ -180,8 +319,9 @@ class ReportService:
 
         # Keep JSON only as this-run intermediate artifact under session directory.
         input_path = self.session_manager.get_input_path(session_id)
-        with input_path.open("w", encoding="utf-8") as f:
-            json.dump(parsed, f, ensure_ascii=False, indent=2)
+        with FileLock(input_path, timeout=30.0):
+            with input_path.open("w", encoding="utf-8") as f:
+                json.dump(parsed, f, ensure_ascii=False, indent=2)
 
         logger.info("Input parsed from Excel at runtime: %s -> %s", excel_path, input_path)
         return TenantInput(raw=parsed)
@@ -378,6 +518,7 @@ class ReportService:
         job_id: str,
         slide_key: str,
         user_prompt: str,
+        target_tokens: List[str] | None = None,
     ) -> Dict[str, Any]:
         """AI rewrite for a single slide using user preference prompt."""
         try:
@@ -401,16 +542,20 @@ class ReportService:
         if not target_slide:
             raise ValueError(f"Slide '{slide_key}' not found in current report")
 
-        input_id = self._get_input_id_for_job(job_id)
-        if input_id == "custom":
-            custom_input_path = self.session_manager.get_input_path(session_id)
-            if not custom_input_path.exists():
-                raise ValueError(
-                    f"Custom input.json not found for session '{session_id}'."
-                )
-            tenant_input = TenantInput.load_from_file(custom_input_path)
-        else:
-            tenant_input = self.load_input(input_id)
+        try:
+            input_id = self._get_input_id_for_job(job_id)
+        except ValueError:
+            # Keep legacy rewrite flow functional even if old job metadata is missing.
+            input_id = "classic_ops_dataxlsx"
+            logger.warning(
+                "Failed to resolve input_id for job %s during rewrite; fallback to %s",
+                job_id,
+                input_id,
+            )
+        tenant_input = self._load_or_bootstrap_session_input(
+            input_id=input_id,
+            session_id=session_id,
+        )
 
         ai_result = self.llm_orchestrator_v2.rewrite_single_slide_v2(
             tenant_input=tenant_input,
@@ -418,6 +563,7 @@ class ReportService:
             slide_key=slide_key,
             user_prompt=user_prompt,
             current_slide_content=dict(target_slide.placeholders or {}),
+            target_tokens=target_tokens,
         )
 
         rewritten_placeholders = ai_result.get("placeholders", {})
@@ -450,6 +596,7 @@ class ReportService:
                 "updated_tokens": updated_tokens,
                 "updated_count": updated_count,
                 "prompt_length": len(user_prompt.strip()),
+                "requested_tokens": target_tokens or [],
                 "warnings": warnings,
             },
             job_id=job_id,
@@ -515,9 +662,12 @@ class ReportService:
         else:
             slides_to_update = slides
 
+        input_id = self._get_input_id_for_job(job_id)
+
         # Update all slides
         updated_slides = []
         not_found_slides = []
+        applied_updates_for_input: List[Dict[str, Any]] = []
 
         for slide_update in slides_to_update:
             key = slide_update.get("slide_key")
@@ -553,6 +703,13 @@ class ReportService:
 
                 slide.placeholders.update(normalized_updates)
                 updated_slides.append(key)
+                if normalized_updates:
+                    applied_updates_for_input.append(
+                        {
+                            "slide_key": key,
+                            "new_content": normalized_updates,
+                        }
+                    )
             else:
                 not_found_slides.append(key)
 
@@ -595,6 +752,15 @@ class ReportService:
                 f"以下幻灯片未找到: {', '.join(not_found_slides)}"
             )
             result["not_found_slides"] = not_found_slides
+
+        sync_warnings = self._persist_manual_updates_to_session_input(
+            session_id=session_id,
+            input_id=input_id,
+            template_id=template_id,
+            applied_updates=applied_updates_for_input,
+        )
+        if sync_warnings:
+            result["warnings"].extend(sync_warnings)
 
         # Legacy compatibility: return slide_key for single mode
         if has_single:

@@ -103,6 +103,7 @@ async def get_template_slides(template_id: str):
                 "slide_no": s.slide_no,
                 "slide_key": s.slide_key,
                 "title": s.title,
+                "ai_rewrite_tokens": [ph.token for ph in s.placeholders if ph.ai_generate],
             }
             for s in descriptor.slides
         ]

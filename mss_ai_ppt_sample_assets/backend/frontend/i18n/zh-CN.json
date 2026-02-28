@@ -73,6 +73,8 @@
   "msgApplyManualChangesBeforeAiRewrite": "请先应用手动修改，再执行 AI 重写",
   "msgAiRewriteSuccess": "已完成页面 {slide} 的 AI 重写",
   "msgAiRewriteNoChanges": "AI 重写完成，但未产生可应用的内容变更",
+  "labelAiRewriteTokens": "重写占位符",
+  "msgAiRewriteTokensHint": "支持多选。不选时默认重写该页全部 AI 占位符。",
   "msgPageNumber": "第",
   "msgPage": "页",
   "msgGeneratingPreview": "生成预览中...",

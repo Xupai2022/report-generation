@@ -759,206 +759,6 @@
     "input_id": "tenant_acme_2025-11",
     "rating": null
   },
-  "a8bc671f_20260221142323018000:mss_executive_v2": {
-    "status": "completed",
-    "created_at": "2026-02-21T06:23:23.029989+00:00",
-    "updated_at": "2026-02-21T06:23:23.308074+00:00",
-    "completed_at": "2026-02-21T06:23:23.303074+00:00",
-    "session_id": "a8bc671f_20260221142323018000",
-    "template_id": "mss_executive_v2",
-    "input_id": "tenant_acme_2025-11",
-    "rating": null
-  },
-  "2fe2d604_20260221142934346000:mss_executive_v2": {
-    "status": "failed",
-    "created_at": "2026-02-21T06:29:34.663755+00:00",
-    "updated_at": "2026-02-21T06:31:00.396567+00:00",
-    "completed_at": "2026-02-21T06:31:00.394567+00:00",
-    "session_id": "2fe2d604_20260221142934346000",
-    "template_id": "mss_executive_v2",
-    "input_id": "tenant_acme_2025-11",
-    "rating": null
-  },
-  "e59c6939_20260221145838467000:mss_executive_v2": {
-    "status": "failed",
-    "created_at": "2026-02-21T06:58:38.817747+00:00",
-    "updated_at": "2026-02-21T06:59:11.069295+00:00",
-    "completed_at": "2026-02-21T06:59:11.065888+00:00",
-    "session_id": "e59c6939_20260221145838467000",
-    "template_id": "mss_executive_v2",
-    "input_id": "tenant_acme_2025-11",
-    "rating": null
-  },
-  "755d6440_20260221150057251000:mss_executive_v2": {
-    "status": "failed",
-    "created_at": "2026-02-21T07:00:57.578893+00:00",
-    "updated_at": "2026-02-21T07:01:29.725049+00:00",
-    "completed_at": "2026-02-21T07:01:29.721518+00:00",
-    "session_id": "755d6440_20260221150057251000",
-    "template_id": "mss_executive_v2",
-    "input_id": "tenant_acme_2025-11",
-    "rating": null
-  },
-  "b1603269_20260221151115236000:mss_executive_v2": {
-    "status": "failed",
-    "created_at": "2026-02-21T07:11:15.554116+00:00",
-    "updated_at": "2026-02-21T07:11:22.745373+00:00",
-    "completed_at": "2026-02-21T07:11:22.742796+00:00",
-    "session_id": "b1603269_20260221151115236000",
-    "template_id": "mss_executive_v2",
-    "input_id": "tenant_acme_2025-11",
-    "rating": null
-  },
-  "6f88dde1_20260221151802301000:mss_executive_v2": {
-    "status": "completed",
-    "created_at": "2026-02-21T07:18:02.317690+00:00",
-    "updated_at": "2026-02-21T07:19:47.806098+00:00",
-    "completed_at": "2026-02-21T07:19:47.800564+00:00",
-    "session_id": "6f88dde1_20260221151802301000",
-    "template_id": "mss_executive_v2",
-    "input_id": "tenant_acme_2025-11",
-    "rating": null
-  },
-  "f4d0d85c_20260221154435911000:mss_executive_v2": {
-    "status": "completed",
-    "created_at": "2026-02-21T07:44:35.918659+00:00",
-    "updated_at": "2026-02-21T07:44:36.186327+00:00",
-    "completed_at": "2026-02-21T07:44:36.182532+00:00",
-    "session_id": "f4d0d85c_20260221154435911000",
-    "template_id": "mss_executive_v2",
-    "input_id": "tenant_acme_2025-11",
-    "rating": null
-  },
-  "2a29291e_20260221154654118000:mss_executive_v2": {
-    "status": "completed",
-    "created_at": "2026-02-21T07:46:54.123454+00:00",
-    "updated_at": "2026-02-21T07:46:54.360277+00:00",
-    "completed_at": "2026-02-21T07:46:54.355779+00:00",
-    "session_id": "2a29291e_20260221154654118000",
-    "template_id": "mss_executive_v2",
-    "input_id": "tenant_acme_2025-11",
-    "rating": null
-  },
-  "78fa9d08_20260221154852774000:mss_executive_v2": {
-    "status": "completed",
-    "created_at": "2026-02-21T07:48:52.779749+00:00",
-    "updated_at": "2026-02-21T07:48:53.029196+00:00",
-    "completed_at": "2026-02-21T07:48:53.023599+00:00",
-    "session_id": "78fa9d08_20260221154852774000",
-    "template_id": "mss_executive_v2",
-    "input_id": "tenant_acme_2025-11",
-    "rating": null
-  },
-  "59dba316_20260221155629983000:mss_executive_v2": {
-    "status": "completed",
-    "created_at": "2026-02-21T07:56:29.988524+00:00",
-    "updated_at": "2026-02-21T07:56:30.194220+00:00",
-    "completed_at": "2026-02-21T07:56:30.187880+00:00",
-    "session_id": "59dba316_20260221155629983000",
-    "template_id": "mss_executive_v2",
-    "input_id": "tenant_acme_2025-11",
-    "rating": null
-  },
-  "2c19a7a0_20260221160205399000:mss_executive_v2": {
-    "status": "completed",
-    "created_at": "2026-02-21T08:02:05.404974+00:00",
-    "updated_at": "2026-02-21T08:02:05.581262+00:00",
-    "completed_at": "2026-02-21T08:02:05.577834+00:00",
-    "session_id": "2c19a7a0_20260221160205399000",
-    "template_id": "mss_executive_v2",
-    "input_id": "tenant_acme_2025-11",
-    "rating": null
-  },
-  "a6b2a1bf_20260221160506144000:mss_executive_v2": {
-    "status": "completed",
-    "created_at": "2026-02-21T08:05:06.153389+00:00",
-    "updated_at": "2026-02-21T08:05:06.446283+00:00",
-    "completed_at": "2026-02-21T08:05:06.441756+00:00",
-    "session_id": "a6b2a1bf_20260221160506144000",
-    "template_id": "mss_executive_v2",
-    "input_id": "tenant_acme_2025-11",
-    "rating": null
-  },
-  "38f9655e_20260221163129873000:mss_executive_v2": {
-    "status": "completed",
-    "created_at": "2026-02-21T08:31:29.878014+00:00",
-    "updated_at": "2026-02-21T08:31:30.091514+00:00",
-    "completed_at": "2026-02-21T08:31:30.087085+00:00",
-    "session_id": "38f9655e_20260221163129873000",
-    "template_id": "mss_executive_v2",
-    "input_id": "tenant_acme_2025-11",
-    "rating": null
-  },
-  "60e6b241_20260221163304778000:mss_executive_v2": {
-    "status": "completed",
-    "created_at": "2026-02-21T08:33:04.784750+00:00",
-    "updated_at": "2026-02-21T08:33:05.018083+00:00",
-    "completed_at": "2026-02-21T08:33:05.014050+00:00",
-    "session_id": "60e6b241_20260221163304778000",
-    "template_id": "mss_executive_v2",
-    "input_id": "tenant_acme_2025-11",
-    "rating": null
-  },
-  "1dcf87db_20260221163340649000:mss_executive_v2": {
-    "status": "completed",
-    "created_at": "2026-02-21T08:33:40.968509+00:00",
-    "updated_at": "2026-02-21T08:33:41.356866+00:00",
-    "completed_at": "2026-02-21T08:33:41.353362+00:00",
-    "session_id": "1dcf87db_20260221163340649000",
-    "template_id": "mss_executive_v2",
-    "input_id": "tenant_acme_2025-11",
-    "rating": null
-  },
-  "48e35894_20260221164013577000:mss_executive_v2": {
-    "status": "completed",
-    "created_at": "2026-02-21T08:40:13.583105+00:00",
-    "updated_at": "2026-02-21T08:40:13.833634+00:00",
-    "completed_at": "2026-02-21T08:40:13.827098+00:00",
-    "session_id": "48e35894_20260221164013577000",
-    "template_id": "mss_executive_v2",
-    "input_id": "tenant_acme_2025-11",
-    "rating": null
-  },
-  "a3116a9c_20260221170540868000:mss_executive_v2": {
-    "status": "completed",
-    "created_at": "2026-02-21T09:05:40.880844+00:00",
-    "updated_at": "2026-02-21T09:08:19.051075+00:00",
-    "completed_at": "2026-02-21T09:08:19.045808+00:00",
-    "session_id": "a3116a9c_20260221170540868000",
-    "template_id": "mss_executive_v2",
-    "input_id": "tenant_acme_2025-11",
-    "rating": null
-  },
-  "93370c40_20260221170845275000:mss_executive_v2": {
-    "status": "completed",
-    "created_at": "2026-02-21T09:08:45.282201+00:00",
-    "updated_at": "2026-02-21T09:10:40.485784+00:00",
-    "completed_at": "2026-02-21T09:10:40.480463+00:00",
-    "session_id": "93370c40_20260221170845275000",
-    "template_id": "mss_executive_v2",
-    "input_id": "tenant_acme_2025-11",
-    "rating": null
-  },
-  "1f910c37_20260221171101083000:mss_executive_v2": {
-    "status": "completed",
-    "created_at": "2026-02-21T09:11:01.089876+00:00",
-    "updated_at": "2026-02-21T09:13:10.529789+00:00",
-    "completed_at": "2026-02-21T09:13:10.523925+00:00",
-    "session_id": "1f910c37_20260221171101083000",
-    "template_id": "mss_executive_v2",
-    "input_id": "tenant_acme_2025-11",
-    "rating": null
-  },
-  "5e2dbf03_20260221171315052000:mss_executive_v2": {
-    "status": "completed",
-    "created_at": "2026-02-21T09:13:21.991281+00:00",
-    "updated_at": "2026-02-21T09:14:00.086908+00:00",
-    "completed_at": "2026-02-21T09:14:00.080913+00:00",
-    "session_id": "5e2dbf03_20260221171315052000",
-    "template_id": "mss_executive_v2",
-    "input_id": "tenant_acme_2025-11",
-    "rating": null
-  },
   "32e01b31_20260221180720798000:mss_executive_v2": {
     "status": "completed",
     "created_at": "2026-02-21T10:07:21.114433+00:00",
@@ -2755,6 +2555,46 @@
     "updated_at": "2026-02-28T04:18:20.294850+00:00",
     "completed_at": "2026-02-28T04:18:20.286509+00:00",
     "session_id": "7b8e3dcf_20260228121815289000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "c7f33c5f_20260228153013926000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-28T07:30:13.967521+00:00",
+    "updated_at": "2026-02-28T07:30:18.636616+00:00",
+    "completed_at": "2026-02-28T07:30:18.630990+00:00",
+    "session_id": "c7f33c5f_20260228153013926000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "3cafb7da_20260228153253591000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-28T07:32:53.597769+00:00",
+    "updated_at": "2026-02-28T07:34:48.376814+00:00",
+    "completed_at": "2026-02-28T07:34:48.366927+00:00",
+    "session_id": "3cafb7da_20260228153253591000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "4c2d81a3_20260228160853651000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-28T08:08:53.989333+00:00",
+    "updated_at": "2026-02-28T08:09:51.581268+00:00",
+    "completed_at": "2026-02-28T08:09:51.571760+00:00",
+    "session_id": "4c2d81a3_20260228160853651000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "67d768a4_20260228171550037000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-02-28T09:15:50.054509+00:00",
+    "updated_at": "2026-02-28T09:16:26.442905+00:00",
+    "completed_at": "2026-02-28T09:16:26.437409+00:00",
+    "session_id": "67d768a4_20260228171550037000",
     "template_id": "mss_classic_ops",
     "input_id": "classic_ops_dataxlsx",
     "rating": null

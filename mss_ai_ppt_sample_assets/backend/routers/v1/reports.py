@@ -519,6 +519,7 @@ async def ai_rewrite_slide(report_id: str, req: AISlideRewriteRequest):
             job_id=report_id,
             slide_key=req.slide_key,
             user_prompt=req.user_prompt,
+            target_tokens=req.target_tokens,
         )
         logger.info(f"AI rewrite completed: report={report_id}, slide={req.slide_key}")
         return SuccessResponse(data=result)

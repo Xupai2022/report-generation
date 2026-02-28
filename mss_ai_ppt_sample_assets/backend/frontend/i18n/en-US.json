@@ -73,6 +73,8 @@
   "msgApplyManualChangesBeforeAiRewrite": "Please apply manual edits first, then run AI rewrite",
   "msgAiRewriteSuccess": "AI rewrite completed for slide {slide}",
   "msgAiRewriteNoChanges": "AI rewrite completed but no changes were applied",
+  "labelAiRewriteTokens": "Rewrite placeholders",
+  "msgAiRewriteTokensHint": "Multiple selection supported. If none selected, backend rewrites all AI placeholders on this slide.",
   "msgPageNumber": "Page",
   "msgPage": "",
   "msgGeneratingPreview": "Generating preview...",
