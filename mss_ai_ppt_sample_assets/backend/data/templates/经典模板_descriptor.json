@@ -150,7 +150,7 @@
           "type": "text",
           "ai_generate": false,
           "source": "deliverables.attack_surface",
-          "default": "??????"
+          "default": "直接取数失败"
         },
         {
           "token": "sec_ops_weekly",
@@ -171,7 +171,7 @@
           "type": "text",
           "ai_generate": false,
           "source": "deliverables.sec_ops_quarterly",
-          "default": "??????"
+          "default": "直接取数失败"
         },
         {
           "token": "nationalday",
@@ -206,7 +206,7 @@
           "type": "text",
           "ai_generate": false,
           "source": "deliverables.phishing_poster",
-          "default": "??????"
+          "default": "直接取数失败"
         }
       ]
     },
@@ -541,7 +541,7 @@
           "token": "server",
           "type": "text",
           "ai_generate": false,
-          "default": "0",
+          "default": "直接取数失败",
           "source": "protection_overview.server"
         },
         {
@@ -786,21 +786,21 @@
           "token": "asset_value1",
           "type": "text",
           "ai_generate": true,
-          "ai_instruction": "基于资产管理数据，生成资产安全管理工作总结。包括资产覆盖情况、安全状况评估、主要发现和改进方向。",
+          "ai_instruction": "基于资产管理数据，生成资产安全管理工作待提升项1。",
           "max_length": 500
         },
         {
           "token": "asset_value2",
           "type": "text",
           "ai_generate": true,
-          "ai_instruction": "基于资产管理数据，生成资产安全管理工作总结。包括资产覆盖情况、安全状况评估、主要发现和改进方向。",
+          "ai_instruction": "基于资产管理数据，生成资产安全管理工作待提升项2。",
           "max_length": 500
         },
         {
           "token": "asset_value3",
           "type": "text",
           "ai_generate": true,
-          "ai_instruction": "基于资产管理数据，生成资产安全管理工作总结。包括资产覆盖情况、安全状况评估、主要发现和改进方向。",
+          "ai_instruction": "基于资产管理数据，生成资产安全管理工作待提升项3。",
           "max_length": 500
         },
         {
@@ -1157,14 +1157,14 @@
           "type": "text",
           "ai_generate": false,
           "source": "platform_effectiveness.xdr_avg_monthly_alert_count",
-          "default": "??????"
+          "default": "直接取数失败"
         },
         {
           "token": "xdr_incident",
           "type": "text",
           "ai_generate": false,
           "source": "platform_effectiveness.xdr_avg_monthly_incident_count",
-          "default": "??????"
+          "default": "直接取数失败"
         },
         {
           "token": "fw_auto",

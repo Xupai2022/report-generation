@@ -1174,148 +1174,639 @@
         }
 
         .preconfig-screen {
+            --pre-text-strong: #0f172a;
+            --pre-text-soft: #475569;
+            --pre-border-strong: rgba(148, 163, 184, 0.38);
+            --pre-border-soft: rgba(148, 163, 184, 0.22);
+            --pre-surface: rgba(255, 255, 255, 0.82);
+            --pre-surface-strong: rgba(255, 255, 255, 0.92);
+            --pre-accent: #1d4ed8;
+            --pre-accent-soft: rgba(37, 99, 235, 0.16);
+            --pre-accent-glow: rgba(37, 99, 235, 0.3);
             flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: var(--space-10);
+            padding: var(--space-4);
             position: relative;
+            isolation: isolate;
+            overflow: hidden;
             background:
-                radial-gradient(1200px 360px at 15% -20%, rgba(37, 99, 235, 0.18), transparent 65%),
-                radial-gradient(1000px 400px at 110% 120%, rgba(15, 23, 42, 0.1), transparent 70%),
-                linear-gradient(135deg, #eef2f7 0%, #f8f7f3 52%, #eef2f7 100%);
+                radial-gradient(1300px 420px at 7% -24%, rgba(37, 99, 235, 0.25), transparent 60%),
+                radial-gradient(840px 380px at 90% -8%, rgba(30, 64, 175, 0.12), transparent 72%),
+                radial-gradient(1200px 500px at 30% 128%, rgba(15, 23, 42, 0.12), transparent 70%),
+                linear-gradient(132deg, #e8eef8 0%, #f2f5f9 33%, #f7f6f2 65%, #edf3fb 100%);
+        }
+        .preconfig-screen::before,
+        .preconfig-screen::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: -1;
+        }
+        .preconfig-screen::before {
+            background:
+                radial-gradient(circle at 15% 35%, rgba(255, 255, 255, 0.58) 0, rgba(255, 255, 255, 0) 38%),
+                radial-gradient(circle at 82% 72%, rgba(148, 163, 184, 0.22) 0, rgba(148, 163, 184, 0) 42%);
+            animation: preAmbientShift 18s ease-in-out infinite alternate;
+        }
+        .preconfig-screen::after {
+            opacity: 0.34;
+            background-image:
+                linear-gradient(90deg, rgba(255, 255, 255, 0.2) 1px, transparent 1px),
+                linear-gradient(rgba(255, 255, 255, 0.2) 1px, transparent 1px);
+            background-size: 3px 3px;
+            mix-blend-mode: soft-light;
+        }
+        @keyframes preAmbientShift {
+            0% { transform: translate3d(0, 0, 0) scale(1); }
+            100% { transform: translate3d(0, -14px, 0) scale(1.03); }
         }
         .preconfig-topbar {
             position: absolute;
-            top: var(--space-4);
-            right: var(--space-4);
+            top: var(--space-3);
+            right: var(--space-3);
             display: flex;
             align-items: center;
             z-index: 5;
         }
         .preconfig-shell {
-            width: min(1080px, 100%);
-            display: grid;
-            grid-template-columns: 1.1fr 1fr;
-            gap: var(--space-8);
-            align-items: stretch;
-        }
-        .preconfig-hero {
-            border-radius: 18px;
-            padding: var(--space-8);
-            color: #0f172a;
-            background: linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(241,245,249,0.78) 100%);
-            border: 1px solid rgba(148, 163, 184, 0.25);
-            box-shadow: 0 22px 44px rgba(15, 23, 42, 0.08);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            gap: var(--space-6);
-        }
-        .preconfig-hero h2 {
-            font-size: 30px;
-            line-height: 1.2;
-            letter-spacing: 0.02em;
-        }
-        .preconfig-hero p {
-            font-size: 15px;
-            line-height: 1.7;
-            color: #334155;
-            max-width: 44ch;
-        }
-        .preconfig-card {
-            border-radius: 18px;
-            padding: var(--space-6);
-            background: rgba(255, 255, 255, 0.76);
-            border: 1px solid rgba(148, 163, 184, 0.25);
-            box-shadow: 0 26px 52px rgba(15, 23, 42, 0.1);
-            backdrop-filter: blur(6px);
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-5);
-        }
-        .preconfig-grid {
+            width: min(1200px, 100%);
             display: grid;
             grid-template-columns: 1fr;
-            gap: var(--space-4);
+            gap: var(--space-3);
+            align-items: stretch;
+            perspective: 1200px;
+            margin: calc(var(--space-6) + 2px) 0 0;
         }
-        .preconfig-focus-section {
+        .preconfig-shell > .preconfig-stagger,
+        .preconfig-card .preconfig-stagger {
+            opacity: 1;
+            transform: none;
+            will-change: transform, opacity;
+        }
+        .preconfig-screen.preconfig-animate .preconfig-stagger {
+            animation: preconfigReveal 760ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            animation-delay: var(--pre-stagger-delay, 0ms);
+        }
+        @keyframes preconfigReveal {
+            from {
+                opacity: 0;
+                transform: translate3d(0, 24px, 0) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0) scale(1);
+            }
+        }
+        .preconfig-hero,
+        .preconfig-card {
+            position: relative;
+            overflow: hidden;
+            border-radius: 22px;
+            border: 1px solid var(--pre-border-strong);
+            box-shadow:
+                0 20px 42px rgba(15, 23, 42, 0.11),
+                inset 0 1px 0 rgba(255, 255, 255, 0.72);
+            backdrop-filter: blur(8px);
+        }
+        .preconfig-hero {
+            padding: var(--space-3) var(--space-4);
+            color: var(--pre-text-strong);
+            background:
+                linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(241, 245, 250, 0.84) 55%, rgba(233, 241, 255, 0.8) 100%);
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-4);
+            transform:
+                perspective(1000px)
+                rotateX(var(--pre-hero-tilt-x, 0deg))
+                rotateY(var(--pre-hero-tilt-y, 0deg));
+            transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 320ms ease;
+        }
+        .preconfig-hero[data-pointer-active="true"] {
+            transition: transform 120ms linear, box-shadow 200ms ease;
+            box-shadow:
+                0 30px 56px rgba(15, 23, 42, 0.16),
+                inset 0 1px 0 rgba(255, 255, 255, 0.78);
+        }
+        .preconfig-hero::before {
+            content: "";
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            pointer-events: none;
+        }
+        .preconfig-hero::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: radial-gradient(
+                220px 140px at var(--pre-hero-glow-x, 60%) var(--pre-hero-glow-y, 40%),
+                rgba(255, 255, 255, 0.48),
+                transparent 75%
+            );
+            opacity: 0.75;
+            pointer-events: none;
+        }
+        .preconfig-hero-main {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-2);
+            position: relative;
+            z-index: 1;
+            min-width: 0;
+        }
+        .preconfig-hero-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            width: fit-content;
+            border-radius: 999px;
+            padding: 4px 10px;
+            background: rgba(30, 64, 175, 0.1);
+            color: #1e3a8a;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .preconfig-hero h2 {
+            font-size: clamp(23px, 2.2vw, 30px);
+            line-height: 1.15;
+            letter-spacing: 0.01em;
+        }
+        .preconfig-hero-subtitle {
+            font-size: 14px;
+            line-height: 1.45;
+            font-weight: 600;
+            color: #1e293b;
+            max-width: 52ch;
+        }
+        .preconfig-hero-lead {
+            font-size: 12px;
+            line-height: 1.45;
+            color: var(--pre-text-soft);
+            max-width: 64ch;
+        }
+        .preconfig-hero-features {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 6px var(--space-3);
+            position: relative;
+            z-index: 1;
+            max-width: 560px;
+        }
+        .preconfig-hero-features li {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #1f2937;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .preconfig-feature-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+            flex-shrink: 0;
+        }
+        .preconfig-card {
+            padding: var(--space-3);
+            background: linear-gradient(165deg, var(--pre-surface-strong) 0%, var(--pre-surface) 72%, rgba(236, 244, 255, 0.78) 100%);
             display: flex;
             flex-direction: column;
             gap: var(--space-3);
         }
-        .preconfig-focus-section h3 {
-            font-size: 13px;
+        .preconfig-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0) 28%);
+            pointer-events: none;
+        }
+        .preconfig-card-heading {
+            display: grid;
+            gap: var(--space-1);
+        }
+        .preconfig-card-heading h3 {
+            font-size: 16px;
+            line-height: 1.3;
+            color: #0f172a;
+        }
+        .preconfig-card-heading p {
+            color: #475569;
+            font-size: 11px;
+            line-height: 1.35;
+        }
+        .preconfig-grid {
+            display: grid;
+            gap: 6px;
+            grid-template-columns: minmax(260px, 0.85fr) minmax(0, 1.15fr);
+            grid-template-areas:
+                "data template"
+                "strategy template";
+            align-items: stretch;
+        }
+        .preconfig-section-data { grid-area: data; }
+        .preconfig-section-template { grid-area: template; }
+        .preconfig-section-strategy { grid-area: strategy; }
+        .preconfig-section-template .toolbar-item {
+            height: 100%;
+        }
+        .preconfig-section-template .preconfig-template-gallery {
+            height: 100%;
+        }
+        .preconfig-section {
+            border: 1px solid var(--pre-border-soft);
+            border-radius: 14px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.72);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+            display: grid;
+            gap: 6px;
+        }
+        .preconfig-section-title {
+            font-size: 12px;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.08em;
-            color: #475569;
+            color: #334155;
+        }
+        .preconfig-section .toolbar-item {
+            gap: var(--space-2);
+        }
+        .preconfig-section select {
+            height: 40px;
+            width: 100%;
+            min-width: 0;
+            border-radius: 10px;
+            border: 1px solid #ccd6e2;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+            color: #0f172a;
+            font-weight: 500;
+        }
+        .preconfig-section select:hover {
+            border-color: #aec4df;
+        }
+        .preconfig-section select:focus-visible {
+            border-color: transparent;
+            outline: 2px solid rgba(37, 99, 235, 0.46);
+            outline-offset: 1px;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+        }
+        .preconfig-template-native {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .preconfig-template-gallery {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+        .preconfig-template-card {
+            border: 1px solid #cbd6e3;
+            border-radius: 14px;
+            background: linear-gradient(180deg, #ffffff 0%, #f7fafc 100%);
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.07);
+            padding: 8px;
+            text-align: left;
+            cursor: pointer;
+            display: grid;
+            gap: 8px;
+            transition: transform var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base);
+        }
+        .preconfig-template-card:hover {
+            transform: translateY(-2px);
+            border-color: #a9c3e6;
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.11);
+        }
+        .preconfig-template-card.selected {
+            border-color: #2563eb;
+            box-shadow: 0 14px 30px rgba(30, 64, 175, 0.24), 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+        .preconfig-template-card:focus-visible {
+            outline: 2px solid #2563eb;
+            outline-offset: 2px;
+        }
+        .preconfig-template-preview {
+            position: relative;
+            aspect-ratio: 16 / 7.2;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(15, 23, 42, 0.16);
+            background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #60a5fa 100%);
+            cursor: ew-resize;
+        }
+        .preconfig-template-preview.has-image {
+            background: #0f172a;
+        }
+        .preconfig-template-preview img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+        .preconfig-template-preview::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(80% 120% at 100% 100%, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 58%),
+                linear-gradient(0deg, rgba(15, 23, 42, 0.22) 0%, rgba(15, 23, 42, 0.08) 38%, rgba(15, 23, 42, 0) 100%);
+            pointer-events: none;
+        }
+        .preconfig-template-page-chip {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 2;
+            border-radius: 999px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #ffffff;
+            background: rgba(15, 23, 42, 0.42);
+        }
+        .preconfig-template-page-title {
+            position: absolute;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            z-index: 2;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.35;
+            color: #0f172a;
+            text-shadow: none;
+            background: rgba(255, 255, 255, 0.84);
+            border-radius: 8px;
+            padding: 4px 6px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .preconfig-template-scrub {
+            position: absolute;
+            left: 10px;
+            right: 10px;
+            bottom: 5px;
+            height: 3px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.28);
+            overflow: hidden;
+        }
+        .preconfig-template-scrub span {
+            display: block;
+            height: 100%;
+            width: calc(var(--pre-template-progress, 0) * 100%);
+            background: rgba(255, 255, 255, 0.86);
+            transition: width 100ms linear;
+        }
+        .preconfig-template-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-2);
+        }
+        .preconfig-template-name {
+            font-size: 12px;
+            font-weight: 700;
+            color: #0f172a;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .preconfig-template-meta-note {
+            font-size: 10px;
+            color: #64748b;
+            flex-shrink: 0;
+        }
+        .preconfig-template-hint {
+            margin-top: 0;
+            font-size: 11px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+        .preconfig-checkbox {
+            min-height: 40px;
+            padding: 0 var(--space-3);
+            border-radius: 10px;
+            border: 1px solid #ccd6e2;
+            background: linear-gradient(180deg, rgba(248, 251, 255, 0.88) 0%, rgba(239, 246, 255, 0.65) 100%);
+            font-weight: 600;
+            color: #1e293b;
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+        }
+        .preconfig-checkbox:hover {
+            border-color: #97b2d4;
+            box-shadow: 0 8px 16px rgba(15, 23, 42, 0.07);
+            transform: translateY(-1px);
+        }
+        .preconfig-checkbox input {
+            accent-color: var(--pre-accent);
+        }
+        .preconfig-focus-section {
+            display: grid;
+            gap: var(--space-2);
+        }
+        .preconfig-focus-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-2);
+        }
+        .preconfig-focus-section h3 {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #334155;
         }
         .preconfig-focus-hint {
             font-size: 12px;
             color: #64748b;
         }
         .preconfig-focus-options {
-            display: flex;
-            flex-wrap: nowrap;
-            align-items: center;
-            gap: var(--space-3);
-            overflow-x: auto;
-            overflow-y: hidden;
-            padding-bottom: var(--space-2);
-            scrollbar-gutter: stable both-edges;
-            -webkit-overflow-scrolling: touch;
-            touch-action: pan-x;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 6px;
         }
         .preconfig-focus-card {
-            flex: 0 0 auto;
-            min-width: 132px;
-            height: 44px;
-            text-align: left;
-            border-radius: 999px;
-            border: 1px solid #d5dbe5;
-            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
-            padding: 0 var(--space-4);
+            min-height: 48px;
+            position: relative;
+            border-radius: 14px;
+            border: 1px solid #cbd6e3;
+            background: linear-gradient(180deg, #ffffff 0%, #f7fafc 100%);
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.07);
+            padding: 8px 12px;
             cursor: pointer;
-            display: inline-flex;
+            display: flex;
             align-items: center;
-            justify-content: center;
-            transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast);
+            gap: var(--space-3);
+            transition:
+                transform var(--transition-base),
+                box-shadow var(--transition-base),
+                border-color var(--transition-base),
+                background var(--transition-base);
             user-select: none;
         }
+        .preconfig-focus-card::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            width: 16px;
+            height: 16px;
+            transform: translateY(-50%);
+            border-radius: 50%;
+            border: 1px solid #b9c8da;
+            background: #ffffff;
+            box-shadow: inset 0 0 0 2px #ffffff;
+            transition: all var(--transition-base);
+        }
         .preconfig-focus-card:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 8px 14px rgba(15, 23, 42, 0.08);
-            border-color: #bfdbfe;
+            transform: translateY(-2px);
+            border-color: #a9c3e6;
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.11);
         }
         .preconfig-focus-card.selected {
             border-color: #2563eb;
-            background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
-            box-shadow: 0 12px 22px rgba(37, 99, 235, 0.2);
+            background: linear-gradient(180deg, rgba(239, 246, 255, 0.98) 0%, rgba(219, 234, 254, 0.94) 100%);
+            box-shadow:
+                0 14px 30px rgba(30, 64, 175, 0.24),
+                0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+        .preconfig-focus-card.selected::after {
+            border-color: #1d4ed8;
+            background: #2563eb;
+            box-shadow: inset 0 0 0 3px #ffffff;
         }
         .preconfig-focus-card:focus-visible {
             outline: 2px solid #2563eb;
             outline-offset: 2px;
         }
+        .preconfig-focus-icon {
+            width: 26px;
+            height: 26px;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9px;
+            background: rgba(30, 64, 175, 0.1);
+            color: #1d4ed8;
+        }
+        .preconfig-focus-icon svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .preconfig-focus-copy {
+            display: flex;
+            align-items: center;
+            text-align: left;
+        }
         .preconfig-focus-name {
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 13px;
+            font-weight: 700;
             color: #0f172a;
+            padding-right: 24px;
+        }
+        .preconfig-focus-desc {
+            display: none;
+        }
+        .preconfig-focus-card.placeholder {
+            cursor: default;
+            border-style: dashed;
+            background: rgba(248, 250, 252, 0.72);
+            box-shadow: none;
+            color: #64748b;
+        }
+        .preconfig-focus-card.placeholder:hover {
+            transform: none;
+            border-color: #cbd6e3;
+            box-shadow: none;
+        }
+        .preconfig-focus-card.placeholder::after {
+            display: none;
         }
         .preconfig-actions {
-            display: flex;
-            justify-content: flex-end;
+            display: grid;
+            gap: var(--space-2);
         }
         #preConfigGenerateBtn {
-            height: 42px;
+            position: relative;
+            overflow: hidden;
+            isolation: isolate;
+            height: 44px;
+            width: 100%;
             padding: 0 var(--space-6);
-            border-radius: 11px;
-            border: 1px solid #1e293b;
-            background: linear-gradient(180deg, #1f3b63 0%, #1d2f48 100%);
-            box-shadow: 0 10px 24px rgba(30, 64, 175, 0.25);
+            border-radius: 12px;
+            border: 1px solid #1e3a8a;
+            background: linear-gradient(180deg, #1e4fa5 0%, #1e3a8a 52%, #172554 100%);
+            box-shadow:
+                0 14px 28px rgba(30, 64, 175, 0.32),
+                inset 0 1px 0 rgba(255, 255, 255, 0.28);
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            transition: transform var(--transition-base), box-shadow var(--transition-base), filter var(--transition-base);
+        }
+        #preConfigGenerateBtn::after {
+            content: "";
+            position: absolute;
+            top: -80%;
+            left: -62%;
+            width: 30%;
+            height: 260%;
+            background: linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.72) 50%, transparent 100%);
+            transform: rotate(18deg);
+            opacity: 0;
+            transition: left 720ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease;
+            z-index: 0;
         }
         #preConfigGenerateBtn:hover {
-            background: linear-gradient(180deg, #224773 0%, #223853 100%);
+            transform: translateY(-2px);
+            box-shadow:
+                0 18px 34px rgba(30, 64, 175, 0.4),
+                0 0 0 4px rgba(37, 99, 235, 0.12);
+            filter: brightness(1.04);
+        }
+        #preConfigGenerateBtn:hover::after {
+            left: 128%;
+            opacity: 0.62;
+        }
+        #preConfigGenerateBtn:active {
+            transform: translateY(0);
+            box-shadow:
+                0 10px 20px rgba(30, 64, 175, 0.28),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        .preconfig-action-hint {
+            display: none;
         }
         .focus-summary-badge {
             min-height: 30px;
@@ -1333,10 +1824,140 @@
             text-overflow: ellipsis;
         }
         @media (max-width: 980px) {
-            .preconfig-screen { padding: var(--space-4); }
-            .preconfig-shell { grid-template-columns: 1fr; }
-            .preconfig-hero h2 { font-size: 24px; }
+            .preconfig-screen {
+                padding: var(--space-4);
+                align-items: flex-start;
+                overflow-y: auto;
+            }
+            .preconfig-shell {
+                grid-template-columns: 1fr;
+                gap: var(--space-4);
+                width: min(760px, 100%);
+                margin: calc(var(--space-10) + 8px) auto var(--space-4);
+            }
+            .preconfig-grid {
+                grid-template-columns: 1fr;
+                grid-template-areas:
+                    "data"
+                    "template"
+                    "strategy";
+            }
+            .preconfig-hero,
+            .preconfig-card {
+                border-radius: 18px;
+                padding: var(--space-5);
+            }
+            .preconfig-hero {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--space-3);
+            }
+            .preconfig-hero-features {
+                justify-content: flex-start;
+                max-width: none;
+            }
+            .preconfig-hero h2 {
+                font-size: clamp(24px, 7.8vw, 32px);
+            }
+            .preconfig-hero-subtitle {
+                font-size: 15px;
+            }
+            .preconfig-focus-options {
+                grid-template-columns: 1fr;
+            }
+            .preconfig-actions {
+                position: sticky;
+                bottom: 0;
+                padding-top: var(--space-3);
+                background: linear-gradient(180deg, rgba(249, 251, 255, 0.58) 0%, rgba(249, 251, 255, 0.96) 28%);
+            }
+            .preconfig-action-hint {
+                display: block;
+                text-align: center;
+                font-size: 12px;
+                color: #64748b;
+                line-height: 1.4;
+            }
             .focus-summary-badge { max-width: 180px; }
+        }
+        @media (min-width: 981px) and (max-height: 930px) {
+            .preconfig-screen {
+                padding: var(--space-3);
+            }
+            .preconfig-shell {
+                gap: var(--space-2);
+                margin: calc(var(--space-5) + 2px) 0 0;
+            }
+            .preconfig-hero {
+                padding: var(--space-2) var(--space-3);
+                gap: var(--space-2);
+            }
+            .preconfig-hero h2 {
+                font-size: 21px;
+            }
+            .preconfig-hero-subtitle {
+                font-size: 13px;
+                line-height: 1.32;
+            }
+            .preconfig-hero-features li {
+                font-size: 11px;
+            }
+            .preconfig-card {
+                padding: 10px;
+                gap: 8px;
+            }
+            .preconfig-card-heading p,
+            .preconfig-template-hint {
+                display: none;
+            }
+            .preconfig-section {
+                padding: 8px;
+                gap: 4px;
+            }
+            .preconfig-section-title,
+            .preconfig-focus-hint {
+                font-size: 11px;
+            }
+            .preconfig-section select {
+                height: 36px;
+            }
+            .preconfig-template-preview {
+                aspect-ratio: 16 / 6.2;
+            }
+            .preconfig-focus-card {
+                min-height: 42px;
+                padding: 6px 10px;
+            }
+            .preconfig-focus-name {
+                font-size: 12px;
+            }
+            #preConfigGenerateBtn {
+                height: 40px;
+            }
+        }
+        @media (max-height: 820px) {
+            .preconfig-screen {
+                align-items: flex-start;
+                overflow-y: auto;
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .preconfig-screen::before,
+            #preConfigGenerateBtn::after {
+                animation: none !important;
+            }
+            .preconfig-hero,
+            .preconfig-focus-card,
+            .preconfig-checkbox,
+            #preConfigGenerateBtn {
+                transition: none !important;
+            }
+            .preconfig-shell > .preconfig-stagger,
+            .preconfig-card .preconfig-stagger {
+                opacity: 1 !important;
+                transform: none !important;
+                animation: none !important;
+            }
         }
     </style>
 </head>
@@ -1367,43 +1988,89 @@
             </button>
         </div>
         <div class="preconfig-shell">
-            <div class="preconfig-hero">
-                <div>
+            <div class="preconfig-hero preconfig-stagger" style="--pre-stagger-delay: 40ms;">
+                <div class="preconfig-hero-main preconfig-stagger" style="--pre-stagger-delay: 120ms;">
+                    <span class="preconfig-hero-eyebrow" data-i18n="preConfigEyebrow">MSS AI REPORT STUDIO</span>
                     <h2 data-i18n="preConfigTitle">报告编排设置</h2>
-                    <p data-i18n="preConfigSubtitle">
-                        选择重点，生成报告。
+                    <p class="preconfig-hero-subtitle" data-i18n="preConfigSubtitle">
+                        选择数据与重点，开始生成报告。
                     </p>
                 </div>
+                <ul class="preconfig-hero-features preconfig-stagger" style="--pre-stagger-delay: 200ms;">
+                    <li><span class="preconfig-feature-dot"></span><span data-i18n="preConfigFeatureReliable">可选择报告偏好重点</span></li>
+                    <li><span class="preconfig-feature-dot"></span><span data-i18n="preConfigFeatureTemplate">支持在线人工和 AI 编辑</span></li>
+                    <li><span class="preconfig-feature-dot"></span><span data-i18n="preConfigFeatureTrace">进入工作台后可重新配置</span></li>
+                </ul>
             </div>
-            <div class="preconfig-card">
-                <div class="preconfig-grid">
-                    <div class="toolbar-item">
-                        <label for="preInputSelect" data-i18n="labelInput">Input Data</label>
-                        <select id="preInputSelect"><option data-i18n="msgLoading">Loading...</option></select>
-                    </div>
-                    <div class="toolbar-item">
-                        <label for="preTemplateSelect" data-i18n="labelTemplate">Select Template</label>
-                        <select id="preTemplateSelect"><option data-i18n="msgLoading">Loading...</option></select>
-                    </div>
-                    <label class="checkbox-group">
-                        <input type="checkbox" id="preUseMock" checked>
-                        <span data-i18n="labelUseMock">Quick Generate (Mock)</span>
-                    </label>
+            <div class="preconfig-card preconfig-stagger" style="--pre-stagger-delay: 160ms;">
+                <div class="preconfig-card-heading preconfig-stagger" style="--pre-stagger-delay: 240ms;">
+                    <h3 data-i18n="preConfigCardTitle">生成配置</h3>
+                    <p data-i18n="preConfigCardIntro">完成以下配置后即可启动报告生成。</p>
                 </div>
-                <div class="preconfig-focus-section">
-                    <h3 data-i18n="preConfigFocusTitle">关注焦点</h3>
-                    <p class="preconfig-focus-hint" data-i18n="preConfigFocusHint">可多选</p>
+                <div class="preconfig-grid preconfig-stagger" style="--pre-stagger-delay: 300ms;">
+                    <div class="preconfig-section preconfig-section-data">
+                        <p class="preconfig-section-title" data-i18n="preConfigSectionData">数据源</p>
+                        <div class="toolbar-item">
+                            <select id="preInputSelect" aria-label="Input Data"><option data-i18n="msgLoading">Loading...</option></select>
+                        </div>
+                    </div>
+                    <div class="preconfig-section preconfig-section-template">
+                        <p class="preconfig-section-title" data-i18n="preConfigSectionTemplate">模板</p>
+                        <div class="toolbar-item">
+                            <select id="preTemplateSelect" class="preconfig-template-native" aria-label="Select Template"><option data-i18n="msgLoading">Loading...</option></select>
+                            <div id="preTemplateGallery" class="preconfig-template-gallery"></div>
+                        </div>
+                    </div>
+                    <div class="preconfig-section preconfig-section-strategy">
+                        <p class="preconfig-section-title" data-i18n="preConfigSectionStrategy">生成策略</p>
+                        <label class="checkbox-group preconfig-checkbox">
+                            <input type="checkbox" id="preUseMock" checked>
+                            <span data-i18n="labelUseMock">Quick Generate (Mock)</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="preconfig-focus-section preconfig-section preconfig-stagger" style="--pre-stagger-delay: 360ms;">
+                    <div class="preconfig-focus-title-row">
+                        <h3 data-i18n="preConfigFocusTitle">关注焦点</h3>
+                        <p class="preconfig-focus-hint" data-i18n="preConfigFocusHint">支持留空（默认包含全部重点）或多选</p>
+                    </div>
                     <div class="preconfig-focus-options">
                         <button type="button" class="preconfig-focus-card" data-focus-option="vulnerability" aria-pressed="false">
-                            <span class="preconfig-focus-name" data-i18n="focusOptionVulnerability">漏洞</span>
+                            <span class="preconfig-focus-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M12 3l8 3v6c0 4.2-3 7.6-8 9-5-1.4-8-4.8-8-9V6l8-3z"></path>
+                                    <path d="M12 8v5"></path>
+                                    <path d="M12 16h.01"></path>
+                                </svg>
+                            </span>
+                            <span class="preconfig-focus-copy">
+                                <span class="preconfig-focus-name" data-i18n="focusOptionVulnerability">漏洞</span>
+                                <span class="preconfig-focus-desc" data-i18n="focusOptionVulnerabilityDesc">风险暴露与修复优先级</span>
+                            </span>
                         </button>
                         <button type="button" class="preconfig-focus-card" data-focus-option="alert" aria-pressed="false">
-                            <span class="preconfig-focus-name" data-i18n="focusOptionAlert">告警</span>
+                            <span class="preconfig-focus-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M12 4l8 14H4l8-14z"></path>
+                                    <path d="M12 9v4"></path>
+                                    <path d="M12 16h.01"></path>
+                                </svg>
+                            </span>
+                            <span class="preconfig-focus-copy">
+                                <span class="preconfig-focus-name" data-i18n="focusOptionAlert">告警</span>
+                                <span class="preconfig-focus-desc" data-i18n="focusOptionAlertDesc">告警态势与处置建议</span>
+                            </span>
                         </button>
+                        <div class="preconfig-focus-card placeholder" aria-hidden="true">
+                            <span class="preconfig-focus-copy">
+                                <span class="preconfig-focus-name" data-i18n="preConfigFocusReserved">更多焦点（预留）</span>
+                            </span>
+                        </div>
                     </div>
                 </div>
-                <div class="preconfig-actions">
+                <div class="preconfig-actions preconfig-stagger" style="--pre-stagger-delay: 420ms;">
                     <button id="preConfigGenerateBtn" class="btn btn-primary" type="button" data-i18n="preConfigGenerateBtn">进入工作台并生成</button>
+                    <p class="preconfig-action-hint" data-i18n="preConfigActionHint">配置完成后将自动进入工作台并开始生成。</p>
                 </div>
             </div>
         </div>
@@ -1678,14 +2345,32 @@
                 btnPresentSlides: 'Play Slides',
                 presentBtnTitle: 'Start slideshow in fullscreen',
                 preConfigTitle: '报告编排设置',
-                preConfigSubtitle: '选择重点，生成报告。',
+                preConfigSubtitle: '选择数据与重点，开始生成报告。',
+                preConfigEyebrow: 'MSS AI REPORT STUDIO',
+                preConfigLead: '',
+                preConfigFeatureReliable: '可选择报告偏好重点',
+                preConfigFeatureTemplate: '支持在线人工和 AI 编辑',
+                preConfigFeatureTrace: '进入工作台后可重新配置',
+                preConfigCardTitle: '生成配置',
+                preConfigCardIntro: '完成以下配置后即可启动报告生成。',
+                preConfigSectionData: '数据源',
+                preConfigSectionTemplate: '模板',
+                preConfigSectionStrategy: '生成策略',
+                preConfigTemplateHint: '在缩略图内左右移动鼠标，可预览模板不同页面。',
+                preConfigTemplateScrubHint: '左右滑动预览',
+                preConfigTemplatePageFallback: '第 {index} 页',
+                preConfigTemplatePageIndicator: '{current}/{total}',
+                preConfigTemplateNone: '暂无模板',
+                preConfigTemplateImageAlt: '模板第 {page} 页缩略图',
                 preConfigFocusTitle: '关注焦点',
-                preConfigFocusHint: '可多选',
+                preConfigFocusHint: '支持留空（默认包含全部重点）或多选',
+                preConfigFocusReserved: '更多焦点（预留）',
                 preConfigGenerateBtn: '进入工作台并生成',
                 focusOptionVulnerability: '漏洞',
-                focusOptionVulnerabilityDesc: '漏洞',
+                focusOptionVulnerabilityDesc: '风险暴露与修复优先级',
                 focusOptionAlert: '告警',
-                focusOptionAlertDesc: '告警',
+                focusOptionAlertDesc: '告警态势与处置建议',
+                preConfigActionHint: '配置完成后将自动进入工作台并开始生成。',
                 btnReconfigure: '重新配置',
                 focusSummaryLabel: '重点',
                 focusSummaryNone: '无'
@@ -1719,14 +2404,32 @@
                 btnPresentSlides: 'Play Slides',
                 presentBtnTitle: 'Start slideshow in fullscreen',
                 preConfigTitle: 'Report Setup',
-                preConfigSubtitle: 'Pick focus, then generate.',
+                preConfigSubtitle: 'Choose data and focus, then generate the report.',
+                preConfigEyebrow: 'MSS AI REPORT STUDIO',
+                preConfigLead: '',
+                preConfigFeatureReliable: 'Selectable report preference focus',
+                preConfigFeatureTemplate: 'Support online manual and AI editing',
+                preConfigFeatureTrace: 'You can reconfigure in workspace anytime',
+                preConfigCardTitle: 'Generation Setup',
+                preConfigCardIntro: 'Complete the following configuration to start report generation.',
+                preConfigSectionData: 'Data Source',
+                preConfigSectionTemplate: 'Template',
+                preConfigSectionStrategy: 'Generation Strategy',
+                preConfigTemplateHint: 'Move the mouse left/right on the thumbnail to preview different pages.',
+                preConfigTemplateScrubHint: 'Scrub to preview',
+                preConfigTemplatePageFallback: 'Page {index}',
+                preConfigTemplatePageIndicator: '{current}/{total}',
+                preConfigTemplateNone: 'No templates available',
+                preConfigTemplateImageAlt: 'Template page {page} thumbnail',
                 preConfigFocusTitle: 'Focus Areas',
-                preConfigFocusHint: 'Multi-select',
+                preConfigFocusHint: 'Leave empty (include all focus areas by default), or select multiple.',
+                preConfigFocusReserved: 'More focus options (reserved)',
                 preConfigGenerateBtn: 'Enter Workspace & Generate',
                 focusOptionVulnerability: 'Vulnerability',
-                focusOptionVulnerabilityDesc: 'Vulnerability',
+                focusOptionVulnerabilityDesc: 'Risk exposure and remediation priority',
                 focusOptionAlert: 'Alert',
-                focusOptionAlertDesc: 'Alert',
+                focusOptionAlertDesc: 'Alert posture and response guidance',
+                preConfigActionHint: 'After confirmation, the workspace opens and generation starts automatically.',
                 btnReconfigure: 'Reconfigure',
                 focusSummaryLabel: 'Focus',
                 focusSummaryNone: 'None'
@@ -1818,6 +2521,7 @@
             // Update dropdowns if loaded
             updateInputDropdown();
             updateTemplateDropdown();
+            syncPreconfigTemplateSelectionUI();
 
             // Update modified slides button
             updateModifiedSlidesUI();
@@ -1919,9 +2623,222 @@
             }
         }
 
+        function hashTemplateSeed(text) {
+            let h = 0;
+            const src = String(text || '');
+            for (let i = 0; i < src.length; i += 1) {
+                h = ((h << 5) - h + src.charCodeAt(i)) | 0;
+            }
+            return Math.abs(h);
+        }
+
+        function getTemplatePreviewBackground(templateId, frameIndex) {
+            const palettes = [
+                ['#1e3a8a', '#2563eb', '#60a5fa'],
+                ['#0f766e', '#14b8a6', '#5eead4'],
+                ['#7c2d12', '#f97316', '#fdba74'],
+                ['#1f2937', '#334155', '#94a3b8'],
+                ['#4c1d95', '#7c3aed', '#c4b5fd']
+            ];
+            const seed = hashTemplateSeed(`${templateId}:${frameIndex}`);
+            const palette = palettes[seed % palettes.length];
+            return `linear-gradient(132deg, ${palette[0]} 0%, ${palette[1]} 58%, ${palette[2]} 100%)`;
+        }
+
+        function getTemplatePreviewImageUrl(templateId, frameIndex) {
+            const folderByTemplate = {
+                mss_classic_ops: '/static/previews/template_classic_preview'
+            };
+            const folder = folderByTemplate[templateId];
+            if (!folder) return '';
+            const safeIndex = Number.isFinite(frameIndex) ? Math.max(0, frameIndex) : 0;
+            return `${folder}/slide${safeIndex + 1}.png`;
+        }
+
+        function getTemplateFrameTitle(frame, index) {
+            if (frame?.title) return String(frame.title);
+            if (frame?.slide_key) return String(frame.slide_key);
+            return tf('preConfigTemplatePageFallback', { index: index + 1 });
+        }
+
+        function updateTemplatePreviewCardFrame(cardEl, templateId, frameIndex) {
+            if (!cardEl) return;
+            const frames = state.preconfigTemplateFramesById[templateId] || [];
+            const safeTotal = Math.max(frames.length, 1);
+            const safeIndex = Math.min(Math.max(frameIndex || 0, 0), safeTotal - 1);
+            const frame = frames[safeIndex] || {};
+            const preview = cardEl.querySelector('.preconfig-template-preview');
+            const pageChip = cardEl.querySelector('.preconfig-template-page-chip');
+            const pageTitle = cardEl.querySelector('.preconfig-template-page-title');
+            const scrub = cardEl.querySelector('.preconfig-template-scrub');
+            const previewImg = cardEl.querySelector('.preconfig-template-preview-image');
+            if (preview) {
+                preview.style.background = getTemplatePreviewBackground(templateId, safeIndex);
+            }
+            if (preview && previewImg) {
+                const imageUrl = getTemplatePreviewImageUrl(templateId, safeIndex);
+                if (imageUrl) {
+                    previewImg.src = `${imageUrl}?v=${state.preconfigTemplatePreviewStamp}&p=${safeIndex + 1}`;
+                    previewImg.alt = tf('preConfigTemplateImageAlt', { page: safeIndex + 1 });
+                    previewImg.style.display = 'block';
+                    preview.classList.add('has-image');
+                } else {
+                    previewImg.removeAttribute('src');
+                    previewImg.style.display = 'none';
+                    preview.classList.remove('has-image');
+                }
+            }
+            if (pageChip) pageChip.textContent = tf('preConfigTemplatePageIndicator', { current: safeIndex + 1, total: safeTotal });
+            if (pageTitle) pageTitle.textContent = getTemplateFrameTitle(frame, safeIndex);
+            if (scrub) scrub.style.setProperty('--pre-template-progress', String((safeIndex + 1) / safeTotal));
+        }
+
+        async function ensurePreconfigTemplateFrames(templateId) {
+            if (!templateId) return [];
+            if (Array.isArray(state.preconfigTemplateFramesById[templateId])) {
+                return state.preconfigTemplateFramesById[templateId];
+            }
+            if (state.preconfigTemplateFramePromiseById[templateId]) {
+                return state.preconfigTemplateFramePromiseById[templateId];
+            }
+            state.preconfigTemplateFramePromiseById[templateId] = (async () => {
+                try {
+                    const res = await api(`/api/v1/templates/${encodeURIComponent(templateId)}/slides`);
+                    const data = res.data || res;
+                    const frames = Array.isArray(data)
+                        ? data.map((item, idx) => ({
+                            slide_key: item?.slide_key || `slide_${idx + 1}`,
+                            title: item?.title || ''
+                        }))
+                        : [];
+                    state.preconfigTemplateFramesById[templateId] = frames.length
+                        ? frames
+                        : [{ slide_key: 'slide_1', title: tf('preConfigTemplatePageFallback', { index: 1 }) }];
+                } catch (e) {
+                    state.preconfigTemplateFramesById[templateId] = [
+                        { slide_key: 'slide_1', title: tf('preConfigTemplatePageFallback', { index: 1 }) }
+                    ];
+                } finally {
+                    delete state.preconfigTemplateFramePromiseById[templateId];
+                }
+                if (typeof state.preconfigTemplateFrameIndexById[templateId] !== 'number') {
+                    state.preconfigTemplateFrameIndexById[templateId] = 0;
+                }
+                return state.preconfigTemplateFramesById[templateId];
+            })();
+            return state.preconfigTemplateFramePromiseById[templateId];
+        }
+
+        function syncPreconfigTemplateSelectionUI() {
+            const preTemplateSelect = $('preTemplateSelect');
+            const selectedTemplateId = preTemplateSelect?.value || '';
+            document.querySelectorAll('.preconfig-template-card').forEach((card) => {
+                const isSelected = card.dataset.templateId === selectedTemplateId;
+                card.classList.toggle('selected', isSelected);
+                card.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+            });
+        }
+
+        function selectPreconfigTemplate(templateId) {
+            const preTemplateSelect = $('preTemplateSelect');
+            if (!preTemplateSelect || !templateId) return;
+            preTemplateSelect.value = templateId;
+            syncPreconfigTemplateSelectionUI();
+        }
+
+        function renderPreconfigTemplateGallery() {
+            const gallery = $('preTemplateGallery');
+            const preTemplateSelect = $('preTemplateSelect');
+            const templates = Array.isArray(window.cachedTemplates) ? window.cachedTemplates : [];
+            state.preconfigTemplatePreviewStamp = Date.now();
+            if (!gallery || !preTemplateSelect) return;
+
+            if (!templates.length) {
+                gallery.innerHTML = `<div class="preconfig-template-card" aria-disabled="true"><div class="preconfig-template-meta"><span class="preconfig-template-name">${t('preConfigTemplateNone')}</span></div></div>`;
+                return;
+            }
+
+            const selectedAvailable = templates.some((tpl) => tpl.template_id === preTemplateSelect.value);
+            if (!selectedAvailable) {
+                preTemplateSelect.value = templates[0].template_id;
+            }
+
+            gallery.innerHTML = templates.map((tpl) => {
+                const isSelected = tpl.template_id === preTemplateSelect.value;
+                return `
+                    <button type="button" class="preconfig-template-card${isSelected ? ' selected' : ''}" data-template-id="${tpl.template_id}" role="option" aria-selected="${isSelected ? 'true' : 'false'}">
+                        <div class="preconfig-template-preview">
+                            <img class="preconfig-template-preview-image" alt="">
+                            <span class="preconfig-template-page-chip">1/1</span>
+                            <span class="preconfig-template-page-title">${t('msgLoading')}</span>
+                            <span class="preconfig-template-scrub"><span></span></span>
+                        </div>
+                        <div class="preconfig-template-meta">
+                            <span class="preconfig-template-name">${getTemplateNameTranslated(tpl.template_id, tpl.name)}</span>
+                        </div>
+                    </button>`;
+            }).join('');
+
+            gallery.querySelectorAll('.preconfig-template-card').forEach((card) => {
+                const templateId = card.dataset.templateId;
+                const preview = card.querySelector('.preconfig-template-preview');
+                const previewImg = card.querySelector('.preconfig-template-preview-image');
+                if (!templateId || !preview) return;
+                if (previewImg) {
+                    previewImg.addEventListener('error', () => {
+                        previewImg.style.display = 'none';
+                        preview.classList.remove('has-image');
+                    });
+                    previewImg.addEventListener('load', () => {
+                        previewImg.style.display = 'block';
+                        preview.classList.add('has-image');
+                    });
+                }
+
+                const refreshFrame = () => {
+                    const current = state.preconfigTemplateFrameIndexById[templateId] || 0;
+                    updateTemplatePreviewCardFrame(card, templateId, current);
+                };
+
+                card.addEventListener('click', () => {
+                    selectPreconfigTemplate(templateId);
+                });
+
+                const scrubFrame = async (clientX) => {
+                    const frames = await ensurePreconfigTemplateFrames(templateId);
+                    if (!frames.length) return;
+                    const rect = preview.getBoundingClientRect();
+                    if (!rect.width) return;
+                    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+                    const index = Math.min(frames.length - 1, Math.floor(ratio * frames.length));
+                    if (state.preconfigTemplateFrameIndexById[templateId] !== index) {
+                        state.preconfigTemplateFrameIndexById[templateId] = index;
+                        refreshFrame();
+                    }
+                };
+
+                preview.addEventListener('pointerenter', async () => {
+                    await ensurePreconfigTemplateFrames(templateId);
+                    refreshFrame();
+                });
+                preview.addEventListener('pointermove', (event) => {
+                    scrubFrame(event.clientX);
+                });
+
+                ensurePreconfigTemplateFrames(templateId).then(() => {
+                    if (card.isConnected) refreshFrame();
+                });
+            });
+        }
+
         function updateTemplateDropdown() {
             populateTemplateSelect('templateSelect');
             populateTemplateSelect('preTemplateSelect');
+            const preTemplateSelect = $('preTemplateSelect');
+            if (preTemplateSelect && !preTemplateSelect.value && Array.isArray(window.cachedTemplates) && window.cachedTemplates.length > 0) {
+                preTemplateSelect.value = window.cachedTemplates[0].template_id;
+            }
+            renderPreconfigTemplateGallery();
         }
 
         function populateInputSelect(selectId) {
@@ -1996,7 +2913,11 @@
             aiRewriteSelectedTokensBySlide: {},
             aiRewriteModeBySlide: {},
             selectedFocusOptions: [],
-            hasEnteredWorkspace: false
+            hasEnteredWorkspace: false,
+            preconfigTemplateFramesById: {},
+            preconfigTemplateFrameIndexById: {},
+            preconfigTemplateFramePromiseById: {},
+            preconfigTemplatePreviewStamp: Date.now()
         };
 
         const $ = (id) => document.getElementById(id);
@@ -2019,6 +2940,7 @@
         function setPreconfigFocusSelection(options = []) {
             const selected = Array.isArray(options) ? new Set(options) : new Set();
             document.querySelectorAll('.preconfig-focus-card').forEach((el) => {
+                if (!el.dataset.focusOption) return;
                 const isSelected = selected.has(el.dataset.focusOption);
                 el.classList.toggle('selected', isSelected);
                 el.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
@@ -2061,9 +2983,50 @@
             const useMock = $('useMock');
 
             if (preInputSelect && inputSelect) preInputSelect.value = inputSelect.value;
-            if (preTemplateSelect && templateSelect) preTemplateSelect.value = templateSelect.value;
+            if (preTemplateSelect && templateSelect && templateSelect.value) {
+                preTemplateSelect.value = templateSelect.value;
+            }
             if (preUseMock && useMock) preUseMock.checked = useMock.checked;
             setPreconfigFocusSelection(state.selectedFocusOptions);
+            syncPreconfigTemplateSelectionUI();
+        }
+
+        function playPreconfigIntroAnimation() {
+            const preConfigScreen = $('preConfigScreen');
+            if (!preConfigScreen) return;
+            preConfigScreen.classList.remove('preconfig-animate');
+            void preConfigScreen.offsetWidth;
+            preConfigScreen.classList.add('preconfig-animate');
+        }
+
+        function bindPreconfigHeroMotion() {
+            const hero = document.querySelector('.preconfig-hero');
+            if (!hero || hero.dataset.motionBound === 'true') return;
+            hero.dataset.motionBound = 'true';
+            if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+
+            const resetHeroPose = () => {
+                hero.style.setProperty('--pre-hero-tilt-x', '0deg');
+                hero.style.setProperty('--pre-hero-tilt-y', '0deg');
+                hero.style.setProperty('--pre-hero-glow-x', '60%');
+                hero.style.setProperty('--pre-hero-glow-y', '40%');
+                hero.removeAttribute('data-pointer-active');
+            };
+
+            hero.addEventListener('pointermove', (event) => {
+                const rect = hero.getBoundingClientRect();
+                if (!rect.width || !rect.height) return;
+                const px = (event.clientX - rect.left) / rect.width - 0.5;
+                const py = (event.clientY - rect.top) / rect.height - 0.5;
+                hero.style.setProperty('--pre-hero-tilt-y', `${(px * 3.6).toFixed(2)}deg`);
+                hero.style.setProperty('--pre-hero-tilt-x', `${(-py * 3).toFixed(2)}deg`);
+                hero.style.setProperty('--pre-hero-glow-x', `${((px + 0.5) * 100).toFixed(1)}%`);
+                hero.style.setProperty('--pre-hero-glow-y', `${((py + 0.5) * 100).toFixed(1)}%`);
+                hero.setAttribute('data-pointer-active', 'true');
+            });
+            hero.addEventListener('pointerleave', resetHeroPose);
+            hero.addEventListener('pointercancel', resetHeroPose);
+            resetHeroPose();
         }
 
         function enterWorkspace() {
@@ -2079,6 +3042,8 @@
             $('preConfigScreen')?.classList.remove('hidden');
             $('mainWorkspace')?.classList.add('hidden');
             state.hasEnteredWorkspace = false;
+            renderPreconfigTemplateGallery();
+            playPreconfigIntroAnimation();
         }
 
         // --- Toast Notification System ---
@@ -2400,6 +3365,8 @@
             updateLanguageButtonStyles();
             initWebSocket();
             checkAndRestoreCooldown();
+            bindPreconfigHeroMotion();
+            playPreconfigIntroAnimation();
             try {
                 const [tplsResp, inputsResp] = await Promise.all([
                     api('/api/v1/templates'),
@@ -3399,10 +4366,14 @@
             openPreconfigScreen();
         };
         document.querySelectorAll('.preconfig-focus-card').forEach((card) => {
+            if (!card.dataset.focusOption) return;
             card.addEventListener('click', () => {
                 card.classList.toggle('selected');
                 card.setAttribute('aria-pressed', card.classList.contains('selected') ? 'true' : 'false');
             });
+        });
+        $('preTemplateSelect')?.addEventListener('change', () => {
+            syncPreconfigTemplateSelectionUI();
         });
         $('exportOptionPpt').onclick = () => setExportFormat('ppt');
         $('exportOptionPdf').onclick = () => setExportFormat('pdf');
