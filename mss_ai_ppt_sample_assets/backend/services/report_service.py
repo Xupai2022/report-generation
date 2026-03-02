@@ -6,7 +6,7 @@ import shutil
 import time
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, List, Set, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 from mss_ai_ppt_sample_assets.backend import config
 from mss_ai_ppt_sample_assets.backend.models.inputs import TenantInput
@@ -327,7 +327,14 @@ class ReportService:
         return TenantInput(raw=parsed)
 
     def generate(
-        self, input_id: str, template_id: str, use_mock: bool = False, session_id: str = None, ws_manager=None, event_loop=None
+        self,
+        input_id: str,
+        template_id: str,
+        use_mock: bool = False,
+        focus_options: Optional[List[str]] = None,
+        session_id: str = None,
+        ws_manager=None,
+        event_loop=None,
     ) -> Dict[str, Any]:
         """Generate report using V2 template.
 
@@ -340,6 +347,7 @@ class ReportService:
             input_id: Input data identifier
             template_id: Template identifier
             use_mock: Whether to use mock LLM generation
+            focus_options: Optional report focus options for prompt augmentation
             session_id: Optional session ID for concurrent request isolation.
                        If None, a new session ID will be generated.
             ws_manager: WebSocket manager for real-time progress updates
@@ -368,10 +376,27 @@ class ReportService:
             tenant_input = self.load_input(input_id)
             logger.debug(f"Loaded input data: {len(tenant_input.raw)} keys")
 
-        return self._generate_v2(input_id, template_id, tenant_input, session_id=session_id, use_mock=use_mock, ws_manager=ws_manager, event_loop=event_loop)
+        return self._generate_v2(
+            input_id,
+            template_id,
+            tenant_input,
+            session_id=session_id,
+            use_mock=use_mock,
+            focus_options=focus_options,
+            ws_manager=ws_manager,
+            event_loop=event_loop,
+        )
 
     def _generate_v2(
-        self, input_id: str, template_id: str, tenant_input: TenantInput, session_id: str, use_mock: bool = False, ws_manager=None, event_loop=None
+        self,
+        input_id: str,
+        template_id: str,
+        tenant_input: TenantInput,
+        session_id: str,
+        use_mock: bool = False,
+        focus_options: Optional[List[str]] = None,
+        ws_manager=None,
+        event_loop=None,
     ) -> Dict[str, Any]:
         """Generate report using V2 AI-driven flow.
 
@@ -381,6 +406,7 @@ class ReportService:
             tenant_input: Parsed tenant input data
             session_id: Unique session ID for file isolation
             use_mock: Whether to use mock LLM generation
+            focus_options: Optional report focus options for prompt augmentation
             ws_manager: WebSocket manager for real-time progress updates
             event_loop: Event loop for scheduling async tasks from sync code
 
@@ -399,6 +425,7 @@ class ReportService:
             tenant_input=tenant_input,
             template_id=template_id,
             use_mock=use_mock,
+            focus_options=focus_options,
             session_id=session_id,
             ws_manager=ws_manager,
             event_loop=event_loop,

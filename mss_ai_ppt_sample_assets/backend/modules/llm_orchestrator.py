@@ -46,6 +46,14 @@ class LLMOrchestratorV2:
     - Generates content based on ai_instruction fields
     - Validates only key numerical fields
     """
+    _FOCUS_PROMPT_MAP: Dict[str, str] = {
+        "vulnerability": (
+            "报告重点偏向漏洞：在slide14的vuln_summary突出漏洞总结的成效，重点体现保护成效，并且在最后输出‘mss为你保驾护航’。"
+        ),
+        "alert": (
+            "报告重点偏向告警：优先突出告警态势、处置效率、误报漏报风险与运营优化建议。"
+        ),
+    }
 
     def __init__(self, template_repo: Optional[TemplateRepository] = None):
         self.template_repo = template_repo or TemplateRepository()
@@ -536,7 +544,8 @@ class LLMOrchestratorV2:
     def _build_user_prompt(
         self,
         tenant_input: TenantInput,
-        template: TemplateDescriptorV2
+        template: TemplateDescriptorV2,
+        focus_options: Optional[List[str]] = None,
     ) -> str:
         """Build the user prompt with data and AI instructions."""
         period = tenant_input.get("period", {})
@@ -544,7 +553,6 @@ class LLMOrchestratorV2:
         prompt_parts = [
             "## 任务",
             "基于输入的安全数据，生成指定 slide 的占位符内容。",
-            f"报告时间：{period.get('start', '')} ~ {period.get('end', '')}",
             "",
             "## 输出要求",
             "1) 只返回合法JSON，不要输出解释、注释或Markdown。",
@@ -574,6 +582,8 @@ class LLMOrchestratorV2:
             "## 需要生成的内容",
             "",
         ])
+
+        self._append_focus_prompt_section(prompt_parts, focus_options)
 
         ai_placeholders = template.get_ai_placeholders()
         current_slide = None
@@ -617,6 +627,7 @@ class LLMOrchestratorV2:
         slide_keys: List[str],
         batch_index: int = 0,
         total_batches: int = 1,
+        focus_options: Optional[List[str]] = None,
     ) -> str:
         """Build user prompt for a subset of slides (for batched generation).
 
@@ -678,6 +689,8 @@ class LLMOrchestratorV2:
             "",
         ])
 
+        self._append_focus_prompt_section(prompt_parts, focus_options)
+
         ai_placeholders = template.get_ai_placeholders()
         current_slide = None
 
@@ -715,6 +728,32 @@ class LLMOrchestratorV2:
         ])
 
         return "\n".join(prompt_parts)
+
+    def _normalize_focus_options(self, focus_options: Optional[List[str]]) -> List[str]:
+        """Normalize report focus options (filter invalid and dedupe)."""
+        if not focus_options:
+            return []
+
+        normalized: List[str] = []
+        seen = set()
+        for option in focus_options:
+            if option in self._FOCUS_PROMPT_MAP and option not in seen:
+                seen.add(option)
+                normalized.append(option)
+        return normalized
+
+    def _append_focus_prompt_section(self, prompt_parts: List[str], focus_options: Optional[List[str]]) -> None:
+        """Append user-selected full-report focus preferences to prompt."""
+        normalized_focus = self._normalize_focus_options(focus_options)
+        if not normalized_focus:
+            return
+
+        prompt_parts.extend([
+            "",
+            "## 报告重点偏向（用户选择）",
+        ])
+        for option in normalized_focus:
+            prompt_parts.append(f"- {self._FOCUS_PROMPT_MAP[option]}")
 
     def _build_rewrite_base_prompt(
         self,
@@ -1012,6 +1051,7 @@ class LLMOrchestratorV2:
         tenant_input: TenantInput,
         template: TemplateDescriptorV2,
         max_tokens_per_batch: int = 15000,
+        focus_options: Optional[List[str]] = None,
         session_id: str = None,
         ws_manager = None,
         event_loop = None,
@@ -1048,7 +1088,11 @@ class LLMOrchestratorV2:
             logger.info("Single batch - using standard generation")
             send_progress(35, "正在调用AI生成内容...")
             system_prompt = self._build_system_prompt(template)
-            user_prompt = self._build_user_prompt(tenant_input, template)
+            user_prompt = self._build_user_prompt(
+                tenant_input,
+                template,
+                focus_options=focus_options,
+            )
             result = self._call_and_parse_with_retry(system_prompt, user_prompt, template)
             send_progress(60, "AI内容生成完成")
             return result
@@ -1073,6 +1117,7 @@ class LLMOrchestratorV2:
                 batch_slide_keys,
                 batch_index=i,
                 total_batches=total_batches,
+                focus_options=focus_options,
             )
 
             prompt_tokens = self._estimate_prompt_tokens(user_prompt)
@@ -1260,6 +1305,7 @@ class LLMOrchestratorV2:
         tenant_input: TenantInput,
         template_id: str,
         use_mock: bool = False,
+        focus_options: Optional[List[str]] = None,
         session_id: str = None,
         ws_manager = None,
         event_loop = None,
@@ -1272,6 +1318,7 @@ class LLMOrchestratorV2:
             tenant_input: Raw tenant input data
             template_id: V2 template ID
             use_mock: Whether to force mock/fallback generation
+            focus_options: Optional report focus options for prompt augmentation
             session_id: Session ID for WebSocket progress updates
             ws_manager: WebSocket manager for real-time progress
             event_loop: Event loop for scheduling async tasks from sync code
@@ -1322,6 +1369,7 @@ class LLMOrchestratorV2:
                 ai_placeholders = self._generate_ai_content_in_batches(
                     tenant_input,
                     template,
+                    focus_options=focus_options,
                     session_id=session_id,
                     ws_manager=ws_manager,
                     event_loop=event_loop,
@@ -1436,4 +1484,3 @@ class LLMOrchestrator:
             else:
                 updated_slides.append(slide)
         return SlideSpec(template_id=slide_spec.template_id, slides=updated_slides)
-

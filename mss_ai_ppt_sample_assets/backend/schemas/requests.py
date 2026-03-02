@@ -9,6 +9,13 @@ class CreateReportRequest(BaseModel):
     input_id: str = Field(..., description="Input data ID", example="tenant_acme_2025-11")
     template_id: str = Field(..., description="Template ID", example="mss_executive_v2")
     use_mock: bool = Field(False, description="Use mock mode (skip AI generation)")
+    focus_options: Optional[List[Literal["vulnerability", "alert"]]] = Field(
+        None,
+        description=(
+            "Optional report focus options. "
+            "If omitted or empty, no additional focus prompt is appended."
+        ),
+    )
     session_id: Optional[str] = Field(None, description="Optional session ID")
     client_id: Optional[str] = Field(None, description="Optional WebSocket client ID")
     idempotency_key: Optional[str] = Field(
@@ -22,6 +29,7 @@ class CreateReportRequest(BaseModel):
                 "input_id": "tenant_acme_2025-11",
                 "template_id": "mss_executive_v2",
                 "use_mock": False,
+                "focus_options": ["vulnerability"],
                 "idempotency_key": "user123-request456"
             }
         }

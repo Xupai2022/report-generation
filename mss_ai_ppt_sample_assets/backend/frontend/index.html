@@ -109,6 +109,13 @@
 
         /* ===== Main Layout Structure ===== */
         .app-layout { display: flex; flex-direction: column; height: 100vh; }
+        #mainWorkspace {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
         .app-header {
             height: var(--header-height);
             background-color: var(--color-bg-surface);
@@ -133,6 +140,7 @@
         }
         .app-body {
             flex-grow: 1;
+            min-height: 0;
             display: flex;
             overflow: hidden;
         }
@@ -1164,6 +1172,172 @@
             align-items: center;
             justify-content: center;
         }
+
+        .preconfig-screen {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-10);
+            position: relative;
+            background:
+                radial-gradient(1200px 360px at 15% -20%, rgba(37, 99, 235, 0.18), transparent 65%),
+                radial-gradient(1000px 400px at 110% 120%, rgba(15, 23, 42, 0.1), transparent 70%),
+                linear-gradient(135deg, #eef2f7 0%, #f8f7f3 52%, #eef2f7 100%);
+        }
+        .preconfig-topbar {
+            position: absolute;
+            top: var(--space-4);
+            right: var(--space-4);
+            display: flex;
+            align-items: center;
+            z-index: 5;
+        }
+        .preconfig-shell {
+            width: min(1080px, 100%);
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: var(--space-8);
+            align-items: stretch;
+        }
+        .preconfig-hero {
+            border-radius: 18px;
+            padding: var(--space-8);
+            color: #0f172a;
+            background: linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(241,245,249,0.78) 100%);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            box-shadow: 0 22px 44px rgba(15, 23, 42, 0.08);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: var(--space-6);
+        }
+        .preconfig-hero h2 {
+            font-size: 30px;
+            line-height: 1.2;
+            letter-spacing: 0.02em;
+        }
+        .preconfig-hero p {
+            font-size: 15px;
+            line-height: 1.7;
+            color: #334155;
+            max-width: 44ch;
+        }
+        .preconfig-card {
+            border-radius: 18px;
+            padding: var(--space-6);
+            background: rgba(255, 255, 255, 0.76);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            box-shadow: 0 26px 52px rgba(15, 23, 42, 0.1);
+            backdrop-filter: blur(6px);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-5);
+        }
+        .preconfig-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--space-4);
+        }
+        .preconfig-focus-section {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-3);
+        }
+        .preconfig-focus-section h3 {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #475569;
+        }
+        .preconfig-focus-hint {
+            font-size: 12px;
+            color: #64748b;
+        }
+        .preconfig-focus-options {
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: center;
+            gap: var(--space-3);
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding-bottom: var(--space-2);
+            scrollbar-gutter: stable both-edges;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-x;
+        }
+        .preconfig-focus-card {
+            flex: 0 0 auto;
+            min-width: 132px;
+            height: 44px;
+            text-align: left;
+            border-radius: 999px;
+            border: 1px solid #d5dbe5;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+            padding: 0 var(--space-4);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast);
+            user-select: none;
+        }
+        .preconfig-focus-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 14px rgba(15, 23, 42, 0.08);
+            border-color: #bfdbfe;
+        }
+        .preconfig-focus-card.selected {
+            border-color: #2563eb;
+            background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
+            box-shadow: 0 12px 22px rgba(37, 99, 235, 0.2);
+        }
+        .preconfig-focus-card:focus-visible {
+            outline: 2px solid #2563eb;
+            outline-offset: 2px;
+        }
+        .preconfig-focus-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #0f172a;
+        }
+        .preconfig-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+        #preConfigGenerateBtn {
+            height: 42px;
+            padding: 0 var(--space-6);
+            border-radius: 11px;
+            border: 1px solid #1e293b;
+            background: linear-gradient(180deg, #1f3b63 0%, #1d2f48 100%);
+            box-shadow: 0 10px 24px rgba(30, 64, 175, 0.25);
+        }
+        #preConfigGenerateBtn:hover {
+            background: linear-gradient(180deg, #224773 0%, #223853 100%);
+        }
+        .focus-summary-badge {
+            min-height: 30px;
+            display: inline-flex;
+            align-items: center;
+            padding: 0 var(--space-3);
+            border-radius: 999px;
+            background: #e2e8f0;
+            color: #334155;
+            font-size: 12px;
+            font-weight: 600;
+            max-width: 340px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        @media (max-width: 980px) {
+            .preconfig-screen { padding: var(--space-4); }
+            .preconfig-shell { grid-template-columns: 1fr; }
+            .preconfig-hero h2 { font-size: 24px; }
+            .focus-summary-badge { max-width: 180px; }
+        }
     </style>
 </head>
 <body class="app-layout">
@@ -1181,6 +1355,61 @@
         <div class="progress-percentage-compact" id="progressPercentageCompact">0%</div>
     </div>
 
+    <section id="preConfigScreen" class="preconfig-screen">
+        <div class="preconfig-topbar">
+            <button id="preLangToggleBtn" class="lang-toggle-btn" data-role="lang-toggle" type="button" onclick="toggleLanguage()" aria-label="切换语言" data-tooltip="切换语言">
+                <svg class="lang-toggle-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M7.2 3.1a9.3 9.3 0 0 1 13.2 10.1"></path>
+                    <path d="M16.8 20.9a9.3 9.3 0 0 1-13.2-10.1"></path>
+                    <text class="lang-text" x="5.2" y="9.0">中</text>
+                    <text class="lang-text" x="10.8" y="16.7">En</text>
+                </svg>
+            </button>
+        </div>
+        <div class="preconfig-shell">
+            <div class="preconfig-hero">
+                <div>
+                    <h2 data-i18n="preConfigTitle">报告编排设置</h2>
+                    <p data-i18n="preConfigSubtitle">
+                        选择重点，生成报告。
+                    </p>
+                </div>
+            </div>
+            <div class="preconfig-card">
+                <div class="preconfig-grid">
+                    <div class="toolbar-item">
+                        <label for="preInputSelect" data-i18n="labelInput">Input Data</label>
+                        <select id="preInputSelect"><option data-i18n="msgLoading">Loading...</option></select>
+                    </div>
+                    <div class="toolbar-item">
+                        <label for="preTemplateSelect" data-i18n="labelTemplate">Select Template</label>
+                        <select id="preTemplateSelect"><option data-i18n="msgLoading">Loading...</option></select>
+                    </div>
+                    <label class="checkbox-group">
+                        <input type="checkbox" id="preUseMock" checked>
+                        <span data-i18n="labelUseMock">Quick Generate (Mock)</span>
+                    </label>
+                </div>
+                <div class="preconfig-focus-section">
+                    <h3 data-i18n="preConfigFocusTitle">关注焦点</h3>
+                    <p class="preconfig-focus-hint" data-i18n="preConfigFocusHint">可多选</p>
+                    <div class="preconfig-focus-options">
+                        <button type="button" class="preconfig-focus-card" data-focus-option="vulnerability" aria-pressed="false">
+                            <span class="preconfig-focus-name" data-i18n="focusOptionVulnerability">漏洞</span>
+                        </button>
+                        <button type="button" class="preconfig-focus-card" data-focus-option="alert" aria-pressed="false">
+                            <span class="preconfig-focus-name" data-i18n="focusOptionAlert">告警</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="preconfig-actions">
+                    <button id="preConfigGenerateBtn" class="btn btn-primary" type="button" data-i18n="preConfigGenerateBtn">进入工作台并生成</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div id="mainWorkspace" class="hidden">
     <header class="app-header">
         <div class="header-group">
             <div class="logo-group">
@@ -1193,7 +1422,7 @@
         </div>
         <div class="header-group">
             <div class="lang-switcher">
-                <button id="langToggleBtn" class="lang-toggle-btn" type="button" onclick="toggleLanguage()" aria-label="切换语言" data-tooltip="切换语言">
+                <button id="langToggleBtn" class="lang-toggle-btn" data-role="lang-toggle" type="button" onclick="toggleLanguage()" aria-label="切换语言" data-tooltip="切换语言">
                     <svg class="lang-toggle-icon" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M7.2 3.1a9.3 9.3 0 0 1 13.2 10.1"></path>
                         <path d="M16.8 20.9a9.3 9.3 0 0 1-13.2-10.1"></path>
@@ -1222,6 +1451,8 @@
                 <input type="checkbox" id="useMock" checked>
                 <span data-i18n="labelUseMock">Quick Generate (Mock)</span>
             </label>
+            <span id="focusSummaryBadge" class="focus-summary-badge">-</span>
+            <button id="reconfigureBtn" class="btn btn-secondary btn-sm" type="button" data-i18n="btnReconfigure">重新配置</button>
             <button id="exportBtn" class="btn btn-secondary icon-export-btn" type="button" disabled data-tooltip="Download">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path d="M12 3v11"></path>
@@ -1323,6 +1554,7 @@
             <div class="panel-footer" data-i18n="editorFooter">Key-Value</div>
         </aside>
     </main>
+    </div>
 
     <div id="exportModalOverlay" class="export-modal-overlay">
         <div id="exportModal" class="export-modal" role="dialog" aria-modal="true" aria-label="导出选项">
@@ -1392,14 +1624,14 @@
             </div>
             <div id="ratingCommentSection" style="display: none;">
                 <label for="ratingComment">
-                    <span data-i18n="ratingCommentLabel">璇峰憡璇夋垜浠叿浣撶殑闂</span>
+                    <span data-i18n="ratingCommentLabel">请告诉我们具体问题</span>
                     <span class="rating-required" data-i18n="ratingCommentRequiredHint">(required, at least 10 characters)</span>
                 </label>
                 <textarea id="ratingComment" rows="3" maxlength="500" data-i18n-placeholder="ratingCommentPlaceholder"></textarea>
                 <div class="rating-char-count"><span id="ratingCharCount">0</span> / 500</div>
             </div>
             <div class="rating-actions" id="ratingActions">
-                <button class="btn btn-primary" id="submitRatingBtn" onclick="submitRating()" style="display: none;" data-i18n="ratingSubmit">鎻愪氦璇勫垎</button>
+                <button class="btn btn-primary" id="submitRatingBtn" onclick="submitRating()" style="display: none;" data-i18n="ratingSubmit">提交评分</button>
             </div>
             <div id="ratingError" class="rating-error" style="display: none;"></div>
         </div>
@@ -1444,7 +1676,19 @@
                 msgAiRewriteSelectedCount: '已选 {count} 项',
                 msgSelectAtLeastOneAiToken: '请至少选择一个占位符',
                 btnPresentSlides: 'Play Slides',
-                presentBtnTitle: 'Start slideshow in fullscreen'
+                presentBtnTitle: 'Start slideshow in fullscreen',
+                preConfigTitle: '报告编排设置',
+                preConfigSubtitle: '选择重点，生成报告。',
+                preConfigFocusTitle: '关注焦点',
+                preConfigFocusHint: '可多选',
+                preConfigGenerateBtn: '进入工作台并生成',
+                focusOptionVulnerability: '漏洞',
+                focusOptionVulnerabilityDesc: '漏洞',
+                focusOptionAlert: '告警',
+                focusOptionAlertDesc: '告警',
+                btnReconfigure: '重新配置',
+                focusSummaryLabel: '重点',
+                focusSummaryNone: '无'
             },
             'en-US': {
                 sectionOverview: 'Overview',
@@ -1473,7 +1717,19 @@
                 msgAiRewriteSelectedCount: '{count} selected',
                 msgSelectAtLeastOneAiToken: 'Please select at least one placeholder',
                 btnPresentSlides: 'Play Slides',
-                presentBtnTitle: 'Start slideshow in fullscreen'
+                presentBtnTitle: 'Start slideshow in fullscreen',
+                preConfigTitle: 'Report Setup',
+                preConfigSubtitle: 'Pick focus, then generate.',
+                preConfigFocusTitle: 'Focus Areas',
+                preConfigFocusHint: 'Multi-select',
+                preConfigGenerateBtn: 'Enter Workspace & Generate',
+                focusOptionVulnerability: 'Vulnerability',
+                focusOptionVulnerabilityDesc: 'Vulnerability',
+                focusOptionAlert: 'Alert',
+                focusOptionAlertDesc: 'Alert',
+                btnReconfigure: 'Reconfigure',
+                focusSummaryLabel: 'Focus',
+                focusSummaryNone: 'None'
             }
         };
 
@@ -1516,13 +1772,13 @@
         }
 
         function updateLanguageButtonStyles() {
-            const toggleBtn = document.getElementById('langToggleBtn');
-            if (!toggleBtn) return;
             const nextLang = currentLang === 'zh-CN' ? 'en-US' : 'zh-CN';
             const tip = nextLang === 'en-US' ? t('tooltipSwitchToEnglish') : t('tooltipSwitchToChinese');
-            toggleBtn.dataset.lang = currentLang;
-            toggleBtn.setAttribute('aria-label', tip);
-            toggleBtn.setAttribute('data-tooltip', tip);
+            document.querySelectorAll('[data-role="lang-toggle"]').forEach((toggleBtn) => {
+                toggleBtn.dataset.lang = currentLang;
+                toggleBtn.setAttribute('aria-label', tip);
+                toggleBtn.setAttribute('data-tooltip', tip);
+            });
         }
 
         function updateUILanguage() {
@@ -1567,6 +1823,7 @@
             updateModifiedSlidesUI();
             updatePreviewLayoutSwitchText();
             updateExportCopy();
+            updateFocusSummaryBadge();
 
             // Update dynamically rendered empty editor placeholder text
             document.querySelectorAll('.field-editor-empty').forEach(el => {
@@ -1643,8 +1900,8 @@
             }
         }
 
-        function updateTemplateDropdown() {
-            const tplSel = $('templateSelect');
+        function populateTemplateSelect(selectId) {
+            const tplSel = $(selectId);
             if (!tplSel || !window.cachedTemplates) return;
 
             const currentValue = tplSel.value;
@@ -1657,14 +1914,18 @@
                 tplSel.appendChild(opt);
             });
 
-            // Restore selection
             if (currentValue) {
                 tplSel.value = currentValue;
             }
         }
 
-        function updateInputDropdown() {
-            const inputSel = $('inputSelect');
+        function updateTemplateDropdown() {
+            populateTemplateSelect('templateSelect');
+            populateTemplateSelect('preTemplateSelect');
+        }
+
+        function populateInputSelect(selectId) {
+            const inputSel = $(selectId);
             if (!inputSel || !window.cachedInputs) return;
 
             const currentValue = inputSel.value;
@@ -1677,10 +1938,14 @@
                 inputSel.appendChild(opt);
             });
 
-            // Restore selection
             if (currentValue) {
                 inputSel.value = currentValue;
             }
+        }
+
+        function updateInputDropdown() {
+            populateInputSelect('inputSelect');
+            populateInputSelect('preInputSelect');
         }
 
         function updateProgressStepsLanguage() {
@@ -1729,10 +1994,92 @@
             statusPollTimer: null,
             lastSaveHadAutoRestore: false,
             aiRewriteSelectedTokensBySlide: {},
-            aiRewriteModeBySlide: {}
+            aiRewriteModeBySlide: {},
+            selectedFocusOptions: [],
+            hasEnteredWorkspace: false
         };
 
         const $ = (id) => document.getElementById(id);
+
+        function getFocusOptionLabel(option) {
+            if (option === 'vulnerability') return t('focusOptionVulnerability');
+            if (option === 'alert') return t('focusOptionAlert');
+            return option;
+        }
+
+        function collectPreconfigFocusOptions() {
+            const selected = [];
+            document.querySelectorAll('.preconfig-focus-card.selected').forEach((el) => {
+                const value = el.dataset.focusOption;
+                if (value) selected.push(value);
+            });
+            return selected;
+        }
+
+        function setPreconfigFocusSelection(options = []) {
+            const selected = Array.isArray(options) ? new Set(options) : new Set();
+            document.querySelectorAll('.preconfig-focus-card').forEach((el) => {
+                const isSelected = selected.has(el.dataset.focusOption);
+                el.classList.toggle('selected', isSelected);
+                el.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+            });
+        }
+
+        function updateFocusSummaryBadge() {
+            const badge = $('focusSummaryBadge');
+            if (!badge) return;
+
+            const options = Array.isArray(state.selectedFocusOptions)
+                ? state.selectedFocusOptions
+                : [];
+            const focusNames = options.map(getFocusOptionLabel);
+            const summary = focusNames.length ? focusNames.join(' / ') : t('focusSummaryNone');
+            badge.textContent = `${t('focusSummaryLabel')}: ${summary}`;
+        }
+
+        function applyPreconfigToMainControls() {
+            const preInputSelect = $('preInputSelect');
+            const preTemplateSelect = $('preTemplateSelect');
+            const preUseMock = $('preUseMock');
+            const inputSelect = $('inputSelect');
+            const templateSelect = $('templateSelect');
+            const useMock = $('useMock');
+
+            if (inputSelect && preInputSelect) inputSelect.value = preInputSelect.value;
+            if (templateSelect && preTemplateSelect) templateSelect.value = preTemplateSelect.value;
+            if (useMock && preUseMock) useMock.checked = preUseMock.checked;
+            state.selectedFocusOptions = Array.from(new Set(collectPreconfigFocusOptions()));
+            updateFocusSummaryBadge();
+        }
+
+        function syncPreconfigFromMainControls() {
+            const preInputSelect = $('preInputSelect');
+            const preTemplateSelect = $('preTemplateSelect');
+            const preUseMock = $('preUseMock');
+            const inputSelect = $('inputSelect');
+            const templateSelect = $('templateSelect');
+            const useMock = $('useMock');
+
+            if (preInputSelect && inputSelect) preInputSelect.value = inputSelect.value;
+            if (preTemplateSelect && templateSelect) preTemplateSelect.value = templateSelect.value;
+            if (preUseMock && useMock) preUseMock.checked = useMock.checked;
+            setPreconfigFocusSelection(state.selectedFocusOptions);
+        }
+
+        function enterWorkspace() {
+            $('preConfigScreen')?.classList.add('hidden');
+            $('mainWorkspace')?.classList.remove('hidden');
+            state.hasEnteredWorkspace = true;
+            updateFocusSummaryBadge();
+            syncActionButtons();
+        }
+
+        function openPreconfigScreen() {
+            syncPreconfigFromMainControls();
+            $('preConfigScreen')?.classList.remove('hidden');
+            $('mainWorkspace')?.classList.add('hidden');
+            state.hasEnteredWorkspace = false;
+        }
 
         // --- Toast Notification System ---
         function showToast(message, options = {}) {
@@ -2063,6 +2410,9 @@
                 updateInputDropdown();
                 updateTemplateDropdown();
             } catch (e) { console.error(e); }
+            setPreconfigFocusSelection(state.selectedFocusOptions);
+            syncPreconfigFromMainControls();
+            updateFocusSummaryBadge();
             syncActionButtons();
         }
 
@@ -2191,15 +2541,46 @@
             });
         }
 
+        function getPreviewAnchorSlideKey() {
+            const viewport = $('canvasViewport');
+            const items = Array.from(document.querySelectorAll('#previewList .slide-view-item'));
+            if (!viewport || !items.length) return state.activeSlideKey;
+            const viewportRect = viewport.getBoundingClientRect();
+            const viewportCenterY = viewportRect.top + (viewportRect.height / 2);
+            let anchorKey = state.activeSlideKey || items[0].dataset.key;
+            let minDistance = Number.POSITIVE_INFINITY;
+            items.forEach((item) => {
+                const rect = item.getBoundingClientRect();
+                const itemCenterY = rect.top + (rect.height / 2);
+                const distance = Math.abs(itemCenterY - viewportCenterY);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    anchorKey = item.dataset.key || anchorKey;
+                }
+            });
+            return anchorKey;
+        }
+
+        function scrollPreviewToSlide(key) {
+            if (!key) return;
+            const viewItem = $(`view-${key}`);
+            if (!viewItem) return;
+            state.isClickScrolling = true;
+            viewItem.scrollIntoView({ behavior: 'auto', block: 'center' });
+            setTimeout(() => { state.isClickScrolling = false; }, 80);
+        }
+
         function setPreviewLayout(layout) {
             if (layout !== 'list' && layout !== 'two-up') return;
             if (state.previewLayout === layout) return;
+            const anchorSlideKey = getPreviewAnchorSlideKey();
             state.previewLayout = layout;
             updatePreviewLayoutButtons();
             updatePreviewLayoutChrome();
             updateActiveSlideTitle();
             if ((state.slidespec?.slides || []).length) {
                 renderPreviewList();
+                requestAnimationFrame(() => scrollPreviewToSlide(anchorSlideKey));
                 return;
             }
             $('previewList').classList.toggle('preview-list-two-up', state.previewLayout === 'two-up');
@@ -2805,6 +3186,10 @@
 
         function syncActionButtons() {
             $('generateBtn').disabled = state.loading;
+            const reconfigureBtn = $('reconfigureBtn');
+            if (reconfigureBtn) {
+                reconfigureBtn.disabled = state.loading;
+            }
             $('rewriteBtn').disabled = state.loading || !state.jobId;
             const aiRewriteTriggerBtn = $('aiRewriteTriggerBtn');
             if (aiRewriteTriggerBtn) {
@@ -2900,13 +3285,15 @@
             renderPresentation();
         }
 
-        $('generateBtn').onclick = async () => {
-            const iId = $('inputSelect').value;
-            const tId = $('templateSelect').value;
-            if (!iId || !tId) { return toast.warning(t('msgSelectDataAndTemplate'), t('toastTitleHint')); }
+        async function startGenerateFlow(inputId, templateId, useMock) {
+            if (!inputId || !templateId) {
+                return toast.warning(t('msgSelectDataAndTemplate'), t('toastTitleHint'));
+            }
 
             const cooldownEnd = parseInt(localStorage.getItem('generateCooldownEnd') || '0');
-            if (cooldownEnd > Date.now()) { return toast.warning(`${t('msgRequestTooFrequent')}${Math.ceil((cooldownEnd - Date.now())/1000)}${t('msgRetryIn')}`); }
+            if (cooldownEnd > Date.now()) {
+                return toast.warning(`${t('msgRequestTooFrequent')}${Math.ceil((cooldownEnd - Date.now())/1000)}${t('msgRetryIn')}`);
+            }
 
             if (!state.wsReady) {
                 console.warn('WebSocket not ready, retrying...');
@@ -2915,8 +3302,6 @@
             }
 
             if (!state.sessionId) {
-                // Generate session ID matching backend format: {uuid8}_{timestamp20}
-                // Example: a3f2c5d8_20250129143025123456
                 const uuid8 = Array.from({length: 8}, () => Math.floor(Math.random() * 16).toString(16)).join('');
                 const now = new Date();
                 const timestamp20 = [
@@ -2926,42 +3311,70 @@
                     String(now.getHours()).padStart(2, '0'),
                     String(now.getMinutes()).padStart(2, '0'),
                     String(now.getSeconds()).padStart(2, '0'),
-                    String(now.getMilliseconds() * 1000).padStart(6, '0')  // Convert ms to microseconds (6 digits)
+                    String(now.getMilliseconds() * 1000).padStart(6, '0')
                 ].join('');
                 state.sessionId = `${uuid8}_${timestamp20}`;
                 console.log('Generated new session_id:', state.sessionId);
             }
-            
+
             showProgressPanel();
-            
             const COOLDOWN_SECONDS = 30;
             localStorage.setItem('generateCooldownEnd', Date.now() + COOLDOWN_SECONDS * 1000);
             checkAndRestoreCooldown();
-            
+
             setLoading(true);
             try {
-                await doGenerate(iId, tId, $('useMock').checked);
+                await doGenerate(inputId, templateId, useMock);
             } catch (e) {
                 console.error(e);
                 localStorage.removeItem('generateCooldownEnd');
                 checkAndRestoreCooldown();
                 if (e.data?.error?.auto_retry_with_mock) {
-                    await doGenerate(iId, tId, true);
+                    await doGenerate(inputId, templateId, true);
                 } else {
                     handleGenerationFailed({ error: e.message });
                 }
             } finally {
                 setLoading(false);
             }
+        }
+
+        $('preConfigGenerateBtn').onclick = async () => {
+            const iId = $('preInputSelect').value;
+            const tId = $('preTemplateSelect').value;
+            if (!iId || !tId) {
+                return toast.warning(t('msgSelectDataAndTemplate'), t('toastTitleHint'));
+            }
+            applyPreconfigToMainControls();
+            enterWorkspace();
+            await startGenerateFlow(iId, tId, $('preUseMock').checked);
+        };
+
+        $('generateBtn').onclick = async () => {
+            const iId = $('inputSelect').value;
+            const tId = $('templateSelect').value;
+            await startGenerateFlow(iId, tId, $('useMock').checked);
         };
 
         async function doGenerate(inputId, templateId, useMock) {
+            const payload = {
+                input_id: inputId,
+                template_id: templateId,
+                use_mock: useMock,
+                session_id: state.sessionId,
+                client_id: state.clientId,
+                idempotency_key: state.sessionId
+            };
+            const normalizedFocusOptions = Array.isArray(state.selectedFocusOptions)
+                ? state.selectedFocusOptions.filter((option) => option === 'vulnerability' || option === 'alert')
+                : [];
+            if (normalizedFocusOptions.length > 0) {
+                payload.focus_options = normalizedFocusOptions;
+            }
+
             const res = await api('/api/v1/reports', {
                 method: 'POST',
-                body: JSON.stringify({
-                    input_id: inputId, template_id: templateId, use_mock: useMock,
-                    session_id: state.sessionId, client_id: state.clientId, idempotency_key: state.sessionId
-                })
+                body: JSON.stringify(payload)
             });
             const result = res.data || res;
             if (result.status === 'running') {
@@ -2982,6 +3395,15 @@
         $('exportBtn').onclick = () => {
             openExportModal();
         };
+        $('reconfigureBtn').onclick = () => {
+            openPreconfigScreen();
+        };
+        document.querySelectorAll('.preconfig-focus-card').forEach((card) => {
+            card.addEventListener('click', () => {
+                card.classList.toggle('selected');
+                card.setAttribute('aria-pressed', card.classList.contains('selected') ? 'true' : 'false');
+            });
+        });
         $('exportOptionPpt').onclick = () => setExportFormat('ppt');
         $('exportOptionPdf').onclick = () => setExportFormat('pdf');
         $('exportOptionPpt').addEventListener('keydown', (event) => {

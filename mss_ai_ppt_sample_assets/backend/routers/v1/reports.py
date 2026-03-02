@@ -48,7 +48,13 @@ def init_dependencies(websocket_manager, semaphore, max_concurrent, manager):
     job_manager = manager
 
 
-async def _process_report_async(job_id: str, input_id: str, template_id: str, use_mock: bool):
+async def _process_report_async(
+    job_id: str,
+    input_id: str,
+    template_id: str,
+    use_mock: bool,
+    focus_options=None,
+):
     """Background task to process report generation.
 
     This runs asynchronously after returning response to client.
@@ -63,9 +69,9 @@ async def _process_report_async(job_id: str, input_id: str, template_id: str, us
         # Acquire LLM semaphore if not using mock
         if not use_mock and llm_semaphore:
             async with llm_semaphore:
-                await _do_generation(job, input_id, template_id, use_mock)
+                await _do_generation(job, input_id, template_id, use_mock, focus_options=focus_options)
         else:
-            await _do_generation(job, input_id, template_id, use_mock)
+            await _do_generation(job, input_id, template_id, use_mock, focus_options=focus_options)
 
     except Exception as e:
         logger.exception(f"Job {job_id} failed: {e}")
@@ -81,10 +87,16 @@ async def _process_report_async(job_id: str, input_id: str, template_id: str, us
             wait_time = 2 ** retry_count  # Exponential backoff
             logger.info(f"🔄 Retrying job {job_id} in {wait_time}s (attempt {retry_count})")
             await asyncio.sleep(wait_time)
-            await _process_report_async(job_id, input_id, template_id, use_mock)
+            await _process_report_async(
+                job_id,
+                input_id,
+                template_id,
+                use_mock,
+                focus_options=focus_options,
+            )
 
 
-async def _do_generation(job, input_id: str, template_id: str, use_mock: bool):
+async def _do_generation(job, input_id: str, template_id: str, use_mock: bool, focus_options=None):
     """Execute the actual generation (called with semaphore acquired)."""
     job_id = job.job_id
 
@@ -104,6 +116,7 @@ async def _do_generation(job, input_id: str, template_id: str, use_mock: bool):
             input_id,
             template_id,
             use_mock=use_mock,
+            focus_options=focus_options,
             session_id=job.session_id,
             ws_manager=ws_manager,
             event_loop=loop  # Pass the main event loop
@@ -196,7 +209,7 @@ async def create_report(request: Request, req: CreateReportRequest):
     logger.info(
         f"=== POST /api/v1/reports: client_ip={client_ip}, input_id={req.input_id}, "
         f"template_id={req.template_id}, use_mock={req.use_mock}, idempotency_key={req.idempotency_key}, "
-        f"client_id={req.client_id}, session_id={req.session_id} ==="
+        f"client_id={req.client_id}, session_id={req.session_id}, focus_options={req.focus_options} ==="
     )
 
     if not job_manager:
@@ -259,7 +272,13 @@ async def create_report(request: Request, req: CreateReportRequest):
 
         # Launch background task
         asyncio.create_task(
-            _process_report_async(job.job_id, req.input_id, req.template_id, req.use_mock)
+            _process_report_async(
+                job.job_id,
+                req.input_id,
+                req.template_id,
+                req.use_mock,
+                focus_options=req.focus_options,
+            )
         )
 
         logger.info(f"Job created and processing started: {job.job_id}")
