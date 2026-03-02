@@ -81,7 +81,14 @@ def test_rewrite_prompt_includes_structured_data_and_dynamic_target_tokens():
     assert "3366666666" in captured["user_prompt"]
     assert "## Previous AI Copy (Style Reference Only)" in captured["user_prompt"]
     assert "old text with 33" in captured["user_prompt"]
+    assert "### Slide:" not in captured["user_prompt"]
+    assert "## Data Priority" in captured["user_prompt"]
     assert "Output only these dynamic target placeholders: trust_assurance, security_trust." in captured["user_prompt"]
+    assert captured["user_prompt"].index("## Rewrite Task") < captured["user_prompt"].index("## Current Slide Structured Data (Highest Priority)")
+    assert captured["user_prompt"].index("## Current Slide Structured Data (Highest Priority)") < captured["user_prompt"].index("## Report Period")
+    assert captured["user_prompt"].index("## Report Period") < captured["user_prompt"].index("## Previous AI Copy (Style Reference Only)")
+    assert captured["user_prompt"].index("## Previous AI Copy (Style Reference Only)") < captured["user_prompt"].index("## Hard Constraints")
+    assert captured["user_prompt"].index("## Hard Constraints") < captured["user_prompt"].index("## Output Format")
 
     assert set(result["placeholders"].keys()) == {"trust_assurance", "security_trust"}
     assert "incident_total" not in result["placeholders"]
@@ -135,6 +142,7 @@ def test_rewrite_single_slide_honors_target_tokens_subset():
     )
 
     assert "Dynamic target placeholders: trust_assurance" in captured["user_prompt"]
+    assert "old security" not in captured["user_prompt"]
     assert set(result["placeholders"].keys()) == {"trust_assurance"}
     assert result["updated_tokens"] == ["trust_assurance"]
 

@@ -937,12 +937,78 @@
             font-size: 13px;
             line-height: 1.5;
         }
+        .ai-rewrite-mode-group {
+            margin: 0 0 12px;
+        }
+        .ai-rewrite-mode-label {
+            margin: 0 0 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #0f172a;
+        }
+        .ai-rewrite-mode-switch {
+            display: flex;
+            gap: 8px;
+        }
+        .ai-rewrite-mode-btn {
+            border: 1px solid #d0cec3;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #334155;
+            height: 34px;
+            min-width: 110px;
+            padding: 0 12px;
+            cursor: pointer;
+            transition: border-color var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast);
+        }
+        .ai-rewrite-mode-btn:hover {
+            border-color: #bab8aa;
+            background: #f4f3ec;
+            color: #0f172a;
+        }
+        .ai-rewrite-mode-btn.active {
+            border-color: #1d4ed8;
+            background: #eff6ff;
+            color: #1d4ed8;
+            font-weight: 600;
+        }
+        .ai-rewrite-mode-btn:disabled {
+            opacity: 0.56;
+            cursor: not-allowed;
+        }
         .ai-rewrite-token-group {
             margin: 0 0 12px;
             padding: 10px 12px;
             border: 1px solid #d8d6c9;
             border-radius: 10px;
             background: rgba(255, 255, 255, 0.7);
+        }
+        .ai-rewrite-token-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 8px;
+        }
+        .ai-rewrite-token-toolbar-btn {
+            border: 1px solid #d0cec3;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #334155;
+            height: 28px;
+            padding: 0 10px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: border-color var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast);
+        }
+        .ai-rewrite-token-toolbar-btn:hover {
+            border-color: #bab8aa;
+            background: #f4f3ec;
+            color: #0f172a;
+        }
+        .ai-rewrite-token-selected-count {
+            margin-left: auto;
+            font-size: 12px;
+            color: #64748b;
         }
         .ai-rewrite-token-title {
             margin: 0;
@@ -1106,7 +1172,7 @@
 
     <div id="progressPanel" class="progress-panel">
         <div class="progress-panel-header">
-            <h3 class="progress-panel-title" data-i18n="msgGenerating">姝ｅ湪鐢熸垚鎶ュ憡</h3>
+            <h3 class="progress-panel-title" data-i18n="msgGenerating">正在生成报告</h3>
         </div>
         <div class="progress-steps-compact" id="progressStepsCompact"></div>
         <div class="progress-bar-compact">
@@ -1283,9 +1349,21 @@
         <div id="aiRewriteModal" class="export-modal ai-rewrite-modal" role="dialog" aria-modal="true" aria-label="AI 重写">
             <p id="aiRewriteModalTitle" class="ai-rewrite-modal-title">AI rewrite current slide</p>
             <p id="aiRewriteModalHint" class="ai-rewrite-modal-hint">Describe how you want this slide rewritten (audience, tone, focus, structure, constraints).</p>
+            <div class="ai-rewrite-mode-group">
+                <p id="aiRewriteModeLabel" class="ai-rewrite-mode-label">Rewrite scope</p>
+                <div class="ai-rewrite-mode-switch">
+                    <button id="aiRewriteModeAllBtn" class="ai-rewrite-mode-btn active" type="button">Rewrite whole slide</button>
+                    <button id="aiRewriteModeSelectedBtn" class="ai-rewrite-mode-btn" type="button">Rewrite selected placeholders</button>
+                </div>
+            </div>
             <div id="aiRewriteTokenGroup" class="ai-rewrite-token-group hidden">
                 <p id="aiRewriteTokenTitle" class="ai-rewrite-token-title">Choose placeholders to rewrite</p>
                 <p id="aiRewriteTokenHint" class="ai-rewrite-token-hint">Multi-select supported. If none selected, backend rewrites all AI placeholders on this slide.</p>
+                <div class="ai-rewrite-token-toolbar">
+                    <button id="aiRewriteSelectAllTokensBtn" class="ai-rewrite-token-toolbar-btn" type="button">Select all</button>
+                    <button id="aiRewriteClearTokensBtn" class="ai-rewrite-token-toolbar-btn" type="button">Clear</button>
+                    <span id="aiRewriteTokenSelectedCount" class="ai-rewrite-token-selected-count">0</span>
+                </div>
                 <div id="aiRewriteTokenOptions" class="ai-rewrite-token-list"></div>
             </div>
             <textarea id="aiRewritePrompt" class="ai-rewrite-modal-input" rows="6" maxlength="2000"></textarea>
@@ -1356,8 +1434,15 @@
                 ariaPreviewLayoutSwitch: '预览布局切换',
                 ariaExportPpt: '导出 PPT',
                 ariaExportPdf: '导出 PDF',
+                labelAiRewriteMode: '重写范围',
+                aiRewriteModeAll: '重写整页',
+                aiRewriteModeSelected: '只重写所选',
                 labelAiRewriteTokens: '重写占位符',
                 msgAiRewriteTokensHint: '支持多选。不选时默认重写该页全部 AI 占位符。',
+                btnAiRewriteSelectAll: '全选',
+                btnAiRewriteClear: '清空',
+                msgAiRewriteSelectedCount: '已选 {count} 项',
+                msgSelectAtLeastOneAiToken: '请至少选择一个占位符',
                 btnPresentSlides: 'Play Slides',
                 presentBtnTitle: 'Start slideshow in fullscreen'
             },
@@ -1378,8 +1463,15 @@
                 ariaPreviewLayoutSwitch: 'Preview layout switch',
                 ariaExportPpt: 'Export PPT',
                 ariaExportPdf: 'Export PDF',
+                labelAiRewriteMode: 'Rewrite scope',
+                aiRewriteModeAll: 'Rewrite whole slide',
+                aiRewriteModeSelected: 'Rewrite selected placeholders',
                 labelAiRewriteTokens: 'Rewrite placeholders',
                 msgAiRewriteTokensHint: 'Multiple selection supported. If none selected, backend rewrites all AI placeholders on this slide.',
+                btnAiRewriteSelectAll: 'Select all',
+                btnAiRewriteClear: 'Clear',
+                msgAiRewriteSelectedCount: '{count} selected',
+                msgSelectAtLeastOneAiToken: 'Please select at least one placeholder',
                 btnPresentSlides: 'Play Slides',
                 presentBtnTitle: 'Start slideshow in fullscreen'
             }
@@ -1636,7 +1728,8 @@
             generationInProgress: false,
             statusPollTimer: null,
             lastSaveHadAutoRestore: false,
-            aiRewriteSelectedTokensBySlide: {}
+            aiRewriteSelectedTokensBySlide: {},
+            aiRewriteModeBySlide: {}
         };
 
         const $ = (id) => document.getElementById(id);
@@ -2140,11 +2233,17 @@
             $('exportConfirmBtn').textContent = t('btnExport');
             $('aiRewriteModalTitle').textContent = t('btnAiRewriteCurrentSlide');
             $('aiRewriteModalHint').textContent = t('msgAiRewriteHint');
+            $('aiRewriteModeLabel').textContent = t('labelAiRewriteMode');
+            $('aiRewriteModeAllBtn').textContent = t('aiRewriteModeAll');
+            $('aiRewriteModeSelectedBtn').textContent = t('aiRewriteModeSelected');
             $('aiRewriteTokenTitle').textContent = t('labelAiRewriteTokens');
             $('aiRewriteTokenHint').textContent = t('msgAiRewriteTokensHint');
+            $('aiRewriteSelectAllTokensBtn').textContent = t('btnAiRewriteSelectAll');
+            $('aiRewriteClearTokensBtn').textContent = t('btnAiRewriteClear');
             $('aiRewritePrompt').placeholder = t('placeholderAiRewritePrompt');
             $('aiRewriteCancelBtn').textContent = t('btnCancel');
             $('aiRewriteConfirmBtn').textContent = t('btnAiRewriteCurrentSlide');
+            updateAiRewriteTokenSelectionSummary();
         }
 
         function setExportFormat(format) {
@@ -2173,6 +2272,20 @@
             return tokens.filter(token => typeof token === 'string' && token.trim());
         }
 
+        function getAiRewriteModeForActiveSlide() {
+            const slideKey = state.activeSlideKey;
+            if (!slideKey) return 'all';
+            const mode = state.aiRewriteModeBySlide[slideKey];
+            return mode === 'selected' ? 'selected' : 'all';
+        }
+
+        function setAiRewriteModeForActiveSlide(mode) {
+            const slideKey = state.activeSlideKey;
+            if (!slideKey) return;
+            state.aiRewriteModeBySlide[slideKey] = mode === 'selected' ? 'selected' : 'all';
+            applyAiRewriteModeUi();
+        }
+
         function collectSelectedAiRewriteTokens() {
             const selected = [];
             document.querySelectorAll('#aiRewriteTokenOptions input[type=\"checkbox\"]:checked').forEach(el => {
@@ -2180,6 +2293,44 @@
                 if (token && typeof token === 'string') selected.push(token);
             });
             return selected;
+        }
+
+        function updateAiRewriteTokenSelectionSummary() {
+            const label = $('aiRewriteTokenSelectedCount');
+            if (!label) return;
+            const count = collectSelectedAiRewriteTokens().length;
+            label.textContent = tf('msgAiRewriteSelectedCount', { count });
+        }
+
+        function applyAiRewriteModeUi() {
+            const mode = getAiRewriteModeForActiveSlide();
+            const hasTokens = getActiveSlideAiRewriteTokens().length > 0;
+
+            $('aiRewriteModeAllBtn').classList.toggle('active', mode === 'all');
+            $('aiRewriteModeSelectedBtn').classList.toggle('active', mode === 'selected');
+            $('aiRewriteModeSelectedBtn').disabled = !hasTokens;
+            $('aiRewriteTokenGroup').classList.toggle('hidden', !(hasTokens && mode === 'selected'));
+            updateAiRewriteTokenSelectionSummary();
+        }
+
+        function selectAllAiRewriteTokens() {
+            document.querySelectorAll('#aiRewriteTokenOptions input[type=\"checkbox\"]').forEach(el => {
+                el.checked = true;
+            });
+            if (state.activeSlideKey) {
+                state.aiRewriteSelectedTokensBySlide[state.activeSlideKey] = collectSelectedAiRewriteTokens();
+            }
+            updateAiRewriteTokenSelectionSummary();
+        }
+
+        function clearAiRewriteTokens() {
+            document.querySelectorAll('#aiRewriteTokenOptions input[type=\"checkbox\"]').forEach(el => {
+                el.checked = false;
+            });
+            if (state.activeSlideKey) {
+                state.aiRewriteSelectedTokensBySlide[state.activeSlideKey] = collectSelectedAiRewriteTokens();
+            }
+            updateAiRewriteTokenSelectionSummary();
         }
 
         function renderAiRewriteTokenOptions() {
@@ -2193,14 +2344,20 @@
 
             if (!slideKey || tokens.length === 0) {
                 group.classList.add('hidden');
+                if (slideKey) {
+                    state.aiRewriteModeBySlide[slideKey] = 'all';
+                }
+                applyAiRewriteModeUi();
                 return;
             }
 
-            group.classList.remove('hidden');
+            if (!state.aiRewriteModeBySlide[slideKey]) {
+                state.aiRewriteModeBySlide[slideKey] = 'all';
+            }
 
             const prevSelected = state.aiRewriteSelectedTokensBySlide[slideKey];
             const selectedSet = new Set(
-                Array.isArray(prevSelected) && prevSelected.length > 0 ? prevSelected : tokens
+                Array.isArray(prevSelected) ? prevSelected : []
             );
 
             tokens.forEach(token => {
@@ -2213,6 +2370,7 @@
                 checkbox.checked = selectedSet.has(token);
                 checkbox.addEventListener('change', () => {
                     state.aiRewriteSelectedTokensBySlide[slideKey] = collectSelectedAiRewriteTokens();
+                    updateAiRewriteTokenSelectionSummary();
                 });
 
                 const tokenCode = document.createElement('code');
@@ -2224,6 +2382,7 @@
             });
 
             state.aiRewriteSelectedTokensBySlide[slideKey] = collectSelectedAiRewriteTokens();
+            applyAiRewriteModeUi();
         }
 
         function positionExportModal() {
@@ -2854,6 +3013,10 @@
         }, true);
         $('aiRewriteTriggerBtn').onclick = () => openAiRewriteModal();
         $('aiRewriteCancelBtn').onclick = () => closeAiRewriteModal();
+        $('aiRewriteModeAllBtn').onclick = () => setAiRewriteModeForActiveSlide('all');
+        $('aiRewriteModeSelectedBtn').onclick = () => setAiRewriteModeForActiveSlide('selected');
+        $('aiRewriteSelectAllTokensBtn').onclick = () => selectAllAiRewriteTokens();
+        $('aiRewriteClearTokensBtn').onclick = () => clearAiRewriteTokens();
 
         $('rewriteBtn').onclick = async () => {
             if (!state.jobId) return;
@@ -2907,10 +3070,15 @@
                 return toast.warning(t('msgApplyManualChangesBeforeAiRewrite'), t('toastTitleHint'));
             }
 
+            const mode = getAiRewriteModeForActiveSlide();
+            const selectedTokens = mode === 'selected' ? collectSelectedAiRewriteTokens() : [];
+            if (mode === 'selected' && selectedTokens.length === 0) {
+                return toast.warning(t('msgSelectAtLeastOneAiToken'), t('toastTitleHint'));
+            }
+
             closeAiRewriteModal();
             setLoading(true);
             try {
-                const selectedTokens = collectSelectedAiRewriteTokens();
                 const res = await api(`/api/v1/reports/${encodeURIComponent(state.jobId)}/slides/ai-rewrite`, {
                     method: 'POST',
                     body: JSON.stringify({

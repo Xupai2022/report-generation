@@ -514,10 +514,10 @@ class LLMOrchestratorV2:
 
 ## 关键要求
 1. **数据准确性**：所有引用的数字必须与输入数据完全一致，绝不能编造数据
-2. **深度分析**：不要只是简单罗列数据，要提供有洞察力的分析和解读
-3. **具体建议**：整改建议必须具体可执行，避免泛泛而谈
+2. **深度分析**：不要只罗列数据，要给出有洞察力的分析与解读
+3. **具体建议**：建议必须具体可执行，避免泛泛而谈
 4. **语言风格**：使用中文，简洁专业，适合{audience_desc}阅读
-5. **格式要求**：严格按照指定的JSON格式返回内容
+5. **格式要求**：严格按照指定JSON格式返回内容
 
 ## 输出格式
 你必须返回一个JSON对象，格式如下：
@@ -539,53 +539,53 @@ class LLMOrchestratorV2:
         template: TemplateDescriptorV2
     ) -> str:
         """Build the user prompt with data and AI instructions."""
-        tenant = tenant_input.get("tenant", {})
         period = tenant_input.get("period", {})
 
         prompt_parts = [
-            "## 客户信息",
-            f"- 客户名称：{tenant.get('name', '')}",
-            f"- 行业：{tenant.get('industry', '')}",
-            f"- 地区：{tenant.get('region', '')}",
+            "## 任务",
+            "基于输入的安全数据，生成指定 slide 的占位符内容。",
+            f"报告时间：{period.get('start', '')} ~ {period.get('end', '')}",
             "",
-            "## 报告周期",
-            f"- 开始日期：{period.get('start', '')}",
-            f"- 结束日期：{period.get('end', '')}",
+            "## 输出要求",
+            "1) 只返回合法JSON，不要输出解释、注释或Markdown。",
+            "2) 输出内容必须为中文。",
+            "3) 所有数字必须与输入数据一致，不得编造。",
+            "4) 只输出下方列出的 slide_key 和占位符。",
             "",
-            "## 安全数据",
+            "## 输出格式",
             "```json",
-            json.dumps(tenant_input.raw, ensure_ascii=False, indent=2),
+            "{",
+            '  "slides": [',
+        ]
+
+        slide_examples = []
+        for slide in template.slides:
+            ai_tokens = [ph.token for ph in slide.placeholders if ph.ai_generate]
+            if ai_tokens:
+                tokens_str = ", ".join(f'"{t}": "..."' for t in ai_tokens)
+                slide_examples.append(f'    {{"slide_key": "{slide.slide_key}", "placeholders": {{{tokens_str}}}}}')
+
+        prompt_parts.append(",\n".join(slide_examples))
+        prompt_parts.extend([
+            "  ]",
+            "}",
             "```",
             "",
             "## 需要生成的内容",
             "",
-        ]
+        ])
 
-        # Add AI placeholder instructions
-        ai_placeholders = template.get_ai_placeholders()  
-        '''
-        遍历模板，返回所有需要AI生成的占位符。 假设模板有2个slide（封面和概览），返回的列表是：
-        ai_placeholders = [
-        ("cover", "REPORT_TITLE", PlaceholderDefinition对象1),
-        ("cover", "CUSTOMER_LABEL", PlaceholderDefinition对象2),
-        ("cover", "PERIOD_LABEL", PlaceholderDefinition对象3),
-        ("summary", "HEADLINE", PlaceholderDefinition对象4),
-        ("summary", "KEY_POINTS", PlaceholderDefinition对象5),
-        ]
-        每个 PlaceholderDefinition 对象包含：token、ai_instruction、max_length等
-        '''
+        ai_placeholders = template.get_ai_placeholders()
         current_slide = None
 
         for slide_key, token, placeholder in ai_placeholders:
             if slide_key != current_slide:
-                # Find slide title
                 for slide in template.slides:
                     if slide.slide_key == slide_key:
-                        prompt_parts.append(f"### Slide: {slide.title} ({slide_key})")
+                        prompt_parts.append(f"### 页面: {slide.title} ({slide_key})")
                         break
                 current_slide = slide_key
 
-            # Add placeholder instruction
             constraints = []
             if placeholder.max_length:
                 constraints.append(f"最多{placeholder.max_length}字")
@@ -600,29 +600,11 @@ class LLMOrchestratorV2:
             prompt_parts.append(f"{placeholder.ai_instruction}")
             prompt_parts.append("")
 
-        # Add output format reminder
         prompt_parts.extend([
             "",
-            "## 请按以下JSON格式返回：",
+            "## 安全数据",
             "```json",
-            "{",
-            '  "slides": [',
-        ])
-
-        # Generate expected structure
-        slide_examples = []
-        for slide in template.slides:
-            ai_tokens = [ph.token for ph in slide.placeholders if ph.ai_generate]
-            '''ai_tokens: ["REPORT_TITLE", "CUSTOMER_LABEL", "PERIOD_LABEL"]'''
-            if ai_tokens:
-                tokens_str = ", ".join(f'"{t}": "..."' for t in ai_tokens)
-                '''tokens_str: '"REPORT_TITLE": "...", "CUSTOMER_LABEL": "...", "PERIOD_LABEL": "..."'  '''
-                slide_examples.append(f'    {{"slide_key": "{slide.slide_key}", "placeholders": {{{tokens_str}}}}}')
-
-        prompt_parts.append(",\n".join(slide_examples))
-        prompt_parts.extend([
-            "  ],",
-            "}",
+            json.dumps(tenant_input.raw, ensure_ascii=False, indent=2),
             "```",
         ])
 
@@ -648,81 +630,35 @@ class LLMOrchestratorV2:
         Returns:
             User prompt string for the specified slides
         """
-        tenant = tenant_input.get("tenant", {})
         period = tenant_input.get("period", {})
 
         prompt_parts = [
-            "## 客户信息",
-            f"- 客户名称：{tenant.get('name', '')}",
-            f"- 行业：{tenant.get('industry', '')}",
-            f"- 地区：{tenant.get('region', '')}",
+            "## 任务",
+            "基于输入的安全数据，生成指定 slide 的占位符内容。",
+            f"报告时间：{period.get('start', '')} ~ {period.get('end', '')}",
             "",
-            "## 报告周期",
-            f"- 开始日期：{period.get('start', '')}",
-            f"- 结束日期：{period.get('end', '')}",
-            "",
-            "## 安全数据",
-            "```json",
-            json.dumps(tenant_input.raw, ensure_ascii=False, indent=2),
-            "```",
+            "## 输出要求",
+            "1) 只返回合法JSON，不要输出解释、注释或Markdown。",
+            "2) 输出内容必须为中文。",
+            "3) 所有数字必须与输入数据一致，不得编造。",
+            "4) 只输出下方列出的 slide_key 和占位符。",
             "",
         ]
 
-        # Add batch info if there are multiple batches
         if total_batches > 1:
             prompt_parts.extend([
-                f"## 批次信息",
-                f"这是第 {batch_index + 1}/{total_batches} 批次，请只生成以下指定slides的内容。",
+                "## 批次信息",
+                f"这是第 {batch_index + 1}/{total_batches} 批次，请仅生成本批次的内容。",
                 "",
             ])
 
         prompt_parts.extend([
-            "## 需要生成的内容",
-            "",
-        ])
-
-        # Get AI placeholders only for specified slides
-        ai_placeholders = template.get_ai_placeholders()
-        current_slide = None
-
-        for slide_key, token, placeholder in ai_placeholders:
-            # Skip slides not in this batch
-            if slide_key not in slide_keys:
-                continue
-
-            if slide_key != current_slide:
-                # Find slide title
-                for slide in template.slides:
-                    if slide.slide_key == slide_key:
-                        prompt_parts.append(f"### Slide: {slide.title} ({slide_key})")
-                        break
-                current_slide = slide_key
-
-            # Add placeholder instruction
-            constraints = []
-            if placeholder.max_length:
-                constraints.append(f"最多{placeholder.max_length}字")
-            if placeholder.max_items:
-                constraints.append(f"最多{placeholder.max_items}条")
-            if placeholder.max_chars_per_item:
-                constraints.append(f"每条最多{placeholder.max_chars_per_item}字")
-
-            constraint_str = f" ({', '.join(constraints)})" if constraints else ""
-
-            prompt_parts.append(f"\n**{token}**{constraint_str}")
-            prompt_parts.append(f"{placeholder.ai_instruction}")
-            prompt_parts.append("")
-
-        # Add output format reminder
-        prompt_parts.extend([
-            "",
-            "## 请按以下JSON格式返回：",
+            "## 输出格式",
             "```json",
             "{",
             '  "slides": [',
         ])
 
-        # Generate expected structure for only the specified slides
         slide_examples = []
         for slide in template.slides:
             if slide.slide_key not in slide_keys:
@@ -737,8 +673,63 @@ class LLMOrchestratorV2:
             "  ]",
             "}",
             "```",
+            "",
+            "## 需要生成的内容",
+            "",
         ])
 
+        ai_placeholders = template.get_ai_placeholders()
+        current_slide = None
+
+        for slide_key, token, placeholder in ai_placeholders:
+            if slide_key not in slide_keys:
+                continue
+
+            if slide_key != current_slide:
+                for slide in template.slides:
+                    if slide.slide_key == slide_key:
+                        prompt_parts.append(f"### 页面: {slide.title} ({slide_key})")
+                        break
+                current_slide = slide_key
+
+            constraints = []
+            if placeholder.max_length:
+                constraints.append(f"最多{placeholder.max_length}字")
+            if placeholder.max_items:
+                constraints.append(f"最多{placeholder.max_items}条")
+            if placeholder.max_chars_per_item:
+                constraints.append(f"每条最多{placeholder.max_chars_per_item}字")
+
+            constraint_str = f" ({', '.join(constraints)})" if constraints else ""
+
+            prompt_parts.append(f"\n**{token}**{constraint_str}")
+            prompt_parts.append(f"{placeholder.ai_instruction}")
+            prompt_parts.append("")
+
+        prompt_parts.extend([
+            "",
+            "## 安全数据",
+            "```json",
+            json.dumps(tenant_input.raw, ensure_ascii=False, indent=2),
+            "```",
+        ])
+
+        return "\n".join(prompt_parts)
+
+    def _build_rewrite_base_prompt(
+        self,
+        tenant_input: TenantInput,
+    ) -> str:
+        """Build additional context block for single-slide rewrite."""
+        period = tenant_input.get("period", {})
+
+        prompt_parts = [
+            "## Full Security Data (Context Only)",
+            "Use this for background context. If there is any conflict, follow Current Slide Structured Data first.",
+            "```json",
+            json.dumps(tenant_input.raw, ensure_ascii=False, indent=2),
+            "```",
+        ]
         return "\n".join(prompt_parts)
 
     def _build_rewrite_prompt_with_user_preference(
@@ -752,6 +743,22 @@ class LLMOrchestratorV2:
     ) -> str:
         """Append user preference instructions for single-slide AI rewrite."""
         ai_tokens_text = ", ".join(ai_tokens)
+        output_tokens_preview = ", ".join(f'"{token}": "..."' for token in ai_tokens)
+
+        task_section = "\n".join([
+            "## Rewrite Task",
+            f"Rewrite only this slide: {slide_key}",
+            f"Dynamic target placeholders: {ai_tokens_text}",
+            "",
+            "## User Preference (High Priority)",
+            "Follow the user preference as much as possible without fabricating data:",
+            user_prompt.strip(),
+            "",
+            "## Data Priority",
+            "1) Current Slide Structured Data (Highest Priority)",
+            "2) Full Security Data (Context Only)",
+            "3) Previous AI Copy (Style Reference Only)",
+        ])
 
         structured_data_section = ""
         if structured_slide_data:
@@ -764,38 +771,42 @@ class LLMOrchestratorV2:
                 "```",
             ])
 
+        full_context_section = f"\n{base_prompt}" if base_prompt else ""
+
         historical_content_section = ""
         if historical_ai_content:
             historical_content_section = "\n".join([
                 "",
                 "## Previous AI Copy (Style Reference Only)",
-                "If any number conflicts with structured data, ignore old numbers and follow structured data.",
+                "If any number conflicts with data, ignore old numbers and follow data priority.",
                 "```json",
                 json.dumps(historical_ai_content, ensure_ascii=False, indent=2),
                 "```",
             ])
 
-        preference_section = "\n".join([
-            "",
-            "## Rewrite Task",
-            f"Rewrite only this slide: {slide_key}",
-            f"Dynamic target placeholders: {ai_tokens_text}",
-            "",
-            "## User Preference (High Priority)",
-            "Follow the user preference as much as possible without fabricating data:",
-            user_prompt.strip(),
-            "",
+        hard_constraints_and_output = "\n".join([
             "## Hard Constraints",
-            "1) All numbers must match the structured data above.",
-            "2) If old copy conflicts, rewrite based on structured data.",
-            f"3) Output only these dynamic target placeholders: {ai_tokens_text}.",
-            "4) Output must be Chinese and in the required JSON format.",
+            "1) All numbers must match Current Slide Structured Data first.",
+            "2) If Structured Data is missing a needed field, infer from Full Security Data.",
+            "3) If old copy conflicts with data, ignore old copy and follow data priority.",
+            f"4) Output only these dynamic target placeholders: {ai_tokens_text}.",
+            "5) Output must be Chinese and in the required JSON format.",
+            "",
+            "## Output Format",
+            "```json",
+            "{",
+            '  "slides": [',
+            f'    {{"slide_key": "{slide_key}", "placeholders": {{{output_tokens_preview}}}}}',
+            "  ]",
+            "}",
+            "```",
         ])
         return (
-            f"{base_prompt}"
+            f"{task_section}"
             f"{structured_data_section}"
+            f"{full_context_section}"
             f"{historical_content_section}\n"
-            f"{preference_section}"
+            f"{hard_constraints_and_output}"
         )
 
     def rewrite_single_slide_v2(
@@ -828,23 +839,18 @@ class LLMOrchestratorV2:
             ai_tokens = target_tokens
 
         system_prompt = self._build_system_prompt(template)
-        base_user_prompt = self._build_user_prompt_for_slides(
-            tenant_input=tenant_input,
-            template=template,
-            slide_keys=[slide_key],
-            batch_index=0,
-            total_batches=1,
-        )
+        base_user_prompt = self._build_rewrite_base_prompt(tenant_input)
         historical_ai_content: Dict[str, Any] = {}
         if isinstance(current_slide_content, dict):
             for token in ai_tokens:
                 if token in current_slide_content:
                     historical_ai_content[token] = current_slide_content[token]
 
+        all_ai_token_set = set(all_ai_tokens)
         structured_slide_data: Dict[str, Any] = {}
         for placeholder in target_slide.placeholders:
             token = placeholder.token
-            if token in ai_tokens:
+            if token in all_ai_token_set:
                 continue
 
             value = None
@@ -947,15 +953,6 @@ class LLMOrchestratorV2:
         tenant = tenant_input.get("tenant", {})
         period = tenant_input.get("period", {})
         base_prompt = "\n".join([
-            "## 客户信息",
-            f"- 客户名称：{tenant.get('name', '')}",
-            f"- 行业：{tenant.get('industry', '')}",
-            f"- 地区：{tenant.get('region', '')}",
-            "",
-            "## 报告周期",
-            f"- 开始日期：{period.get('start', '')}",
-            f"- 结束日期：{period.get('end', '')}",
-            "",
             "## 安全数据",
             "```json",
             json.dumps(tenant_input.raw, ensure_ascii=False, indent=2),
@@ -1049,11 +1046,11 @@ class LLMOrchestratorV2:
 
         if total_batches <= 1:
             logger.info("Single batch - using standard generation")
-            send_progress(35, "??AI?????????...")
+            send_progress(35, "正在调用AI生成内容...")
             system_prompt = self._build_system_prompt(template)
             user_prompt = self._build_user_prompt(tenant_input, template)
             result = self._call_and_parse_with_retry(system_prompt, user_prompt, template)
-            send_progress(60, "AI??????")
+            send_progress(60, "AI内容生成完成")
             return result
 
         logger.info(f"Smart batching: splitting into {total_batches} batches")
@@ -1068,7 +1065,7 @@ class LLMOrchestratorV2:
             logger.info(f"Processing batch {i + 1}/{total_batches}: slides {batch_slide_keys}")
 
             current_progress = 30 + int(i * progress_per_batch)
-            send_progress(current_progress, f"AI???? ({i + 1}/{total_batches} ??)...")
+            send_progress(current_progress, f"AI生成中（第 {i + 1}/{total_batches} 批）...")
 
             user_prompt = self._build_user_prompt_for_slides(
                 tenant_input,
@@ -1090,7 +1087,7 @@ class LLMOrchestratorV2:
 
             logger.info(f"Batch {i + 1}/{total_batches} completed")
 
-        send_progress(60, "??AI??????")
+        send_progress(60, "所有AI内容生成完成")
         return all_ai_placeholders
 
     def _call_and_parse_with_retry(
@@ -1119,9 +1116,9 @@ class LLMOrchestratorV2:
                     logger.warning("Retrying LLM call due to format error...")
                 else:
                     error_msg = (
-                        f"AI??????????{max_parse_retries}?????"
-                        f"?????mock???????"
-                        f"????: {e}"
+                        f"AI生成失败：重试 {max_parse_retries} 次后仍未成功。"
+                        f"请检查提示词与模型输出格式，必要时启用 mock 兜底。"
+                        f"原始错误：{e}"
                     )
                     logger.error(error_msg)
                     raise LLMGenerationError(error_msg) from e
@@ -1439,3 +1436,4 @@ class LLMOrchestrator:
             else:
                 updated_slides.append(slide)
         return SlideSpec(template_id=slide_spec.template_id, slides=updated_slides)
+
