@@ -1185,12 +1185,13 @@
             --pre-accent-glow: rgba(37, 99, 235, 0.3);
             flex: 1;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: center;
-            padding: var(--space-4);
+            padding: calc(var(--space-6) + 2px) var(--space-4) var(--space-3);
             position: relative;
             isolation: isolate;
-            overflow: hidden;
+            overflow-y: auto;
+            overflow-x: hidden;
             background:
                 radial-gradient(1300px 420px at 7% -24%, rgba(37, 99, 235, 0.25), transparent 60%),
                 radial-gradient(840px 380px at 90% -8%, rgba(30, 64, 175, 0.12), transparent 72%),
@@ -1232,13 +1233,16 @@
             z-index: 5;
         }
         .preconfig-shell {
-            width: min(1200px, 100%);
+            width: min(1220px, 100%);
             display: grid;
             grid-template-columns: 1fr;
+            grid-template-rows: auto minmax(0, 1fr);
             gap: var(--space-3);
             align-items: stretch;
             perspective: 1200px;
-            margin: calc(var(--space-6) + 2px) 0 0;
+            margin: 0;
+            height: 100%;
+            min-height: 0;
         }
         .preconfig-shell > .preconfig-stagger,
         .preconfig-card .preconfig-stagger {
@@ -1317,7 +1321,7 @@
         .preconfig-hero-main {
             display: flex;
             flex-direction: column;
-            gap: var(--space-2);
+            gap: var(--space-3);
             position: relative;
             z-index: 1;
             min-width: 0;
@@ -1343,7 +1347,7 @@
         }
         .preconfig-hero-subtitle {
             font-size: 14px;
-            line-height: 1.45;
+            line-height: 1.6;
             font-weight: 600;
             color: #1e293b;
             max-width: 52ch;
@@ -1382,11 +1386,13 @@
             flex-shrink: 0;
         }
         .preconfig-card {
-            padding: var(--space-3);
+            padding: var(--space-4);
             background: linear-gradient(165deg, var(--pre-surface-strong) 0%, var(--pre-surface) 72%, rgba(236, 244, 255, 0.78) 100%);
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-3);
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr) auto;
+            gap: var(--space-4);
+            align-content: stretch;
+            min-height: clamp(560px, 72vh, 860px);
         }
         .preconfig-card::before {
             content: "";
@@ -1397,8 +1403,15 @@
             pointer-events: none;
         }
         .preconfig-card-heading {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: var(--space-3);
+        }
+        .preconfig-card-heading-copy {
             display: grid;
             gap: var(--space-1);
+            min-width: 0;
         }
         .preconfig-card-heading h3 {
             font-size: 16px;
@@ -1410,32 +1423,65 @@
             font-size: 11px;
             line-height: 1.35;
         }
+        .preconfig-mock-toggle {
+            margin: 0;
+            min-height: 20px;
+            flex-shrink: 0;
+            color: #475569;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            user-select: none;
+        }
+        .preconfig-mock-toggle span {
+            color: #475569;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .preconfig-mock-toggle input {
+            accent-color: var(--pre-accent);
+        }
+        .preconfig-mock-toggle:hover span {
+            color: #334155;
+        }
         .preconfig-grid {
             display: grid;
-            gap: 6px;
-            grid-template-columns: minmax(260px, 0.85fr) minmax(0, 1.15fr);
+            gap: 12px;
+            grid-template-columns: minmax(280px, 0.86fr) minmax(0, 1.14fr);
+            grid-template-rows: auto minmax(0, 1fr);
             grid-template-areas:
                 "data template"
-                "strategy template";
+                "focus template";
             align-items: stretch;
+            flex: 1;
+            height: 100%;
+            min-height: 0;
         }
         .preconfig-section-data { grid-area: data; }
         .preconfig-section-template { grid-area: template; }
-        .preconfig-section-strategy { grid-area: strategy; }
+        .preconfig-section-focus { grid-area: focus; }
         .preconfig-section-template .toolbar-item {
             height: 100%;
+            min-height: 0;
+            flex: 1;
         }
         .preconfig-section-template .preconfig-template-gallery {
+            height: 100%;
+        }
+        .preconfig-section-template {
+            grid-template-rows: auto minmax(0, 1fr);
+            min-height: 0;
             height: 100%;
         }
         .preconfig-section {
             border: 1px solid var(--pre-border-soft);
             border-radius: 14px;
-            padding: 10px;
+            padding: 12px;
             background: rgba(255, 255, 255, 0.72);
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
             display: grid;
-            gap: 6px;
+            gap: 8px;
+            min-height: 0;
         }
         .preconfig-section-title {
             font-size: 12px;
@@ -1477,7 +1523,10 @@
         .preconfig-template-gallery {
             display: grid;
             grid-template-columns: 1fr;
+            grid-template-rows: minmax(0, 1fr);
             gap: 8px;
+            min-height: 0;
+            align-content: stretch;
         }
         .preconfig-template-card {
             border: 1px solid #cbd6e3;
@@ -1488,7 +1537,11 @@
             text-align: left;
             cursor: pointer;
             display: grid;
-            gap: 8px;
+            grid-template-rows: minmax(0, 1fr) auto;
+            gap: 4px;
+            height: 100%;
+            align-items: stretch;
+            min-height: 0;
             transition: transform var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base);
         }
         .preconfig-template-card:hover {
@@ -1506,7 +1559,10 @@
         }
         .preconfig-template-preview {
             position: relative;
-            aspect-ratio: 16 / 7.2;
+            min-height: 0;
+            height: 100%;
+            aspect-ratio: auto;
+            align-self: stretch;
             border-radius: 10px;
             overflow: hidden;
             border: 1px solid rgba(15, 23, 42, 0.16);
@@ -1587,6 +1643,7 @@
             align-items: center;
             justify-content: space-between;
             gap: var(--space-2);
+            min-height: 20px;
         }
         .preconfig-template-name {
             font-size: 12px;
@@ -1627,13 +1684,13 @@
         }
         .preconfig-focus-section {
             display: grid;
+            grid-template-rows: auto minmax(0, 1fr);
             gap: var(--space-2);
+            min-height: 0;
         }
         .preconfig-focus-title-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: var(--space-2);
+            display: grid;
+            gap: 2px;
         }
         .preconfig-focus-section h3 {
             font-size: 12px;
@@ -1645,14 +1702,22 @@
         .preconfig-focus-hint {
             font-size: 12px;
             color: #64748b;
+            line-height: 1.4;
         }
         .preconfig-focus-options {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            grid-template-columns: 1fr;
             gap: 6px;
+            max-height: none;
+            overflow-y: auto;
+            padding-right: 1px;
+            scrollbar-width: thin;
+            grid-auto-rows: minmax(58px, 1fr);
+            align-content: stretch;
+            min-height: 0;
         }
         .preconfig-focus-card {
-            min-height: 48px;
+            min-height: 58px;
             position: relative;
             border-radius: 14px;
             border: 1px solid #cbd6e3;
@@ -1662,6 +1727,7 @@
             cursor: pointer;
             display: flex;
             align-items: center;
+            justify-content: flex-start;
             gap: var(--space-3);
             transition:
                 transform var(--transition-base),
@@ -1729,12 +1795,16 @@
             display: flex;
             align-items: center;
             text-align: left;
+            min-width: 0;
         }
         .preconfig-focus-name {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 700;
             color: #0f172a;
             padding-right: 24px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .preconfig-focus-desc {
             display: none;
@@ -1757,6 +1827,7 @@
         .preconfig-actions {
             display: grid;
             gap: var(--space-2);
+            margin-top: 0;
         }
         #preConfigGenerateBtn {
             position: relative;
@@ -1825,27 +1896,38 @@
         }
         @media (max-width: 980px) {
             .preconfig-screen {
-                padding: var(--space-4);
+                padding: calc(var(--space-10) + 8px) var(--space-4) var(--space-4);
                 align-items: flex-start;
                 overflow-y: auto;
             }
             .preconfig-shell {
                 grid-template-columns: 1fr;
+                grid-template-rows: none;
                 gap: var(--space-4);
                 width: min(760px, 100%);
                 margin: calc(var(--space-10) + 8px) auto var(--space-4);
+                height: auto;
+                min-height: auto;
             }
             .preconfig-grid {
                 grid-template-columns: 1fr;
                 grid-template-areas:
                     "data"
                     "template"
-                    "strategy";
+                    "focus";
             }
             .preconfig-hero,
             .preconfig-card {
                 border-radius: 18px;
                 padding: var(--space-5);
+            }
+            .preconfig-card-heading {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: var(--space-2);
+            }
+            .preconfig-mock-toggle {
+                align-self: flex-end;
             }
             .preconfig-hero {
                 flex-direction: column;
@@ -1870,23 +1952,21 @@
                 bottom: 0;
                 padding-top: var(--space-3);
                 background: linear-gradient(180deg, rgba(249, 251, 255, 0.58) 0%, rgba(249, 251, 255, 0.96) 28%);
-            }
-            .preconfig-action-hint {
-                display: block;
-                text-align: center;
-                font-size: 12px;
-                color: #64748b;
-                line-height: 1.4;
+                display: grid;
+                grid-template-columns: 1fr;
             }
             .focus-summary-badge { max-width: 180px; }
         }
-        @media (min-width: 981px) and (max-height: 930px) {
+        @media (min-width: 981px) and (max-height: 860px) {
             .preconfig-screen {
-                padding: var(--space-3);
+                padding: calc(var(--space-5) + 2px) var(--space-4) var(--space-3);
             }
             .preconfig-shell {
-                gap: var(--space-2);
-                margin: calc(var(--space-5) + 2px) 0 0;
+                gap: var(--space-3);
+                margin: 0;
+                height: calc(100dvh - 78px);
+                min-height: 0;
+                grid-template-rows: auto minmax(0, 1fr);
             }
             .preconfig-hero {
                 padding: var(--space-2) var(--space-3);
@@ -1905,6 +1985,10 @@
             .preconfig-card {
                 padding: 10px;
                 gap: 8px;
+                min-height: clamp(460px, 66vh, 680px);
+            }
+            .preconfig-mock-toggle span {
+                font-size: 11px;
             }
             .preconfig-card-heading p,
             .preconfig-template-hint {
@@ -1914,18 +1998,27 @@
                 padding: 8px;
                 gap: 4px;
             }
+            .preconfig-section-template {
+                min-height: 224px;
+            }
+            .preconfig-template-gallery {
+                grid-template-rows: minmax(0, 1fr);
+            }
             .preconfig-section-title,
             .preconfig-focus-hint {
                 font-size: 11px;
+            }
+            .preconfig-focus-options {
+                max-height: none;
             }
             .preconfig-section select {
                 height: 36px;
             }
             .preconfig-template-preview {
-                aspect-ratio: 16 / 6.2;
+                aspect-ratio: auto;
             }
             .preconfig-focus-card {
-                min-height: 42px;
+                min-height: 46px;
                 padding: 6px 10px;
             }
             .preconfig-focus-name {
@@ -2004,8 +2097,14 @@
             </div>
             <div class="preconfig-card preconfig-stagger" style="--pre-stagger-delay: 160ms;">
                 <div class="preconfig-card-heading preconfig-stagger" style="--pre-stagger-delay: 240ms;">
-                    <h3 data-i18n="preConfigCardTitle">生成配置</h3>
-                    <p data-i18n="preConfigCardIntro">完成以下配置后即可启动报告生成。</p>
+                    <div class="preconfig-card-heading-copy">
+                        <h3 data-i18n="preConfigCardTitle">生成配置</h3>
+                        <p data-i18n="preConfigCardIntro">完成以下配置后即可启动报告生成。</p>
+                    </div>
+                    <label class="checkbox-group preconfig-mock-toggle">
+                        <input type="checkbox" id="preUseMock" checked>
+                        <span data-i18n="labelUseMock">Mock 数据（调试）</span>
+                    </label>
                 </div>
                 <div class="preconfig-grid preconfig-stagger" style="--pre-stagger-delay: 300ms;">
                     <div class="preconfig-section preconfig-section-data">
@@ -2021,50 +2120,58 @@
                             <div id="preTemplateGallery" class="preconfig-template-gallery"></div>
                         </div>
                     </div>
-                    <div class="preconfig-section preconfig-section-strategy">
-                        <p class="preconfig-section-title" data-i18n="preConfigSectionStrategy">生成策略</p>
-                        <label class="checkbox-group preconfig-checkbox">
-                            <input type="checkbox" id="preUseMock" checked>
-                            <span data-i18n="labelUseMock">Quick Generate (Mock)</span>
-                        </label>
-                    </div>
-                </div>
-                <div class="preconfig-focus-section preconfig-section preconfig-stagger" style="--pre-stagger-delay: 360ms;">
-                    <div class="preconfig-focus-title-row">
-                        <h3 data-i18n="preConfigFocusTitle">关注焦点</h3>
-                        <p class="preconfig-focus-hint" data-i18n="preConfigFocusHint">支持留空（默认包含全部重点）或多选</p>
-                    </div>
-                    <div class="preconfig-focus-options">
-                        <button type="button" class="preconfig-focus-card" data-focus-option="vulnerability" aria-pressed="false">
-                            <span class="preconfig-focus-icon" aria-hidden="true">
-                                <svg viewBox="0 0 24 24">
-                                    <path d="M12 3l8 3v6c0 4.2-3 7.6-8 9-5-1.4-8-4.8-8-9V6l8-3z"></path>
-                                    <path d="M12 8v5"></path>
-                                    <path d="M12 16h.01"></path>
-                                </svg>
-                            </span>
-                            <span class="preconfig-focus-copy">
-                                <span class="preconfig-focus-name" data-i18n="focusOptionVulnerability">漏洞</span>
-                                <span class="preconfig-focus-desc" data-i18n="focusOptionVulnerabilityDesc">风险暴露与修复优先级</span>
-                            </span>
-                        </button>
-                        <button type="button" class="preconfig-focus-card" data-focus-option="alert" aria-pressed="false">
-                            <span class="preconfig-focus-icon" aria-hidden="true">
-                                <svg viewBox="0 0 24 24">
-                                    <path d="M12 4l8 14H4l8-14z"></path>
-                                    <path d="M12 9v4"></path>
-                                    <path d="M12 16h.01"></path>
-                                </svg>
-                            </span>
-                            <span class="preconfig-focus-copy">
-                                <span class="preconfig-focus-name" data-i18n="focusOptionAlert">告警</span>
-                                <span class="preconfig-focus-desc" data-i18n="focusOptionAlertDesc">告警态势与处置建议</span>
-                            </span>
-                        </button>
-                        <div class="preconfig-focus-card placeholder" aria-hidden="true">
-                            <span class="preconfig-focus-copy">
-                                <span class="preconfig-focus-name" data-i18n="preConfigFocusReserved">更多焦点（预留）</span>
-                            </span>
+                    <div class="preconfig-focus-section preconfig-section preconfig-section-focus">
+                        <div class="preconfig-focus-title-row">
+                            <h3 data-i18n="preConfigFocusTitle">关注焦点</h3>
+                            <p class="preconfig-focus-hint" data-i18n="preConfigFocusHint">可留空（默认覆盖全部重点），亦可按需多选。</p>
+                        </div>
+                        <div class="preconfig-focus-options">
+                            <button type="button" class="preconfig-focus-card" data-focus-option="vulnerability" aria-pressed="false">
+                                <span class="preconfig-focus-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M12 3l8 3v6c0 4.2-3 7.6-8 9-5-1.4-8-4.8-8-9V6l8-3z"></path>
+                                        <path d="M12 8v5"></path>
+                                        <path d="M12 16h.01"></path>
+                                    </svg>
+                                </span>
+                                <span class="preconfig-focus-copy">
+                                    <span class="preconfig-focus-name" data-i18n="focusOptionVulnerability">漏洞</span>
+                                    <span class="preconfig-focus-desc" data-i18n="focusOptionVulnerabilityDesc">风险暴露与修复优先级</span>
+                                </span>
+                            </button>
+                            <button type="button" class="preconfig-focus-card" data-focus-option="alert" aria-pressed="false">
+                                <span class="preconfig-focus-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M12 4l8 14H4l8-14z"></path>
+                                        <path d="M12 9v4"></path>
+                                        <path d="M12 16h.01"></path>
+                                    </svg>
+                                </span>
+                                <span class="preconfig-focus-copy">
+                                    <span class="preconfig-focus-name" data-i18n="focusOptionAlert">告警</span>
+                                    <span class="preconfig-focus-desc" data-i18n="focusOptionAlertDesc">告警态势与处置建议</span>
+                                </span>
+                            </button>
+                            <div class="preconfig-focus-card placeholder" aria-hidden="true">
+                                <span class="preconfig-focus-copy">
+                                    <span class="preconfig-focus-name" data-i18n="preConfigFocusReserved1">预留焦点 01</span>
+                                </span>
+                            </div>
+                            <div class="preconfig-focus-card placeholder" aria-hidden="true">
+                                <span class="preconfig-focus-copy">
+                                    <span class="preconfig-focus-name" data-i18n="preConfigFocusReserved2">预留焦点 02</span>
+                                </span>
+                            </div>
+                            <div class="preconfig-focus-card placeholder" aria-hidden="true">
+                                <span class="preconfig-focus-copy">
+                                    <span class="preconfig-focus-name" data-i18n="preConfigFocusReserved3">预留焦点 03</span>
+                                </span>
+                            </div>
+                            <div class="preconfig-focus-card placeholder" aria-hidden="true">
+                                <span class="preconfig-focus-copy">
+                                    <span class="preconfig-focus-name" data-i18n="preConfigFocusReserved4">预留焦点 04</span>
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2116,7 +2223,7 @@
         <div class="toolbar-group">
             <label class="checkbox-group">
                 <input type="checkbox" id="useMock" checked>
-                <span data-i18n="labelUseMock">Quick Generate (Mock)</span>
+                <span data-i18n="labelUseMock">Mock 数据（调试）</span>
             </label>
             <span id="focusSummaryBadge" class="focus-summary-badge">-</span>
             <button id="reconfigureBtn" class="btn btn-secondary btn-sm" type="button" data-i18n="btnReconfigure">重新配置</button>
@@ -2363,8 +2470,12 @@
                 preConfigTemplateNone: '暂无模板',
                 preConfigTemplateImageAlt: '模板第 {page} 页缩略图',
                 preConfigFocusTitle: '关注焦点',
-                preConfigFocusHint: '支持留空（默认包含全部重点）或多选',
+                preConfigFocusHint: '可留空（默认覆盖全部重点），亦可按需多选。',
                 preConfigFocusReserved: '更多焦点（预留）',
+                preConfigFocusReserved1: '预留焦点 01',
+                preConfigFocusReserved2: '预留焦点 02',
+                preConfigFocusReserved3: '预留焦点 03',
+                preConfigFocusReserved4: '预留焦点 04',
                 preConfigGenerateBtn: '进入工作台并生成',
                 focusOptionVulnerability: '漏洞',
                 focusOptionVulnerabilityDesc: '风险暴露与修复优先级',
@@ -2422,8 +2533,12 @@
                 preConfigTemplateNone: 'No templates available',
                 preConfigTemplateImageAlt: 'Template page {page} thumbnail',
                 preConfigFocusTitle: 'Focus Areas',
-                preConfigFocusHint: 'Leave empty (include all focus areas by default), or select multiple.',
+                preConfigFocusHint: 'You may leave this empty (defaults to all focus areas) or select multiple.',
                 preConfigFocusReserved: 'More focus options (reserved)',
+                preConfigFocusReserved1: 'Reserved Focus 01',
+                preConfigFocusReserved2: 'Reserved Focus 02',
+                preConfigFocusReserved3: 'Reserved Focus 03',
+                preConfigFocusReserved4: 'Reserved Focus 04',
                 preConfigGenerateBtn: 'Enter Workspace & Generate',
                 focusOptionVulnerability: 'Vulnerability',
                 focusOptionVulnerabilityDesc: 'Risk exposure and remediation priority',

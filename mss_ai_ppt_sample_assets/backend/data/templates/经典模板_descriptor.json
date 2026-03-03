@@ -1,15 +1,9 @@
-{
+﻿{
   "template_id": "mss_classic_ops",
   "name": "MSS运营服务总结（经典版）",
   "version": "1.0.0",
   "pptx_file": "经典模板.pptx",
   "language": "zh-CN",
-  "style": {
-    "theme": "sangfor_classic",
-    "primaryColor": "#0F5ABF",
-    "accentColor": "#FF6B35",
-    "backgroundColor": "#FFFFFF"
-  },
   "slides": [
     {
       "slide_no": 1,
@@ -17,18 +11,14 @@
       "title": "封面",
       "placeholders": [
         {
-          "token": "PERIOD_start",
-          "type": "text",
-          "ai_generate": false,
-          "source": "cover.PERIOD_start",
-          "default": "直接取数失败"
+          "token": "period_start",
+          "source": "cover.period_start",
+          "default": "失败"
         },
         {
-          "token": "PERIOD_end",
-          "type": "text",
-          "ai_generate": false,
-          "source": "cover.PERIOD_end",
-          "default": "直接取数失败"
+          "token": "period_end",
+          "source": "cover.period_end",
+          "default": "失败"
         }
       ]
     },
@@ -57,31 +47,23 @@
       "placeholders": [
         {
           "token": "AF_count",
-          "type": "text",
-          "ai_generate": false,
           "source": "Architecture.AF_count",
-          "default": "直接取数失败"
+          "default": "失败"
         },
         {
           "token": "STA_count",
-          "type": "text",
-          "ai_generate": false,
           "source": "Architecture.STA_count",
-          "default": "直接取数失败"
+          "default": "失败"
         },
         {
           "token": "EDR_count",
-          "type": "text",
-          "ai_generate": false,
           "source": "Architecture.EDR_count",
-          "default": "直接取数失败"
+          "default": "失败"
         },
         {
           "token": "TSS_count",
-          "type": "text",
-          "ai_generate": false,
           "source": "Architecture.TSS_count",
-          "default": "直接取数失败"
+          "default": "失败"
         }
       ]
     },
@@ -97,116 +79,84 @@
       "title": "交付物",
       "placeholders": [
         {
-          "token": "kickoff_ppt",
-          "type": "text",
-          "ai_generate": false,
-          "source": "deliverables.kickoff_ppt",
-          "default": "直接取数失败"
+          "token": "project_launch_ppt",
+          "source": "deliverables.project_launch_ppt",
+          "default": "失败"
         },
         {
-          "token": "first_analysis",
-          "type": "text",
-          "ai_generate": false,
-          "source": "deliverables.first_analysis",
-          "default": "直接取数失败"
+          "token": "initial_analysis_and_disposal_report",
+          "source": "deliverables.initial_analysis_and_disposal_report",
+          "default": "失败"
         },
         {
-          "token": "vuln_evidence",
-          "type": "text",
-          "ai_generate": false,
-          "source": "deliverables.vuln_evidence",
-          "default": "直接取数失败"
+          "token": "vulnerability_management_evidence_report",
+          "source": "deliverables.vulnerability_management_evidence_report",
+          "default": "失败"
         },
         {
-          "token": "vuln_list",
-          "type": "text",
-          "ai_generate": false,
-          "source": "deliverables.vuln_list",
-          "default": "直接取数失败"
+          "token": "vulnerability_list",
+          "source": "deliverables.vulnerability_list",
+          "default": "失败"
         },
         {
-          "token": "asset_inventory",
-          "type": "text",
-          "ai_generate": false,
-          "source": "deliverables.asset_inventory",
-          "default": "直接取数失败"
+          "token": "service_asset_table",
+          "source": "deliverables.service_asset_table",
+          "default": "失败"
         },
         {
-          "token": "incident_tracking",
-          "type": "text",
-          "ai_generate": false,
-          "source": "deliverables.incident_tracking",
-          "default": "直接取数失败"
+          "token": "incident_tracking_table",
+          "source": "deliverables.incident_tracking_table",
+          "default": "失败"
         },
         {
-          "token": "incident_response",
-          "type": "text",
-          "ai_generate": false,
-          "source": "deliverables.incident_response",
-          "default": "直接取数失败"
+          "token": "emergency_response_report",
+          "source": "deliverables.emergency_response_report",
+          "default": "失败"
         },
         {
-          "token": "attack_surface",
-          "type": "text",
-          "ai_generate": false,
-          "source": "deliverables.attack_surface",
-          "default": "直接取数失败"
+          "token": "exposure_surface_analysis_report",
+          "source": "deliverables.exposure_surface_analysis_report",
+          "default": "失败"
         },
         {
-          "token": "sec_ops_weekly",
-          "type": "text",
-          "ai_generate": false,
-          "source": "deliverables.sec_ops_weekly",
-          "default": "直接取数失败"
+          "token": "security_operations_report_weekly",
+          "source": "deliverables.security_operations_report_weekly",
+          "default": "失败"
         },
         {
-          "token": "analysis_monthly",
-          "type": "text",
-          "ai_generate": false,
-          "source": "deliverables.analysis_monthly",
-          "default": "直接取数失败"
+          "token": "comprehensive_analysis_report_monthly",
+          "source": "deliverables.comprehensive_analysis_report_monthly",
+          "default": "失败"
         },
         {
-          "token": "sec_ops_quarterly",
-          "type": "text",
-          "ai_generate": false,
-          "source": "deliverables.sec_ops_quarterly",
-          "default": "直接取数失败"
+          "token": "security_operations_report_quarterly",
+          "source": "deliverables.security_operations_report_quarterly",
+          "default": "失败"
         },
         {
-          "token": "nationalday",
-          "type": "text",
-          "ai_generate": false,
-          "source": "deliverables.nationalday",
-          "default": "直接取数失败"
+          "token": "national_day_network_security_work_report",
+          "source": "deliverables.national_day_network_security_work_report",
+          "default": "失败"
         },
         {
-          "token": "springfestival",
-          "type": "text",
-          "ai_generate": false,
-          "source": "deliverables.springfestival",
-          "default": "直接取数失败"
+          "token": "spring_network_security_work_report",
+          "source": "deliverables.spring_network_security_work_report",
+          "default": "失败"
         },
         {
-          "token": "mayday",
-          "type": "text",
-          "ai_generate": false,
-          "source": "deliverables.mayday",
-          "default": "直接取数失败"
+          "token": "may_day_network_security_work_report",
+          "source": "deliverables.may_day_network_security_work_report",
+          "default": "失败"
         },
         {
-          "token": "biweekly_threat",
-          "type": "text",
-          "ai_generate": false,
-          "source": "deliverables.biweekly_threat",
-          "default": "直接取数失败"
+          "token": "security_trends_semi_annual_report",
+          "source": "deliverables.security_trends_semi_annual_report",
+          "default": "失败"
         },
         {
-          "token": "phishing_poster",
-          "type": "text",
-          "ai_generate": false,
-          "source": "deliverables.phishing_poster",
-          "default": "直接取数失败"
+          "token": "phishing_scenario_security_poster",
+          "source": "deliverables.phishing_scenario_security_poster",
+          "default": "失败"
         }
       ]
     },
@@ -216,248 +166,178 @@
       "title": "服务覆盖总览",
       "placeholders": [
         {
-          "token": "af_coverage",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "coverage_summary.AF_coverage"
+          "token": "AF_protection_path_coverage_rate",
+          "default": "失败",
+          "source": "coverage_summary.AF_protection_path_coverage_rate"
         },
         {
-          "token": "aes_coverage",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "coverage_summary.aes_coverage"
+          "token": "probe_traffic_monitoring_coverage_rate",
+          "default": "失败",
+          "source": "coverage_summary.probe_traffic_monitoring_coverage_rate"
         },
         {
-          "token": "probe_coverage",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "coverage_summary.probe_coverage"
+          "token": "AES_installation_coverage_rate",
+          "default": "失败",
+          "source": "coverage_summary.AES_installation_coverage_rate"
         },
         {
-          "token": "alert_manual",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "coverage_summary.alert_manual"
+          "token": "alert_automatic_analysis_ratio",
+          "default": "失败",
+          "source": "coverage_summary.alert_automatic_analysis_ratio"
         },
         {
-          "token": "alert_auto",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "coverage_summary.alert_auto"
+          "token": "alert_manual_analysis_ratio",
+          "default": "失败",
+          "source": "coverage_summary.alert_manual_analysis_ratio"
         },
         {
-          "token": "mss_risk",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "coverage_summary.mss_risk"
+          "token": "mss_risk_asset",
+          "default": "失败",
+          "source": "coverage_summary.mss_risk_asset"
         },
         {
-          "token": "nonmss_risk",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "coverage_summary.nonmss_risk"
+          "token": "nonmss_risk_asset",
+          "default": "失败",
+          "source": "coverage_summary.nonmss_risk_asset"
         },
         {
-          "token": "alert_inner",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "coverage_summary.alert_inner"
+          "token": "alert_mss",
+          "default": "失败",
+          "source": "coverage_summary.alert_mss"
         },
         {
-          "token": "incident_inner",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "coverage_summary.incident_inner"
+          "token": "incident_mss",
+          "default": "失败",
+          "source": "coverage_summary.incident_mss"
         },
         {
-          "token": "handling_inner",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "coverage_summary.handling_inner"
+          "token": "handling_rate_mss",
+          "default": "失败",
+          "source": "coverage_summary.handling_rate_mss"
         },
         {
-          "token": "response_inner",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "coverage_summary.response_inner"
+          "token": "response_time_mss",
+          "default": "失败",
+          "source": "coverage_summary.response_time_mss"
         },
         {
-          "token": "alert_outer",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "coverage_summary.alert_outer"
+          "token": "alert_nonmss",
+          "default": "失败",
+          "source": "coverage_summary.alert_nonmss"
         },
         {
-          "token": "incident_outer",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "coverage_summary.incident_outer"
+          "token": "incident_nonmss",
+          "default": "失败",
+          "source": "coverage_summary.incident_nonmss"
         },
         {
-          "token": "handling_outer",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "coverage_summary.handling_outer"
+          "token": "handling_rate_nonmss",
+          "default": "失败",
+          "source": "coverage_summary.handling_rate_nonmss"
         },
         {
-          "token": "response_outer",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "coverage_summary.response_outer"
+          "token": "response_time_nonmss",
+          "default": "失败",
+          "source": "coverage_summary.response_time_nonmss"
         },
         {
           "token": "business_system",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
+          "default": "失败",
           "source": "coverage_summary.business_system"
         },
         {
           "token": "server_asset",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
+          "default": "失败",
           "source": "coverage_summary.server_asset"
         },
         {
           "token": "pc_asset",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
+          "default": "失败",
           "source": "coverage_summary.pc_asset"
         },
         {
-          "token": "log_count",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "coverage_summary.log_count"
+          "token": "number_of_security_logs",
+          "default": "失败",
+          "source": "coverage_summary.number_of_security_logs"
         },
         {
-          "token": "log_rate",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "coverage_summary.log_rate"
+          "token": "log_noise_reduction_rate",
+          "default": "失败",
+          "source": "coverage_summary.log_noise_reduction_rate"
         },
         {
-          "token": "alert_count",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "coverage_summary.alert_count"
+          "token": "number_of_security_alerts",
+          "default": "失败",
+          "source": "coverage_summary.number_of_security_alerts"
         },
         {
-          "token": "alert_rate",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "coverage_summary.alert_rate"
+          "token": "alert_reduction_rate",
+          "default": "失败",
+          "source": "coverage_summary.alert_reduction_rate"
         },
         {
-          "token": "incident_count",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "coverage_summary.incident_count"
+          "token": "number_of_security_incidents",
+          "default": "失败",
+          "source": "coverage_summary.number_of_security_incidents"
         },
         {
-          "token": "asset_count",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "coverage_summary.asset_count"
+          "token": "number_of_risk_assets",
+          "default": "失败",
+          "source": "coverage_summary.number_of_risk_assets"
         },
         {
           "token": "AF_count",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
+          "default": "失败",
           "source": "coverage_summary.AF_count"
         },
         {
           "token": "STA_count",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
+          "default": "失败",
           "source": "coverage_summary.STA_count"
         },
         {
           "token": "EDR_count",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
+          "default": "失败",
           "source": "coverage_summary.EDR_count"
         },
         {
           "token": "TSS_count",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
+          "default": "失败",
           "source": "coverage_summary.TSS_count"
         },
         {
           "token": "cybersecurity_incident",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
+          "default": "失败",
           "source": "coverage_summary.cybersecurity_incident"
         },
         {
           "token": "proactive_protection",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
+          "default": "失败",
           "source": "coverage_summary.proactive_protection"
         },
         {
           "token": "incident_count1",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
+          "default": "失败",
           "source": "coverage_summary.incident_count1"
         },
         {
           "token": "closure_rate1",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
+          "default": "失败",
           "source": "coverage_summary.closure_rate1"
         },
         {
           "token": "incident_count2",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
+          "default": "失败",
           "source": "coverage_summary.incident_count2"
         },
         {
           "token": "closure_rate2",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
+          "default": "失败",
           "source": "coverage_summary.closure_rate2"
         },
         {
           "token": "response_time",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
+          "default": "失败",
           "source": "coverage_summary.response_time"
         }
       ]
@@ -468,193 +348,139 @@
       "title": "保护总览",
       "placeholders": [
         {
-          "token": "vuln_protect",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.vuln_protect"
+          "token": "high_risk_exploitable_vulnerability_protection_rate",
+          "default": "失败",
+          "source": "protection_overview.high_risk_exploitable_vulnerability_protection_rate"
         },
         {
-          "token": "alert_judgment",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.alert_judgment"
+          "token": "alert_analysis_rate",
+          "default": "失败",
+          "source": "protection_overview.alert_analysis_rate"
         },
         {
-          "token": "alert_response",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.alert_response"
+          "token": "alert_average_response_time",
+          "default": "失败",
+          "source": "protection_overview.alert_average_response_time"
         },
         {
-          "token": "threat_contain",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.threat_contain"
+          "token": "real_time_threat_tracking_rate",
+          "default": "失败",
+          "source": "protection_overview.real_time_threat_tracking_rate"
         },
         {
-          "token": "af_block",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.af_block"
+          "token": "AF_protection_path_coverage_rate",
+          "default": "失败",
+          "source": "protection_overview.AF_protection_path_coverage_rate"
         },
         {
-          "token": "edr_risk",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.edr_risk"
+          "token": "EDR_endpoint_risk_count",
+          "default": "失败",
+          "source": "protection_overview.EDR_endpoint_risk_count"
         },
         {
-          "token": "policy_check",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.policy_check"
+          "token": "policy_check_and_optimization_count",
+          "default": "失败",
+          "source": "protection_overview.policy_check_and_optimization_count"
         },
         {
-          "token": "vuln_protect",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.vuln_protect"
+          "token": "high_risk_exploitable_vulnerability_protection_count",
+          "default": "失败",
+          "source": "protection_overview.high_risk_exploitable_vulnerability_protection_count"
         },
         {
-          "token": "surface",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.surface"
+          "token": "exposure_surface_scan_count",
+          "default": "失败",
+          "source": "protection_overview.exposure_surface_scan_count"
         },
         {
-          "token": "scanning",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.scanning"
+          "token": "vulnerability_and_scan_count",
+          "default": "失败",
+          "source": "protection_overview.vulnerability_and_scan_count"
         },
         {
-          "token": "server",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.server"
+          "token": "service_asset_count",
+          "default": "失败",
+          "source": "protection_overview.service_asset_count"
         },
         {
-          "token": "pc",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.pc"
+          "token": "PC_asset_count",
+          "default": "失败",
+          "source": "protection_overview.PC_asset_count"
         },
         {
-          "token": "vuln_high",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.vuln_high"
+          "token": "high_risk_exploitable_vulnerability_count",
+          "default": "失败",
+          "source": "protection_overview.high_risk_exploitable_vulnerability_count"
         },
         {
-          "token": "surface_risk",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.surface_risk"
+          "token": "exposure_surface_risk_count",
+          "default": "失败",
+          "source": "protection_overview.exposure_surface_risk_count"
         },
         {
-          "token": "incident_closed",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.incident_closed"
+          "token": "closed_loop_incident_ticket_count",
+          "default": "失败",
+          "source": "protection_overview.closed_loop_incident_ticket_count"
         },
         {
-          "token": "vuln_closed",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.vuln_closed"
+          "token": "closed_loop_vulnerability_ticket_count",
+          "default": "失败",
+          "source": "protection_overview.closed_loop_vulnerability_ticket_count"
         },
         {
-          "token": "weekly",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.weekly"
+          "token": "operational_weekly_report_count",
+          "default": "失败",
+          "source": "protection_overview.operational_weekly_report_count"
         },
         {
-          "token": "monthly",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.monthly"
+          "token": "operational_monthly_report_count",
+          "default": "失败",
+          "source": "protection_overview.operational_monthly_report_count"
         },
         {
-          "token": "xdr_log",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.xdr_log"
+          "token": "XDR_security_log_count",
+          "default": "失败",
+          "source": "protection_overview.XDR_security_log_count"
         },
         {
-          "token": "xdr_alert",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.xdr_alert"
+          "token": "XDR_security_alert_total_count",
+          "default": "失败",
+          "source": "protection_overview.XDR_security_alert_total_count"
         },
         {
-          "token": "xdr_incident",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.xdr_incident"
+          "token": "XDR_security_incident_count",
+          "default": "失败",
+          "source": "protection_overview.XDR_security_incident_count"
         },
         {
-          "token": "mss_push",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.mss_push"
+          "token": "MSS_pushed_event_count",
+          "default": "失败",
+          "source": "protection_overview.MSS_pushed_event_count"
         },
         {
-          "token": "mss_latency",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.mss_latency"
+          "token": "MSS_event_average_push_duration",
+          "default": "失败",
+          "source": "protection_overview.MSS_event_average_push_duration"
         },
         {
-          "token": "xdr_auto",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.xdr_auto"
+          "token": "XDR_automated_processing_event_count",
+          "default": "失败",
+          "source": "protection_overview.XDR_automated_processing_event_count"
         },
         {
-          "token": "mss_handle",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.mss_handle"
+          "token": "MSS_processed_event_count",
+          "default": "失败",
+          "source": "protection_overview.MSS_processed_event_count"
         },
         {
-          "token": "emergency_handle",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.emergency_handle"
+          "token": "emergency_response_event_count",
+          "default": "失败",
+          "source": "protection_overview.emergency_response_event_count"
         },
         {
-          "token": "incident_contain",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "protection_overview.incident_contain"
+          "token": "event_average_response_time",
+          "default": "失败",
+          "source": "protection_overview.event_average_response_time"
         }
       ]
     },
@@ -671,50 +497,39 @@
       "placeholders": [
         {
           "token": "incident_total",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
+          "default": "失败",
           "source": "incident_effectiveness.incident_total"
         },
         {
-          "token": "response_avg",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "incident_effectiveness.response_avg"
+          "token": "average_response_time",
+          "default": "失败",
+          "source": "incident_effectiveness.average_response_time"
         },
         {
-          "token": "handle_avg",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "incident_effectiveness.handle_avg"
+          "token": "average_resolution_duration",
+          "default": "失败",
+          "source": "incident_effectiveness.average_resolution_duration"
         },
         {
-          "token": "incident_closed",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "incident_effectiveness.incident_closed"
+          "token": "event_closed_loop_rate",
+          "default": "失败",
+          "source": "incident_effectiveness.event_closed_loop_rate"
         },
         {
-          "token": "trust_assurance",
-          "type": "text",
+          "token": "business_continuity_assurance_conclusion",
           "ai_generate": true,
-          "ai_instruction": "信任",
+          "ai_instruction": "写业务持续性保障结论",
           "max_length": 100
         },
         {
-          "token": "security_trust",
-          "type": "text",
+          "token": "user_trust_assurance_conclusion",
           "ai_generate": true,
-          "ai_instruction": "信任",
+          "ai_instruction": "写用户信赖度保障结论",
           "max_length": 100
         },
         {
           "token": "P11_bar",
           "type": "P11_bar",
-          "ai_generate": false,
           "chart_config": {
             "data_source": "incident_effectiveness.response_timeliness",
             "x_field": "labels",
@@ -726,7 +541,6 @@
         {
           "token": "P11_line",
           "type": "P11_line",
-          "ai_generate": false,
           "chart_config": {
             "data_source": "incident_effectiveness.response_trend"
           },
@@ -735,7 +549,6 @@
         {
           "token": "P11_pie",
           "type": "P11_pie",
-          "ai_generate": false,
           "chart_config": {
             "data_source": "incident_effectiveness.incident_distribution"
           },
@@ -756,150 +569,123 @@
       "placeholders": [
         {
           "token": "asset_improve1",
-          "type": "text",
           "ai_generate": true,
           "ai_instruction": "生成资产安全改进措施1。从asset_improvements[0]获取。",
           "max_length": 100
         },
         {
           "token": "asset_improve2",
-          "type": "text",
           "ai_generate": true,
           "ai_instruction": "生成资产安全改进措施2。从asset_improvements[1]获取。",
           "max_length": 100
         },
         {
           "token": "asset_improve3",
-          "type": "text",
           "ai_generate": true,
           "ai_instruction": "生成资产安全改进措施3。从asset_improvements[2]获取。",
           "max_length": 100
         },
         {
           "token": "asset_summary",
-          "type": "text",
           "ai_generate": true,
           "ai_instruction": "基于资产管理数据，生成资产安全管理工作总结。包括资产覆盖情况、安全状况评估、主要发现和改进方向。",
           "max_length": 500
         },
         {
           "token": "asset_value1",
-          "type": "text",
           "ai_generate": true,
           "ai_instruction": "基于资产管理数据，生成资产安全管理工作待提升项1。",
           "max_length": 500
         },
         {
           "token": "asset_value2",
-          "type": "text",
           "ai_generate": true,
           "ai_instruction": "基于资产管理数据，生成资产安全管理工作待提升项2。",
           "max_length": 500
         },
         {
           "token": "asset_value3",
-          "type": "text",
           "ai_generate": true,
           "ai_instruction": "基于资产管理数据，生成资产安全管理工作待提升项3。",
           "max_length": 500
         },
         {
-          "token": "intranet_server",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "asset_management.intranet_server"
+          "token": "internal_network_server_count",
+          "default": "失败",
+          "source": "asset_management.internal_network_server_count"
         },
         {
-          "token": "intranet_network",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "asset_management.intranet_network"
+          "token": "internal_network_network_device_count",
+          "default": "失败",
+          "source": "asset_management.internal_network_network_device_count"
         },
         {
-          "token": "intranet_iot",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "asset_management.intranet_iot"
+          "token": "internal_network_IoT_device_count",
+          "default": "失败",
+          "source": "asset_management.internal_network_IoT_device_count"
         },
         {
-          "token": "intranet_mss",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "asset_management.intranet_mss"
+          "token": "internal_network_MSS_service_asset_count",
+          "default": "失败",
+          "source": "asset_management.internal_network_MSS_service_asset_count"
         },
         {
-          "token": "rootdomain_internet",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "asset_management.rootdomain_internet"
+          "token": "external_root_domain_asset_count",
+          "default": "失败",
+          "source": "asset_management.external_root_domain_asset_count"
         },
         {
-          "token": "subdomain_internet",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "asset_management.subdomain_internet"
+          "token": "external_subdomain_asset_count",
+          "default": "失败",
+          "source": "asset_management.external_subdomain_asset_count"
         },
         {
           "token": "web_asset",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
+          "default": "失败",
           "source": "asset_management.web_asset"
         },
         {
           "token": "nonweb_asset",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
+          "default": "失败",
           "source": "asset_management.nonweb_asset"
         },
         {
-          "token": "login_entry",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "asset_management.login_entry"
+          "token": "login_endpoint_count",
+          "default": "失败",
+          "source": "asset_management.login_endpoint_count"
         },
         {
-          "token": "server_total",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "asset_management.server_total"
+          "token": "total_server_assets_count",
+          "default": "失败",
+          "source": "asset_management.total_server_assets_count"
         },
         {
-          "token": "pc_total",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "asset_management.pc_total"
+          "token": "PC_assets_count",
+          "default": "失败",
+          "source": "asset_management.PC_assets_count"
         },
         {
-          "token": "internet_entry",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "asset_management.internet_entry"
+          "token": "internet_IP_domain_count",
+          "default": "失败",
+          "source": "asset_management.internet_IP_domain_count"
         },
         {
-          "token": "internet_port",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "asset_management.internet_port"
+          "token": "internet_exposed_ports_count",
+          "default": "失败",
+          "source": "asset_management.internet_exposed_ports_count"
         },
         {
-          "token": "asset_identify",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "asset_management.asset_identify"
+          "token": "asset_identification_count",
+          "default": "失败",
+          "source": "asset_management.asset_identification_count"
+        },
+        {
+          "token": "P13_pie",
+          "type": "P13_pie",
+          "chart_config": {
+            "data_source": "asset_management.asset_distribution"
+          },
+          "source": "asset_management.P13_pie"
         }
       ]
     },
@@ -910,50 +696,38 @@
       "placeholders": [
         {
           "token": "vuln_summary",
-          "type": "text",
           "ai_generate": true,
           "ai_instruction": "基于漏洞管理数据，生成脆弱性管理工作总结。包括扫描次数、发现漏洞数量、修复进度、重点漏洞类型分析等。",
           "max_length": 500
         },
         {
-          "token": "vuln_high",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "vulnerability_effectiveness.vuln_high"
+          "token": "high_risk_exploitable_vulnerability_count",
+          "default": "失败",
+          "source": "vulnerability_effectiveness.high_risk_exploitable_vulnerability_count"
         },
         {
-          "token": "internet_closed",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "vulnerability_effectiveness.internet_closed"
+          "token": "closed_loop_external_asset_vulnerability_count",
+          "default": "失败",
+          "source": "vulnerability_effectiveness.closed_loop_external_asset_vulnerability_count"
         },
         {
-          "token": "admin_weak",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "vulnerability_effectiveness.admin_weak"
+          "token": "admin_weak_password_count",
+          "default": "失败",
+          "source": "vulnerability_effectiveness.admin_weak_password_count"
         },
         {
-          "token": "vuln_closed",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "vulnerability_effectiveness.vuln_closed"
+          "token": "high_risk_exploitable_vulnerability_closure_rate",
+          "default": "失败",
+          "source": "vulnerability_effectiveness.high_risk_exploitable_vulnerability_closure_rate"
         },
         {
           "token": "scanning",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
+          "default": "失败",
           "source": "vulnerability_effectiveness.scanning"
         },
         {
           "token": "P14_pie",
           "type": "P14_pie",
-          "ai_generate": false,
           "chart_config": {
             "data_source": "vulnerability_effectiveness.vulnerability_distribution"
           },
@@ -967,85 +741,65 @@
       "title": "威胁运营成效",
       "placeholders": [
         {
-          "token": "xdr_attack",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "threat_effectiveness.xdr_attack"
+          "token": "external_attack_log_count_XDR",
+          "default": "失败",
+          "source": "threat_effectiveness.external_attack_log_count_XDR"
         },
         {
-          "token": "threat_alert",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "threat_effectiveness.threat_alert"
+          "token": "real_time_threat_alert_count",
+          "default": "失败",
+          "source": "threat_effectiveness.real_time_threat_alert_count"
         },
         {
-          "token": "mss_ticket",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "threat_effectiveness.mss_ticket"
+          "token": "MSS_threat_ticket_count",
+          "default": "失败",
+          "source": "threat_effectiveness.MSS_threat_ticket_count"
         },
         {
-          "token": "ticket_response",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "threat_effectiveness.ticket_response"
+          "token": "threat_ticket_average_response_time",
+          "default": "失败",
+          "source": "threat_effectiveness.threat_ticket_average_response_time"
         },
         {
-          "token": "policy_check",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "threat_effectiveness.policy_check"
+          "token": "security_device_policy_check_count",
+          "default": "失败",
+          "source": "threat_effectiveness.security_device_policy_check_count"
         },
         {
-          "token": "policy_optimized",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "threat_effectiveness.policy_optimized"
+          "token": "optimized_policy_risk_count",
+          "default": "失败",
+          "source": "threat_effectiveness.optimized_policy_risk_count"
         },
         {
-          "token": "threat_intel",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "threat_effectiveness.threat_intel"
+          "token": "latest_threat_intelligence_count",
+          "default": "失败",
+          "source": "threat_effectiveness.latest_threat_intelligence_count"
         },
         {
-          "token": "threat_asset",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
-          "source": "threat_effectiveness.threat_asset"
+          "token": "latest_threat_impacted_asset_count",
+          "default": "失败",
+          "source": "threat_effectiveness.latest_threat_impacted_asset_count"
         },
         {
           "token": "threat_improve1",
-          "type": "text",
           "ai_generate": true,
           "ai_instruction": "生成威胁运营改进措施1。从threat_improvements[0]获取。",
           "max_length": 100
         },
         {
           "token": "threat_improve2",
-          "type": "text",
           "ai_generate": true,
           "ai_instruction": "生成威胁运营改进措施2。从threat_improvements[1]获取。",
           "max_length": 100
         },
         {
           "token": "threat_improve3",
-          "type": "text",
           "ai_generate": true,
           "ai_instruction": "生成威胁运营改进措施3。从threat_improvements[2]获取。",
           "max_length": 100
         },
         {
           "token": "threat_summary",
-          "type": "text",
           "ai_generate": true,
           "ai_instruction": "基于威胁运营数据，生成威胁运营工作总结。包括威胁检测覆盖、告警处置效率、主要威胁类型、防护效果等。",
           "max_length": 500
@@ -1053,7 +807,6 @@
         {
           "token": "P15_line",
           "type": "P15_line",
-          "ai_generate": false,
           "chart_config": {
             "data_source": "threat_effectiveness.threat_trend"
           },
@@ -1068,49 +821,39 @@
       "placeholders": [
         {
           "token": "duty_summary",
-          "type": "text",
           "ai_generate": true,
           "ai_instruction": "基于period_comparison的每个节日，生成差不多的话术，突出保障效果。模板参考‘中秋节值守保障\n2024年9月15日-9月17日 7*24小时全程值守，保障网络安全0事故'，并且对于峰值特殊的的节日加上‘实时攻击达到峰值’等突出趋势的话术",
           "max_length": 500
         },
         {
           "token": "duty_critical",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
+          "default": "失败",
           "source": "critical_assurance.duty_critical"
         },
         {
           "token": "incident_critical",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
+          "default": "失败",
           "source": "critical_assurance.incident_critical"
         },
         {
           "token": "availability_assure",
-          "type": "text",
-          "ai_generate": false,
-          "default": "直接取数失败",
+          "default": "失败",
           "source": "critical_assurance.availability_assure"
         },
         {
           "token": "security_value1",
-          "type": "text",
           "ai_generate": true,
           "ai_instruction": "基于重保值守数据，生成重保值守工作总结。包括值守时间、保障期间的安全态势、应急响应情况、重点防护措施等。",
           "max_length": 500
         },
         {
           "token": "security_value2",
-          "type": "text",
           "ai_generate": true,
           "ai_instruction": "基于重保值守数据，生成重保值守工作总结。包括值守时间、保障期间的安全态势、应急响应情况、重点防护措施等。",
           "max_length": 500
         },
         {
           "token": "security_value3",
-          "type": "text",
           "ai_generate": true,
           "ai_instruction": "基于重保值守数据，生成重保值守工作总结。包括值守时间、保障期间的安全态势、应急响应情况、重点防护措施等。",
           "max_length": 500
@@ -1118,7 +861,6 @@
         {
           "token": "P16_combo",
           "type": "P16_combo",
-          "ai_generate": false,
           "chart_config": {
             "data_source": "critical_assurance.posture_comparison"
           },
@@ -1132,148 +874,109 @@
       "title": "安全设备与平台成效",
       "placeholders": [
         {
-          "token": "fw_attack",
-          "type": "text",
-          "ai_generate": false,
-          "source": "platform_effectiveness.fw_attack",
-          "default": "直接取数失败"
+          "token": "firewall_detected_attack_count",
+          "source": "platform_effectiveness.firewall_detected_attack_count",
+          "default": "失败"
         },
         {
-          "token": "aes_risk",
-          "type": "text",
-          "ai_generate": false,
-          "source": "platform_effectiveness.aes_risk",
-          "default": "直接取数失败"
+          "token": "AES_detected_endpoint_security_risk_count",
+          "source": "platform_effectiveness.AES_detected_endpoint_security_risk_count",
+          "default": "失败"
         },
         {
-          "token": "xdr_log",
-          "type": "text",
-          "ai_generate": false,
-          "source": "platform_effectiveness.xdr_log",
-          "default": "直接取数失败"
+          "token": "XDR_monthly_average_log_count",
+          "source": "platform_effectiveness.XDR_monthly_average_log_count",
+          "default": "失败"
         },
         {
-          "token": "xdr_alert",
-          "type": "text",
-          "ai_generate": false,
-          "source": "platform_effectiveness.xdr_avg_monthly_alert_count",
-          "default": "直接取数失败"
+          "token": "XDR_monthly_average_alert_count",
+          "source": "platform_effectiveness.XDR_monthly_average_alert_count",
+          "default": "失败"
         },
         {
-          "token": "xdr_incident",
-          "type": "text",
-          "ai_generate": false,
-          "source": "platform_effectiveness.xdr_avg_monthly_incident_count",
-          "default": "直接取数失败"
+          "token": "XDR_monthly_average_incident_count",
+          "source": "platform_effectiveness.XDR_monthly_average_incident_count",
+          "default": "失败"
         },
         {
-          "token": "fw_auto",
-          "type": "text",
-          "ai_generate": false,
-          "source": "platform_effectiveness.fw_auto",
-          "default": "直接取数失败"
+          "token": "firewall_automatic_block_rate",
+          "source": "platform_effectiveness.firewall_automatic_block_rate",
+          "default": "失败"
         },
         {
-          "token": "host_handle",
-          "type": "text",
-          "ai_generate": false,
-          "source": "platform_effectiveness.host_handle",
-          "default": "直接取数失败"
+          "token": "host_anomaly_risk_handling_count",
+          "source": "platform_effectiveness.host_anomaly_risk_handling_count",
+          "default": "失败"
         },
         {
-          "token": "alert_aggregate",
-          "type": "text",
-          "ai_generate": false,
-          "source": "platform_effectiveness.alert_aggregate",
-          "default": "直接取数失败"
+          "token": "aggregated_security_alert_count",
+          "source": "platform_effectiveness.aggregated_security_alert_count",
+          "default": "失败"
         },
         {
-          "token": "fw_coverage",
-          "type": "text",
-          "ai_generate": false,
-          "source": "platform_effectiveness.fw_coverage",
-          "default": "直接取数失败"
+          "token": "firewall_protection_path_coverage_rate",
+          "source": "platform_effectiveness.firewall_protection_path_coverage_rate",
+          "default": "失败"
         },
         {
-          "token": "server_coverage",
-          "type": "text",
-          "ai_generate": false,
-          "source": "platform_effectiveness.server_coverage",
-          "default": "直接取数失败"
+          "token": "server_endpoint_coverage_rate",
+          "source": "platform_effectiveness.server_endpoint_coverage_rate",
+          "default": "失败"
         },
         {
-          "token": "incident_intel",
-          "type": "text",
-          "ai_generate": false,
-          "source": "platform_effectiveness.incident_intel",
-          "default": "直接取数失败"
+          "token": "intelligent_security_incident_identification_count",
+          "source": "platform_effectiveness.intelligent_security_incident_identification_count",
+          "default": "失败"
         },
         {
-          "token": "component_offline",
-          "type": "text",
-          "ai_generate": false,
-          "source": "platform_effectiveness.component_offline",
-          "default": "直接取数失败"
+          "token": "component_network_connectivity_anomaly_count",
+          "source": "platform_effectiveness.component_network_connectivity_anomaly_count",
+          "default": "失败"
         },
         {
-          "token": "component_log",
-          "type": "text",
-          "ai_generate": false,
-          "source": "platform_effectiveness.component_log",
-          "default": "直接取数失败"
+          "token": "component_log_synchronization_anomaly_count",
+          "source": "platform_effectiveness.component_log_synchronization_anomaly_count",
+          "default": "失败"
         },
         {
-          "token": "component_policy",
-          "type": "text",
-          "ai_generate": false,
-          "source": "platform_effectiveness.component_policy",
-          "default": "直接取数失败"
+          "token": "component_policy_effectiveness_alert_count",
+          "source": "platform_effectiveness.component_policy_effectiveness_alert_count",
+          "default": "失败"
         },
         {
-          "token": "component_auto",
-          "type": "text",
-          "ai_generate": false,
-          "source": "platform_effectiveness.component_auto",
-          "default": "直接取数失败"
+          "token": "component_anomaly_automatic_handling_count",
+          "source": "platform_effectiveness.component_anomaly_automatic_handling_count",
+          "default": "失败"
         },
         {
-          "token": "aes_trust",
-          "type": "text",
-          "ai_generate": false,
-          "source": "platform_effectiveness.aes_trust_risk_count",
-          "default": "直接取数失败"
+          "token": "AES_trusted_risk_event_count",
+          "source": "platform_effectiveness.AES_trusted_risk_event_count",
+          "default": "失败"
         },
         {
-          "token": "agent_install",
-          "type": "text",
-          "ai_generate": false,
-          "source": "platform_effectiveness.agent_install_count",
-          "default": "直接取数失败"
+          "token": "agent_installation_count",
+          "source": "platform_effectiveness.agent_installation_count",
+          "default": "失败"
         },
         {
-          "token": "asset_total",
-          "type": "text",
-          "ai_generate": false,
-          "source": "platform_effectiveness.asset_total_count",
-          "default": "直接取数失败"
+          "token": "total_asset_count",
+          "source": "platform_effectiveness.total_asset_count",
+          "default": "失败"
         },
         {
           "token": "platform_improve1",
-          "type": "text",
           "ai_generate": true,
           "ai_instruction": "生成平台运营改进措施1。从platform_improvements[0]获取。",
           "max_length": 100
         },
         {
           "token": "platform_improve2",
-          "type": "text",
           "ai_generate": true,
           "ai_instruction": "生成平台运营改进措施2。从platform_improvements[1]获取。",
           "max_length": 100
         },
         {
           "token": "platform_improve3",
-          "type": "text",
           "ai_generate": true,
           "ai_instruction": "生成平台运营改进措施3。从platform_improvements[2]获取。",
           "max_length": 100
@@ -1328,6 +1031,8 @@
       "title": "致谢",
       "placeholders": []
     }
-  ],
-  "audience": "management"
+  ]
 }
+
+
+

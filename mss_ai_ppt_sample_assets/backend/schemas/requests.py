@@ -122,7 +122,7 @@ class AISlideRewriteRequest(BaseModel):
             "example": {
                 "slide_key": "summary",
                 "user_prompt": "请聚焦本月高风险告警的业务影响，语气偏管理层，并给出三条可执行建议。",
-                "target_tokens": ["trust_assurance", "security_trust"]
+                "target_tokens": ["business_continuity_assurance_conclusion", "user_trust_assurance_conclusion"]
             }
         }
 

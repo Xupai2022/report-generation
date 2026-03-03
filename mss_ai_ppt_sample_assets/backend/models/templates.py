@@ -25,7 +25,7 @@ class PlaceholderDefinition(BaseModel):
         "P14_pie",  # Severity distribution donut chart (告警严重程度分布饼图)
         "P15_line",  # Monthly threats trend line chart (月度威胁趋势折线图)
         "P16_combo",  # Combo chart with bar (daily attacks) and line (defense rate)
-    ]
+    ] = "text"
     ai_generate: bool = False  # Whether content should be AI-generated
 
     # For ai_generate=False: direct data source
@@ -85,14 +85,14 @@ class TemplateDescriptorV2(BaseModel):
     name: str
     version: str
     pptx_file: str
-    audience: Literal["management", "technical"]
+    audience: Literal["management", "technical"] = "management"
     language: str = "zh-CN"
     style: Dict[str, Any] = Field(default_factory=dict)
     slides: List[SlideDefinitionV2]
 
     @classmethod
     def load_from_file(cls, path: Path) -> "TemplateDescriptorV2":
-        with path.open("r", encoding="utf-8") as f:
+        with path.open("r", encoding="utf-8-sig") as f:
             data = json.load(f)
         return cls.model_validate(data)
 
@@ -145,7 +145,7 @@ def load_template_descriptor(path: Path) -> TemplateDescriptorV2:
     Returns:
         TemplateDescriptorV2
     """
-    with path.open("r", encoding="utf-8") as f:
+    with path.open("r", encoding="utf-8-sig") as f:
         data = json.load(f)
 
     # Simplified check or just direct validation

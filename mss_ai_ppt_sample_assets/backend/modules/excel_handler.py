@@ -282,7 +282,7 @@ class ExcelDataExtractor:
 
         for path in descriptor_dir.glob("*_descriptor.json"):
             try:
-                content = json.loads(path.read_text(encoding="utf-8"))
+                content = json.loads(path.read_text(encoding="utf-8-sig"))
             except Exception:
                 continue
             if content.get("template_id") == "mss_classic_ops":
@@ -340,9 +340,9 @@ class ExcelDataExtractor:
 
         cover: Dict[str, Any] = {}
         if period.get("start"):
-            cover["PERIOD_start"] = period["start"]
+            cover["period_start"] = period["start"]
         if period.get("end"):
-            cover["PERIOD_end"] = period["end"]
+            cover["period_end"] = period["end"]
         ExcelDataExtractor._add_section(output, "cover", cover)
 
         architecture: Dict[str, Any] = {}
@@ -354,39 +354,31 @@ class ExcelDataExtractor:
 
         deliverables: Dict[str, Any] = {}
         deliverables_map = {
-            "kickoff_ppt": "D9",
-            "first_analysis": "D10",
-            "vuln_evidence": "D11",
-            "vuln_list": "D12",
-            "asset_inventory": "D13",
-            "incident_tracking": "D14",
-            "incident_response": "D15",
-            "attack_surface": "D16",
-            "sec_ops_weekly": "G9",
-            "analysis_monthly": "G10",
-            "sec_ops_quarterly": "G11",
-            "nationalday": "G13",
-            "springfestival": "G14",
-            "mayday": "G15",
+            "project_launch_ppt": "D9",
+            "initial_analysis_and_disposal_report": "D10",
+            "vulnerability_management_evidence_report": "D11",
+            "vulnerability_list": "D12",
+            "service_asset_table": "D13",
+            "incident_tracking_table": "D14",
+            "emergency_response_report": "D15",
+            "exposure_surface_analysis_report": "D16",
+            "security_operations_report_weekly": "G9",
+            "comprehensive_analysis_report_monthly": "G10",
+            "security_operations_report_quarterly": "G11",
+            "national_day_network_security_work_report": "G13",
+            "spring_network_security_work_report": "G14",
+            "may_day_network_security_work_report": "G15",
+            "security_trends_semi_annual_report": "G17",
+            "phishing_scenario_security_poster": "G18",
         }
         for token, addr in deliverables_map.items():
             ExcelDataExtractor._put_text(deliverables, token, ws[addr])
-        # P7: primary mapping is G16/G17. Fallback to G17/G18 for legacy-filled sheets.
-        if ExcelDataExtractor._has_value(ws["G16"]):
-            ExcelDataExtractor._put_text(deliverables, "biweekly_threat", ws["G16"])
-        elif ExcelDataExtractor._has_value(ws["G17"]):
-            ExcelDataExtractor._put_text(deliverables, "biweekly_threat", ws["G17"])
-
-        if ExcelDataExtractor._has_value(ws["G18"]):
-            ExcelDataExtractor._put_text(deliverables, "phishing_poster", ws["G18"])
-        elif ExcelDataExtractor._has_value(ws["G17"]):
-            ExcelDataExtractor._put_text(deliverables, "phishing_poster", ws["G17"])
         ExcelDataExtractor._add_section(output, "deliverables", deliverables)
 
         coverage_summary: Dict[str, Any] = {}
-        ExcelDataExtractor._put_pct(coverage_summary, "AF_coverage", ws["L22"])
-        ExcelDataExtractor._put_pct(coverage_summary, "aes_coverage", ws["L24"])
-        ExcelDataExtractor._put_pct(coverage_summary, "probe_coverage", ws["L23"])
+        ExcelDataExtractor._put_pct(coverage_summary, "AF_protection_path_coverage_rate", ws["L22"])
+        ExcelDataExtractor._put_pct(coverage_summary, "probe_traffic_monitoring_coverage_rate", ws["L23"])
+        ExcelDataExtractor._put_pct(coverage_summary, "AES_installation_coverage_rate", ws["L24"])
         coverage_map = {
             "cybersecurity_incident": "C21",
             "proactive_protection": "D21",
@@ -395,31 +387,31 @@ class ExcelDataExtractor:
             "incident_count2": "G21",
             "closure_rate2": "H21",
             "response_time": "I21",
-            "alert_manual": "L26",
-            "alert_auto": "L25",
-            "mss_risk": "J27",
-            "nonmss_risk": "J28",
-            "alert_inner": "J23",
-            "incident_inner": "J24",
-            "handling_inner": "J25",
-            "response_inner": "J26",
-            "alert_outer": "J28",
-            "incident_outer": "J29",
-            "handling_outer": "J30",
-            "response_outer": "J31",
+            "alert_automatic_analysis_ratio": "L26",
+            "alert_manual_analysis_ratio": "L25",
+            "mss_risk_asset": "J22",
+            "nonmss_risk_asset": "J27",
+            "alert_mss": "J23",
+            "incident_mss": "J24",
+            "handling_rate_mss": "J25",
+            "response_time_mss": "J26",
+            "alert_nonmss": "J28",
+            "incident_nonmss": "J29",
+            "handling_rate_nonmss": "J30",
+            "response_time_nonmss": "J31",
             "business_system": "D28",
             "server_asset": "D29",
             "pc_asset": "D30",
-            "log_count": "G22",
-            "log_rate": "G23",
-            "alert_count": "G24",
-            "alert_rate": "G25",
-            "incident_count": "G26",
-            "asset_count": "G27",
-            "AF_count": "D3",
-            "STA_count": "D4",
-            "EDR_count": "D5",
-            "TSS_count": "D6",
+            "number_of_security_logs": "G22",
+            "log_noise_reduction_rate": "G23",
+            "number_of_security_alerts": "G24",
+            "alert_reduction_rate": "G25",
+            "number_of_security_incidents": "G26",
+            "number_of_risk_assets": "G27",
+            "AF_count": "D22",
+            "STA_count": "D23",
+            "EDR_count": "D24",
+            "TSS_count": "D25",
         }
         for token, addr in coverage_map.items():
             ExcelDataExtractor._put_text(coverage_summary, token, ws[addr])
@@ -427,47 +419,44 @@ class ExcelDataExtractor:
 
         protection_overview: Dict[str, Any] = {}
         protection_map = {
-            "af_block": "D35",
-            "edr_risk": "D36",
-            "policy_check": "D37",
-            "vuln_protect": "D38",
-            "surface": "D39",
-            "scanning": "D40",
-            "server": "D41",
-            "pc": "D42",
-            "vuln_high": "D43",
-            "surface_risk": "D44",
-            "incident_closed": "D45",
-            "vuln_closed": "D46",
-            "weekly": "D47",
-            "monthly": "D48",
-            "alert_judgment": "D34",
-            "alert_response": "E34",
-            "threat_contain": "F34",
-            "xdr_log": "G35",
-            "xdr_alert": "G36",
-            "xdr_incident": "G37",
-            "mss_push": "G38",
-            "mss_latency": "G39",
-            "xdr_auto": "G40",
-            "mss_handle": "G41",
-            "emergency_handle": "G42",
-            "incident_contain": "G43",
+            "AF_protection_path_coverage_rate": "D35",
+            "EDR_endpoint_risk_count": "D36",
+            "policy_check_and_optimization_count": "D37",
+            "high_risk_exploitable_vulnerability_protection_rate": "C34",
+            "high_risk_exploitable_vulnerability_protection_count": "D38",
+            "exposure_surface_scan_count": "D39",
+            "vulnerability_and_scan_count": "D40",
+            "service_asset_count": "D41",
+            "PC_asset_count": "D42",
+            "high_risk_exploitable_vulnerability_count": "D43",
+            "exposure_surface_risk_count": "D44",
+            "closed_loop_incident_ticket_count": "D45",
+            "closed_loop_vulnerability_ticket_count": "D46",
+            "operational_weekly_report_count": "D47",
+            "operational_monthly_report_count": "D48",
+            "alert_analysis_rate": "D34",
+            "alert_average_response_time": "E34",
+            "real_time_threat_tracking_rate": "F34",
+            "XDR_security_log_count": "G35",
+            "XDR_security_alert_total_count": "G36",
+            "XDR_security_incident_count": "G37",
+            "MSS_pushed_event_count": "G38",
+            "MSS_event_average_push_duration": "G39",
+            "XDR_automated_processing_event_count": "G40",
+            "MSS_processed_event_count": "G41",
+            "emergency_response_event_count": "G42",
+            "event_average_response_time": "G43",
         }
         for token, addr in protection_map.items():
             ExcelDataExtractor._put_text(protection_overview, token, ws[addr])
-        if "xdr_auto" not in protection_overview and ExcelDataExtractor._has_value(ws["D124"]):
-            ExcelDataExtractor._put_text(protection_overview, "xdr_auto", ws["D124"])
         ExcelDataExtractor._add_section(output, "protection_overview", protection_overview)
 
         incident_effectiveness: Dict[str, Any] = {}
         incident_map = {
             "incident_total": "C51",
-            "response_avg": "D51",
-            "handle_avg": "E51",
-            "incident_closed": "F51",
-            "trust_assurance": "F51",
-            "security_trust": "D51",
+            "average_response_time": "D51",
+            "average_resolution_duration": "E51",
+            "event_closed_loop_rate": "F51",
         }
         for token, addr in incident_map.items():
             ExcelDataExtractor._put_text(incident_effectiveness, token, ws[addr])
@@ -503,31 +492,41 @@ class ExcelDataExtractor:
 
         asset_management: Dict[str, Any] = {}
         asset_map = {
-            "intranet_server": "D70",
-            "intranet_network": "D72",
-            "intranet_iot": "D73",
-            "intranet_mss": "D74",
-            "rootdomain_internet": "G70",
-            "subdomain_internet": "G71",
+            "internal_network_server_count": "D70",
+            "internal_network_network_device_count": "D72",
+            "internal_network_IoT_device_count": "D73",
+            "internal_network_MSS_service_asset_count": "D74",
+            "external_root_domain_asset_count": "G70",
+            "external_subdomain_asset_count": "G71",
             "web_asset": "G72",
             "nonweb_asset": "G73",
-            "login_entry": "G74",
-            "server_total": "D64",
-            "pc_total": "D65",
-            "internet_entry": "D66",
-            "internet_port": "D67",
-            "asset_identify": "D68",
+            "login_endpoint_count": "G74",
+            "total_server_assets_count": "D64",
+            "PC_assets_count": "D65",
+            "internet_IP_domain_count": "D66",
+            "internet_exposed_ports_count": "D67",
+            "asset_identification_count": "D68",
         }
         for token, addr in asset_map.items():
             ExcelDataExtractor._put_text(asset_management, token, ws[addr])
+
+        asset_dist = ExcelDataExtractor._read_labeled_pairs(ws, 64, 68, 6, 7)
+        if asset_dist["labels"]:
+            asset_dist_obj = {
+                "categories": asset_dist["labels"],
+                "values": asset_dist["values"],
+            }
+            asset_management["asset_distribution"] = asset_dist_obj
+            asset_management["P13_pie"] = asset_dist_obj
+
         ExcelDataExtractor._add_section(output, "asset_management", asset_management)
 
         vulnerability_effectiveness: Dict[str, Any] = {}
         vuln_map = {
-            "vuln_high": "C77",
-            "internet_closed": "D77",
-            "admin_weak": "E77",
-            "vuln_closed": "F77",
+            "high_risk_exploitable_vulnerability_count": "C77",
+            "closed_loop_external_asset_vulnerability_count": "D77",
+            "admin_weak_password_count": "E77",
+            "high_risk_exploitable_vulnerability_closure_rate": "F77",
             "scanning": "D40",
         }
         for token, addr in vuln_map.items():
@@ -598,14 +597,14 @@ class ExcelDataExtractor:
         threat_effectiveness["P15_line"] = threat_trend
 
         threat_map = {
-            "xdr_attack": "D84",
-            "threat_alert": "D85",
-            "mss_ticket": "D86",
-            "ticket_response": "D87",
-            "policy_check": "D88",
-            "policy_optimized": "D89",
-            "threat_intel": "D90",
-            "threat_asset": "D91",
+            "external_attack_log_count_XDR": "D84",
+            "real_time_threat_alert_count": "D85",
+            "MSS_threat_ticket_count": "D86",
+            "threat_ticket_average_response_time": "D87",
+            "security_device_policy_check_count": "D88",
+            "optimized_policy_risk_count": "D89",
+            "latest_threat_intelligence_count": "D90",
+            "latest_threat_impacted_asset_count": "D91",
         }
         for token, addr in threat_map.items():
             ExcelDataExtractor._put_text(threat_effectiveness, token, ws[addr])
@@ -646,30 +645,30 @@ class ExcelDataExtractor:
 
         platform_effectiveness: Dict[str, Any] = {}
         platform_map = {
-            "fw_attack": "D111",
-            "fw_auto": "D112",
-            "fw_coverage": "D113",
-            "aes_risk": "D114",
-            "host_handle": "D115",
-            "server_coverage": "D116",
-            "xdr_log": "D117",
-            "alert_aggregate": "D118",
-            "incident_intel": "D119",
-            "component_offline": "D121",
-            "component_log": "D122",
-            "component_policy": "D123",
-            "component_auto": "D124",
+            "firewall_detected_attack_count": "D111",
+            "firewall_automatic_block_rate": "D112",
+            "firewall_protection_path_coverage_rate": "D113",
+            "AES_detected_endpoint_security_risk_count": "D114",
+            "host_anomaly_risk_handling_count": "D115",
+            "server_endpoint_coverage_rate": "D116",
+            "XDR_total_security_log_count": "D117",
+            "aggregated_security_alert_count": "D118",
+            "intelligent_security_incident_identification_count": "D119",
+            "component_network_connectivity_anomaly_count": "D121",
+            "component_log_synchronization_anomaly_count": "D122",
+            "component_policy_effectiveness_alert_count": "D123",
+            "component_anomaly_automatic_handling_count": "D124",
         }
         for token, addr in platform_map.items():
             ExcelDataExtractor._put_text(platform_effectiveness, token, ws[addr])
 
         platform_extra_map = {
-            "aes_trust_risk_count": "F114",
-            "agent_install_count": "F115",
-            "asset_total_count": "F116",
-            "xdr_avg_monthly_log_count": "F117",
-            "xdr_avg_monthly_alert_count": "F118",
-            "xdr_avg_monthly_incident_count": "F119",
+            "AES_trusted_risk_event_count": "F114",
+            "agent_installation_count": "F115",
+            "total_asset_count": "F116",
+            "XDR_monthly_average_log_count": "F117",
+            "XDR_monthly_average_alert_count": "F118",
+            "XDR_monthly_average_incident_count": "F119",
         }
         for token, addr in platform_extra_map.items():
             ExcelDataExtractor._put_text(platform_effectiveness, token, ws[addr])
