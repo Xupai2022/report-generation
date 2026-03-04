@@ -48,7 +48,8 @@ class JobManager:
         template_id: str,
         idempotency_key: Optional[str] = None,
         session_id: Optional[str] = None,
-        max_retries: int = 3
+        max_retries: int = 3,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> JobState:
         """Create a new job or return existing one (idempotency).
 
@@ -58,6 +59,7 @@ class JobManager:
             idempotency_key: Optional idempotency key to prevent duplicates
             session_id: Optional session ID (generated if not provided)
             max_retries: Maximum retry attempts for this job
+            metadata: Optional metadata to persist with the job
 
         Returns:
             JobState: Created or existing job state
@@ -103,6 +105,7 @@ class JobManager:
             status=JobStatus.PENDING,
             idempotency_key=idempotency_key,
             max_retries=max_retries,
+            metadata=metadata or {},
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc)
         )
@@ -153,11 +156,13 @@ class JobManager:
                 "message": "完成",
                 "report_path": result.get("report_path"),
                 "slidespec_path": result.get("slidespec_path"),
+                "preview_urls": result.get("preview_urls"),
                 "metadata": {
                     "warnings": result.get("warnings", []),
                     "version": result.get("version", "v2"),
                     "generation_duration_ms": generation_duration_ms,
-                    "ai_model": ai_model
+                    "ai_model": ai_model,
+                    "preview_timings": result.get("preview_timings"),
                 }
             })
             self.logger.info(f"Job completed: {job_id} (duration: {generation_duration_ms}ms)")

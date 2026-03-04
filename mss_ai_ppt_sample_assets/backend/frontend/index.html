@@ -2123,7 +2123,7 @@
                     <div class="preconfig-focus-section preconfig-section preconfig-section-focus">
                         <div class="preconfig-focus-title-row">
                             <h3 data-i18n="preConfigFocusTitle">关注焦点</h3>
-                            <p class="preconfig-focus-hint" data-i18n="preConfigFocusHint">可留空（默认覆盖全部重点），亦可按需多选。</p>
+                            <p class="preconfig-focus-hint" data-i18n="preConfigFocusHint">请至少选择一项，可按需多选。</p>
                         </div>
                         <div class="preconfig-focus-options">
                             <button type="button" class="preconfig-focus-card" data-focus-option="vulnerability" aria-pressed="false">
@@ -2150,6 +2150,19 @@
                                 <span class="preconfig-focus-copy">
                                     <span class="preconfig-focus-name" data-i18n="focusOptionAlert">告警</span>
                                     <span class="preconfig-focus-desc" data-i18n="focusOptionAlertDesc">告警态势与处置建议</span>
+                                </span>
+                            </button>
+                            <button type="button" class="preconfig-focus-card" data-focus-option="business_protection" aria-pressed="false">
+                                <span class="preconfig-focus-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M4 12c0-4.4 3.6-8 8-8s8 3.6 8 8-3.6 8-8 8-8-3.6-8-8z"></path>
+                                        <path d="M8 12h8"></path>
+                                        <path d="M12 8v8"></path>
+                                    </svg>
+                                </span>
+                                <span class="preconfig-focus-copy">
+                                    <span class="preconfig-focus-name" data-i18n="focusOptionBusinessProtection">业务保护</span>
+                                    <span class="preconfig-focus-desc" data-i18n="focusOptionBusinessProtectionDesc">业务连续性与关键系统可用性</span>
                                 </span>
                             </button>
                             <div class="preconfig-focus-card placeholder" aria-hidden="true">
@@ -2305,8 +2318,8 @@
             <div id="canvasViewport" class="canvas-viewport">
                 <div id="previewList" class="preview-list hidden"></div>
                 <div id="emptyState" class="empty-state">
-                    <div class="icon">✨</div>
-                    <h3 data-i18n="msgSelectDataAndTemplate">Select data and template to begin</h3>
+                    <div class="icon">📄</div>
+                    <h3 data-i18n="msgNoData">No data available</h3>
                 </div>
             </div>
             <div class="panel-footer">
@@ -2346,7 +2359,7 @@
                 </div>
             </div>
             <div class="export-modal-actions">
-                <button id="exportConfirmBtn" class="export-confirm-btn" type="button">瀵煎嚭</button>
+                <button id="exportConfirmBtn" class="export-confirm-btn" type="button">导出</button>
             </div>
         </div>
     </div>
@@ -2470,7 +2483,7 @@
                 preConfigTemplateNone: '暂无模板',
                 preConfigTemplateImageAlt: '模板第 {page} 页缩略图',
                 preConfigFocusTitle: '关注焦点',
-                preConfigFocusHint: '可留空（默认覆盖全部重点），亦可按需多选。',
+                preConfigFocusHint: '请至少选择一项，可按需多选。',
                 preConfigFocusReserved: '更多焦点（预留）',
                 preConfigFocusReserved1: '预留焦点 01',
                 preConfigFocusReserved2: '预留焦点 02',
@@ -2481,10 +2494,14 @@
                 focusOptionVulnerabilityDesc: '风险暴露与修复优先级',
                 focusOptionAlert: '告警',
                 focusOptionAlertDesc: '告警态势与处置建议',
+                focusOptionBusinessProtection: '业务保护',
+                focusOptionBusinessProtectionDesc: '业务连续性与关键系统可用性',
                 preConfigActionHint: '配置完成后将自动进入工作台并开始生成。',
                 btnReconfigure: '重新配置',
                 focusSummaryLabel: '重点',
-                focusSummaryNone: '无'
+                focusSummaryNone: '无',
+                msgSelectAtLeastOneFocus: '请至少选择一个关注焦点',
+                msgReusingRunningTask: '检测到你已有正在生成的任务，已继续该任务进度。'
             },
             'en-US': {
                 sectionOverview: 'Overview',
@@ -2533,7 +2550,7 @@
                 preConfigTemplateNone: 'No templates available',
                 preConfigTemplateImageAlt: 'Template page {page} thumbnail',
                 preConfigFocusTitle: 'Focus Areas',
-                preConfigFocusHint: 'You may leave this empty (defaults to all focus areas) or select multiple.',
+                preConfigFocusHint: 'Select at least one focus area. Multi-select is supported.',
                 preConfigFocusReserved: 'More focus options (reserved)',
                 preConfigFocusReserved1: 'Reserved Focus 01',
                 preConfigFocusReserved2: 'Reserved Focus 02',
@@ -2544,10 +2561,14 @@
                 focusOptionVulnerabilityDesc: 'Risk exposure and remediation priority',
                 focusOptionAlert: 'Alert',
                 focusOptionAlertDesc: 'Alert posture and response guidance',
+                focusOptionBusinessProtection: 'Business Protection',
+                focusOptionBusinessProtectionDesc: 'Business continuity and critical service availability',
                 preConfigActionHint: 'After confirmation, the workspace opens and generation starts automatically.',
                 btnReconfigure: 'Reconfigure',
                 focusSummaryLabel: 'Focus',
-                focusSummaryNone: 'None'
+                focusSummaryNone: 'None',
+                msgSelectAtLeastOneFocus: 'Please select at least one focus area',
+                msgReusingRunningTask: 'An existing running task was found in this browser. Continuing that task.'
             }
         };
 
@@ -2954,6 +2975,7 @@
                 preTemplateSelect.value = window.cachedTemplates[0].template_id;
             }
             renderPreconfigTemplateGallery();
+            syncActionButtons();
         }
 
         function populateInputSelect(selectId) {
@@ -2978,6 +3000,7 @@
         function updateInputDropdown() {
             populateInputSelect('inputSelect');
             populateInputSelect('preInputSelect');
+            syncActionButtons();
         }
 
         function updateProgressStepsLanguage() {
@@ -2985,7 +3008,7 @@
                 'init': t('progressInit'),
                 'load_template': t('progressLoadTemplate'),
                 'generate_content': t('progressGenerateContent'),
-                'render_ppt': t('progressRenderPpt'),
+                'render_preview': t('progressRenderPreview'),
                 'complete': t('progressComplete')
             };
 
@@ -3024,6 +3047,7 @@
             exportFormat: 'ppt',
             generationInProgress: false,
             statusPollTimer: null,
+            progressPanelHideTimer: null,
             lastSaveHadAutoRestore: false,
             aiRewriteSelectedTokensBySlide: {},
             aiRewriteModeBySlide: {},
@@ -3032,15 +3056,30 @@
             preconfigTemplateFramesById: {},
             preconfigTemplateFrameIndexById: {},
             preconfigTemplateFramePromiseById: {},
-            preconfigTemplatePreviewStamp: Date.now()
+            preconfigTemplatePreviewStamp: Date.now(),
+            lastFailureFingerprint: null,
+            lastFailureAt: 0
         };
 
         const $ = (id) => document.getElementById(id);
+        const VALID_FOCUS_OPTIONS = new Set(['vulnerability', 'alert', 'business_protection']);
 
         function getFocusOptionLabel(option) {
             if (option === 'vulnerability') return t('focusOptionVulnerability');
             if (option === 'alert') return t('focusOptionAlert');
+            if (option === 'business_protection') return t('focusOptionBusinessProtection');
             return option;
+        }
+
+        function normalizeFocusOptions(options) {
+            const normalized = [];
+            const seen = new Set();
+            (Array.isArray(options) ? options : []).forEach((option) => {
+                if (!VALID_FOCUS_OPTIONS.has(option) || seen.has(option)) return;
+                seen.add(option);
+                normalized.push(option);
+            });
+            return normalized;
         }
 
         function collectPreconfigFocusOptions() {
@@ -3066,9 +3105,7 @@
             const badge = $('focusSummaryBadge');
             if (!badge) return;
 
-            const options = Array.isArray(state.selectedFocusOptions)
-                ? state.selectedFocusOptions
-                : [];
+            const options = normalizeFocusOptions(state.selectedFocusOptions);
             const focusNames = options.map(getFocusOptionLabel);
             const summary = focusNames.length ? focusNames.join(' / ') : t('focusSummaryNone');
             badge.textContent = `${t('focusSummaryLabel')}: ${summary}`;
@@ -3085,7 +3122,7 @@
             if (inputSelect && preInputSelect) inputSelect.value = preInputSelect.value;
             if (templateSelect && preTemplateSelect) templateSelect.value = preTemplateSelect.value;
             if (useMock && preUseMock) useMock.checked = preUseMock.checked;
-            state.selectedFocusOptions = Array.from(new Set(collectPreconfigFocusOptions()));
+            state.selectedFocusOptions = normalizeFocusOptions(collectPreconfigFocusOptions());
             updateFocusSummaryBadge();
         }
 
@@ -3162,6 +3199,16 @@
         }
 
         // --- Toast Notification System ---
+        function closeToastByKey(key) {
+            if (!key) return;
+            const container = $('toastContainer');
+            if (!container) return;
+            const existing = container.querySelector(`.toast[data-toast-key="${key}"]`);
+            if (!existing) return;
+            existing.classList.add('removing');
+            setTimeout(() => existing.remove(), 200);
+        }
+
         function showToast(message, options = {}) {
             const {
                 type = 'info',  // 'success', 'error', 'warning', 'info'
@@ -3169,12 +3216,17 @@
                 duration = 4000,
                 actionLabel = '',
                 onAction = null,
-                variant = ''
+                variant = '',
+                key = ''
             } = options;
 
             const container = $('toastContainer');
+            if (key) closeToastByKey(key);
             const toastEl = document.createElement('div');
             toastEl.className = `toast toast-${type}`;
+            if (key) {
+                toastEl.dataset.toastKey = key;
+            }
             if (variant) {
                 toastEl.classList.add(`toast-${variant}`);
             }
@@ -3191,8 +3243,11 @@
                 <button class="toast-close">&times;</button>
             `;
             container.appendChild(toastEl);
-            
+
+            let removed = false;
             const remove = () => {
+                if (removed) return;
+                removed = true;
                 toastEl.classList.add('removing');
                 setTimeout(() => toastEl.remove(), 200);
             };
@@ -3202,7 +3257,9 @@
             if (actionBtn && typeof onAction === 'function') {
                 actionBtn.onclick = () => {
                     remove();
-                    onAction();
+                    Promise.resolve(onAction()).catch((err) => {
+                        console.error('Toast action failed:', err);
+                    });
                 };
             }
             if (duration > 0) {
@@ -3228,7 +3285,7 @@
                 console.log('WebSocket connected');
                 state.wsReady = true;
                 if (state.generationInProgress && state.jobId) {
-                    startJobStatusPolling();
+                    stopJobStatusPolling();
                 }
             };
             state.websocket.onerror = (error) => { console.error('WebSocket error:', error); state.wsReady = false; };
@@ -3263,11 +3320,15 @@
         // --- Progress UI Management ---
         const PROGRESS_STEPS = [
             { id: 'init', label: 'progressInit' }, { id: 'load_template', label: 'progressLoadTemplate' },
-            { id: 'generate_content', label: 'progressGenerateContent' }, { id: 'render_ppt', label: 'progressRenderPpt' },
+            { id: 'generate_content', label: 'progressGenerateContent' }, { id: 'render_preview', label: 'progressRenderPreview' },
             { id: 'complete', label: 'progressComplete' }
         ];
 
         function showProgressPanel() {
+            if (state.progressPanelHideTimer) {
+                clearTimeout(state.progressPanelHideTimer);
+                state.progressPanelHideTimer = null;
+            }
             state.progressSteps = PROGRESS_STEPS.map(s => ({ ...s, status: 'pending' }));
             renderProgressSteps();
             $('progressPanel').classList.add('active');
@@ -3275,8 +3336,12 @@
         }
 
         function hideProgressPanel() {
-            setTimeout(() => {
+            if (state.progressPanelHideTimer) {
+                clearTimeout(state.progressPanelHideTimer);
+            }
+            state.progressPanelHideTimer = setTimeout(() => {
                 $('progressPanel').classList.remove('active');
+                state.progressPanelHideTimer = null;
             }, 3000);
         }
 
@@ -3304,7 +3369,7 @@
             if (progress < 20) currentStepIndex = 0;
             else if (progress < 30) currentStepIndex = 1;
             else if (progress < 70) currentStepIndex = 2;
-            else if (progress < 90) currentStepIndex = 3;
+            else if (progress < 100) currentStepIndex = 3;
             else currentStepIndex = 4;
 
             for (let i = 0; i < currentStepIndex; i++) {
@@ -3341,11 +3406,20 @@
                     return;
                 }
 
+                if (job.status === 'running' || job.status === 'pending') {
+                    if (typeof job.progress === 'number') {
+                        updateProgress(job.progress, job.message || '', {});
+                    }
+                    return;
+                }
+
                 if (job.status === 'completed') {
                     state.generationInProgress = false;
                     stopJobStatusPolling();
                     state.sessionId = null;
+                    closeToastByKey('restart-interrupted');
                     hideProgressPanel();
+                    syncActionButtons();
                     toast.success(t('msgSuccess'), t('toastTitleHint'));
                 }
             } catch (e) {
@@ -3362,6 +3436,9 @@
         async function handleGenerationComplete(result) {
             state.generationInProgress = false;
             stopJobStatusPolling();
+            closeToastByKey('restart-interrupted');
+            state.lastFailureFingerprint = null;
+            state.lastFailureAt = 0;
             state.progressSteps.forEach(s => s.status = 'completed');
             renderProgressSteps();
             updateProgressBar(100);
@@ -3375,7 +3452,9 @@
                 state.currentTemplateId = getTemplateIdFromJobId(result.job_id);
                 await loadTemplateSlideTitles(state.currentTemplateId);
                 state.slidespec = result.slidespec;
-                state.previews = [];
+                state.previews = Array.isArray(result.preview_urls || result.images)
+                    ? (result.preview_urls || result.images)
+                    : [];
                 state.previewStamp = Date.now();
                 $('jobIdDisplay').textContent = `${t('msgJobId')}: ${result.job_id}`;
                 syncActionButtons();
@@ -3391,39 +3470,47 @@
                     }
                 }
 
-                // Fetch previews after a short delay
-                setTimeout(async () => {
+                if (state.previews.length <= 0) {
                     try {
-                        console.log('Fetching previews for job:', result.job_id);
-                        const prevRes = await api(`/api/v1/reports/${encodeURIComponent(result.job_id)}/preview?regenerate_if_missing=true`);
-                        console.log('Preview API response:', prevRes);
-                        const prevData = prevRes.data || prevRes;
-                        console.log('Preview data:', prevData);
-                        state.previews = prevData.preview_urls || prevData.images || [];
-                        state.previewStamp = Date.now();
-                        console.log('Extracted previews:', state.previews);
+                        await refreshPreviewsForCurrentReport();
                         renderSlides();
                         renderPreviewList();
-                        updateActiveState(state.activeSlideKey, true);
-                    } catch (e) { console.error('Failed to load previews:', e); }
-                }, 500);
+                    } catch (e) {
+                        console.error('Failed to load previews:', e);
+                    }
+                }
+                updateActiveState(state.activeSlideKey, true);
             }
             hideProgressPanel();
+            syncActionButtons();
         }
 
-        function requestRegenerateFromToast() {
-            localStorage.removeItem('generateCooldownEnd');
-            checkAndRestoreCooldown();
-            setTimeout(() => $('generateBtn').click(), 0);
+        async function requestRegenerateFromToast() {
+            const iId = $('inputSelect')?.value || $('preInputSelect')?.value;
+            const tId = $('templateSelect')?.value || $('preTemplateSelect')?.value;
+            const useMock = Boolean($('useMock')?.checked || $('preUseMock')?.checked);
+            if (!iId || !tId) {
+                return;
+            }
+            await startGenerateFlow(iId, tId, useMock);
         }
 
 	    function handleGenerationFailed(result) {
+            const errorCode = result?.error_code || '';
+            const baseError = result?.error || t('errorUnknown');
+            const fingerprint = `${state.jobId || ''}|${errorCode}|${baseError}`;
+            const now = Date.now();
+            if (state.lastFailureFingerprint === fingerprint && now - state.lastFailureAt < 5000) {
+                return;
+            }
+            state.lastFailureFingerprint = fingerprint;
+            state.lastFailureAt = now;
+
             state.generationInProgress = false;
             stopJobStatusPolling();
             state.sessionId = null;
             console.log('Job failed, cleared session_id for retry.');
             const isRestartInterrupted = result?.error_code === 'RESTART_INTERRUPTED';
-            const baseError = result?.error || t('errorUnknown');
             if (isRestartInterrupted) {
                 showToast(t('msgRestartInterrupted'), {
                     type: 'error',
@@ -3431,32 +3518,18 @@
                     duration: 0,
                     actionLabel: t('btnRegenerateNow'),
                     onAction: requestRegenerateFromToast,
-                    variant: 'critical'
+                    variant: 'critical',
+                    key: 'restart-interrupted'
                 });
             } else {
+                closeToastByKey('restart-interrupted');
                 toast.error(`${baseError} ${t('msgRegenerateAfterError')}`, t('msgError'));
             }
+            renderSlides();
+            renderPreviewList();
 	        hideProgressPanel();
+            syncActionButtons();
 	    }
-
-        function checkAndRestoreCooldown() {
-            const cooldownEnd = parseInt(localStorage.getItem('generateCooldownEnd') || '0');
-            const now = Date.now();
-            if (cooldownEnd > now) {
-                const btn = $('generateBtn');
-                const updateCountdown = () => {
-                    const remaining = Math.ceil((parseInt(localStorage.getItem('generateCooldownEnd') || '0') - Date.now()) / 1000);
-                    const btnTextSpan = btn.querySelector('[data-i18n="btnGenerate"]');
-                    if (remaining > 0) {
-                        if(btnTextSpan) btnTextSpan.textContent = `${t('btnGenerate')} (${remaining}s)`;
-                        setTimeout(updateCountdown, 1000);
-                    } else {
-                        if(btnTextSpan) btnTextSpan.textContent = t('btnGenerate');
-                    }
-                };
-                updateCountdown();
-            }
-        }
 
         async function api(path, opts = {}) {
             const res = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...opts });
@@ -3479,7 +3552,6 @@
             renderSlideFields();
             updateLanguageButtonStyles();
             initWebSocket();
-            checkAndRestoreCooldown();
             bindPreconfigHeroMotion();
             playPreconfigIntroAnimation();
             try {
@@ -3514,7 +3586,9 @@
             const slides = state.slidespec?.slides || [];
             $('slideCount').textContent = slides.length;
             if (!slides.length) {
-                list.innerHTML = `<div class="empty-state"><div class="icon">📄</div><p class="text-sm font-medium">${t('msgNoData')}</p></div>`;
+                const emptyMessage = state.generationInProgress ? t('msgGeneratingPreview') : t('msgNoData');
+                const emptyIcon = state.generationInProgress ? '⏳' : '📄';
+                list.innerHTML = `<div class="empty-state"><div class="icon">${emptyIcon}</div><p class="text-sm font-medium">${emptyMessage}</p></div>`;
                 return;
             }
             list.innerHTML = slides.map((s, idx) => `
@@ -3543,6 +3617,17 @@
             console.log('renderPreviewList called, slides:', slides.length, 'previews:', state.previews.length);
             observer.disconnect();
             if (!slides.length) {
+                const emptyState = $('emptyState');
+                const emptyTitle = emptyState?.querySelector('h3');
+                const emptyIcon = emptyState?.querySelector('.icon');
+                if (emptyTitle) {
+                    emptyTitle.textContent = state.generationInProgress
+                        ? t('msgGeneratingPreview')
+                        : t('msgNoData');
+                }
+                if (emptyIcon) {
+                    emptyIcon.textContent = state.generationInProgress ? '⏳' : '📄';
+                }
                 list.classList.add('hidden');
                 $('emptyState').classList.remove('hidden');
                 return;
@@ -3718,6 +3803,7 @@
 
         function openExportModal() {
             if (!state.jobId) return;
+            if (guardBusyAction()) return;
             setExportFormat(state.exportFormat || 'ppt');
             $('exportModalOverlay').classList.add('active');
             positionExportModal();
@@ -3873,6 +3959,7 @@
         }
 
         function openAiRewriteModal() {
+            if (guardBusyAction()) return;
             if (!state.jobId) return;
             if (!state.activeSlideKey) {
                 return toast.warning(t('msgSelectSlideForAiRewrite'), t('toastTitleHint'));
@@ -3913,6 +4000,7 @@
 
         function performExport() {
             if (!state.jobId) return;
+            if (guardBusyAction()) return;
             const isPdf = state.exportFormat === 'pdf';
             const path = isPdf ? 'download-pdf' : 'download';
             window.location.href = `/api/v1/reports/${encodeURIComponent(state.jobId)}/${path}?regenerate_if_missing=true`;
@@ -4266,24 +4354,48 @@
             $('genSpinner').classList.toggle('hidden', !flag);
         }
 
+        function isBusy() {
+            return state.loading || state.generationInProgress;
+        }
+
+        function guardBusyAction() {
+            if (!isBusy()) return false;
+            toast.info(t('msgGeneratingPleaseWait'), t('toastTitleHint'));
+            return true;
+        }
+
         function syncActionButtons() {
-            $('generateBtn').disabled = state.loading;
+            const hasWorkspaceSelection = Boolean($('inputSelect')?.value && $('templateSelect')?.value);
+            const hasPreconfigSelection = Boolean($('preInputSelect')?.value && $('preTemplateSelect')?.value);
+            const hasWorkspaceFocusSelection = normalizeFocusOptions(state.selectedFocusOptions).length > 0;
+            const hasPreconfigFocusSelection = normalizeFocusOptions(collectPreconfigFocusOptions()).length > 0;
+            const busy = isBusy();
+
+            $('generateBtn').disabled = busy || !hasWorkspaceSelection || !hasWorkspaceFocusSelection;
+            const preConfigGenerateBtn = $('preConfigGenerateBtn');
+            if (preConfigGenerateBtn) {
+                preConfigGenerateBtn.disabled = busy || !hasPreconfigSelection || !hasPreconfigFocusSelection;
+            }
             const reconfigureBtn = $('reconfigureBtn');
             if (reconfigureBtn) {
-                reconfigureBtn.disabled = state.loading;
+                reconfigureBtn.disabled = busy;
             }
-            $('rewriteBtn').disabled = state.loading || !state.jobId;
+            $('rewriteBtn').disabled = busy || !state.jobId;
             const aiRewriteTriggerBtn = $('aiRewriteTriggerBtn');
             if (aiRewriteTriggerBtn) {
-                aiRewriteTriggerBtn.disabled = state.loading || !state.jobId || !state.activeSlideKey;
+                aiRewriteTriggerBtn.disabled = busy || !state.jobId || !state.activeSlideKey;
             }
             const aiRewriteConfirmBtn = $('aiRewriteConfirmBtn');
             if (aiRewriteConfirmBtn) {
-                aiRewriteConfirmBtn.disabled = state.loading || !state.jobId || !state.activeSlideKey;
+                aiRewriteConfirmBtn.disabled = busy || !state.jobId || !state.activeSlideKey;
             }
-            $('refreshPreviewBtn').disabled = state.loading || !state.jobId;
-            $('exportBtn').disabled = state.loading || !state.jobId;
-            $('presentBtn').disabled = state.loading || !state.slidespec?.slides?.length;
+            $('refreshPreviewBtn').disabled = busy || !state.jobId;
+            $('exportBtn').disabled = busy || !state.jobId;
+            $('presentBtn').disabled = busy || !state.slidespec?.slides?.length;
+            const exportConfirmBtn = $('exportConfirmBtn');
+            if (exportConfirmBtn) {
+                exportConfirmBtn.disabled = busy || !state.jobId;
+            }
         }
 
         function getSlideCount() {
@@ -4369,13 +4481,23 @@
 
         async function startGenerateFlow(inputId, templateId, useMock) {
             if (!inputId || !templateId) {
-                return toast.warning(t('msgSelectDataAndTemplate'), t('toastTitleHint'));
+                return;
             }
-
-            const cooldownEnd = parseInt(localStorage.getItem('generateCooldownEnd') || '0');
-            if (cooldownEnd > Date.now()) {
-                return toast.warning(`${t('msgRequestTooFrequent')}${Math.ceil((cooldownEnd - Date.now())/1000)}${t('msgRetryIn')}`);
+            const normalizedFocusOptions = normalizeFocusOptions(state.selectedFocusOptions);
+            if (normalizedFocusOptions.length === 0) {
+                toast.warning(t('msgSelectAtLeastOneFocus'), t('toastTitleHint'));
+                return;
             }
+            state.selectedFocusOptions = normalizedFocusOptions;
+            if (state.generationInProgress) {
+                toast.info(t('msgGeneratingPleaseWait'), t('toastTitleHint'));
+                return;
+            }
+            closeToastByKey('restart-interrupted');
+            state.lastFailureFingerprint = null;
+            state.lastFailureAt = 0;
+            closeExportModal();
+            closeAiRewriteModal();
 
             if (!state.wsReady) {
                 console.warn('WebSocket not ready, retrying...');
@@ -4400,17 +4522,12 @@
             }
 
             showProgressPanel();
-            const COOLDOWN_SECONDS = 30;
-            localStorage.setItem('generateCooldownEnd', Date.now() + COOLDOWN_SECONDS * 1000);
-            checkAndRestoreCooldown();
 
             setLoading(true);
             try {
                 await doGenerate(inputId, templateId, useMock);
             } catch (e) {
                 console.error(e);
-                localStorage.removeItem('generateCooldownEnd');
-                checkAndRestoreCooldown();
                 if (e.data?.error?.auto_retry_with_mock) {
                     await doGenerate(inputId, templateId, true);
                 } else {
@@ -4422,10 +4539,11 @@
         }
 
         $('preConfigGenerateBtn').onclick = async () => {
+            if (guardBusyAction()) return;
             const iId = $('preInputSelect').value;
             const tId = $('preTemplateSelect').value;
             if (!iId || !tId) {
-                return toast.warning(t('msgSelectDataAndTemplate'), t('toastTitleHint'));
+                return;
             }
             applyPreconfigToMainControls();
             enterWorkspace();
@@ -4433,6 +4551,7 @@
         };
 
         $('generateBtn').onclick = async () => {
+            if (guardBusyAction()) return;
             const iId = $('inputSelect').value;
             const tId = $('templateSelect').value;
             await startGenerateFlow(iId, tId, $('useMock').checked);
@@ -4447,12 +4566,8 @@
                 client_id: state.clientId,
                 idempotency_key: state.sessionId
             };
-            const normalizedFocusOptions = Array.isArray(state.selectedFocusOptions)
-                ? state.selectedFocusOptions.filter((option) => option === 'vulnerability' || option === 'alert')
-                : [];
-            if (normalizedFocusOptions.length > 0) {
-                payload.focus_options = normalizedFocusOptions;
-            }
+            const normalizedFocusOptions = normalizeFocusOptions(state.selectedFocusOptions);
+            payload.focus_options = normalizedFocusOptions;
 
             const res = await api('/api/v1/reports', {
                 method: 'POST',
@@ -4462,12 +4577,26 @@
             if (result.status === 'running') {
                 state.jobId = result.job_id || state.jobId;
                 state.generationInProgress = true;
+                syncActionButtons();
                 state.previews = [];
                 state.previewStamp = Date.now();
+                if (state.jobId) {
+                    $('jobIdDisplay').textContent = `${t('msgJobId')}: ${state.jobId}`;
+                }
                 renderSlides();
                 renderPreviewList();
                 stopJobStatusPolling();
-                toast.info(t('msgGeneratingPleaseWait'), t('toastTitleHint'));
+                if (typeof result.progress === 'number') {
+                    updateProgress(result.progress, result.message || '', {});
+                }
+                if (!state.wsReady) {
+                    startJobStatusPolling();
+                }
+                if (result.existing_job) {
+                    toast.info(t('msgReusingRunningTask'), t('toastTitleHint'));
+                } else {
+                    toast.info(t('msgGeneratingPleaseWait'), t('toastTitleHint'));
+                }
             } else if (result.status === 'completed' && result.from_cache) {
                 toast.success(t('msgUsingCachedResult'), t('toastTitleHint'));
                 handleGenerationComplete(result);
@@ -4478,6 +4607,7 @@
             openExportModal();
         };
         $('reconfigureBtn').onclick = () => {
+            if (guardBusyAction()) return;
             openPreconfigScreen();
         };
         document.querySelectorAll('.preconfig-focus-card').forEach((card) => {
@@ -4485,11 +4615,16 @@
             card.addEventListener('click', () => {
                 card.classList.toggle('selected');
                 card.setAttribute('aria-pressed', card.classList.contains('selected') ? 'true' : 'false');
+                syncActionButtons();
             });
         });
         $('preTemplateSelect')?.addEventListener('change', () => {
             syncPreconfigTemplateSelectionUI();
+            syncActionButtons();
         });
+        $('inputSelect')?.addEventListener('change', syncActionButtons);
+        $('templateSelect')?.addEventListener('change', syncActionButtons);
+        $('preInputSelect')?.addEventListener('change', syncActionButtons);
         $('exportOptionPpt').onclick = () => setExportFormat('ppt');
         $('exportOptionPdf').onclick = () => setExportFormat('pdf');
         $('exportOptionPpt').addEventListener('keydown', (event) => {
@@ -4528,6 +4663,7 @@
 
         $('rewriteBtn').onclick = async () => {
             if (!state.jobId) return;
+            if (guardBusyAction()) return;
             const saved = saveCurrentSlideModifications();
             if (!saved) return;
             if (state.modifiedSlides.size === 0) {
@@ -4563,6 +4699,7 @@
 
         $('aiRewriteConfirmBtn').onclick = async () => {
             if (!state.jobId) return;
+            if (guardBusyAction()) return;
             if (!state.activeSlideKey) {
                 return toast.warning(t('msgSelectSlideForAiRewrite'), t('toastTitleHint'));
             }
@@ -4629,6 +4766,7 @@
 
         $('refreshPreviewBtn').onclick = async () => {
             if (!state.jobId) return;
+            if (guardBusyAction()) return;
             try {
                 await refreshPreviewsForCurrentReport();
                 renderSlides();
@@ -4643,6 +4781,7 @@
         $('previewLayoutTwoUpBtn').onclick = () => setPreviewLayout('two-up');
 
         $('presentBtn').onclick = async () => {
+            if (guardBusyAction()) return;
             const startIndex = state.slidespec?.slides?.findIndex(s => s.slide_key === state.activeSlideKey);
             await startPresentation(startIndex >= 0 ? startIndex : 0, true);
         };

@@ -14,7 +14,8 @@ from __future__ import annotations
 
 import asyncio
 import json
-from typing import Dict, Optional, Set
+import inspect
+from typing import Dict, Optional, Set, Callable, Awaitable, Any
 from fastapi import WebSocket, WebSocketDisconnect
 import logging
 
@@ -29,6 +30,17 @@ class WebSocketManager:
         self.active_connections: Dict[str, WebSocket] = {}
         # session_id -> client_id mapping
         self.session_clients: Dict[str, str] = {}
+        # Optional callback for persisting progress to job state.
+        self.progress_callback: Optional[
+            Callable[[str, int, str], Optional[Awaitable[Any]]]
+        ] = None
+
+    def set_progress_callback(
+        self,
+        callback: Optional[Callable[[str, int, str], Optional[Awaitable[Any]]]],
+    ):
+        """Register a callback invoked on every progress update."""
+        self.progress_callback = callback
 
     async def connect(self, websocket: WebSocket, client_id: str):
         """Accept and register a WebSocket connection.
@@ -105,6 +117,20 @@ class WebSocketManager:
             message: Progress message
             details: Optional additional details
         """
+        callback = self.progress_callback
+        if callback:
+            try:
+                maybe_awaitable = callback(session_id, progress, message)
+                if inspect.isawaitable(maybe_awaitable):
+                    await maybe_awaitable
+            except Exception as e:
+                logger.warning(
+                    "Progress callback failed: session=%s progress=%s error=%s",
+                    session_id,
+                    progress,
+                    e,
+                )
+
         client_id = self.session_clients.get(session_id)
         if not client_id:
             logger.debug(f"No client registered for session {session_id}. Registered sessions: {list(self.session_clients.keys())}")

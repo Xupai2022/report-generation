@@ -460,15 +460,15 @@ class ReportService:
             self.ppt_generator_v2.render(slidespec, report_path)
         logger.debug(f"PPT rendered: {report_path.stat().st_size / 1024:.1f} KB")
 
-        # Send progress update after rendering (90%)
-        send_progress(90, "保存文件...")
+        # Send progress update after rendering (80%+)
+        send_progress(82, "保存文件...")
 
         # Save slidespec with file lock
         with FileLock(slidespec_path, timeout=60.0):
             slidespec.save(slidespec_path)
 
-        # Send final progress update (95%)
-        send_progress(95, "生成完成...")
+        # PPT is ready; preview rendering continues in async job flow.
+        send_progress(88, "PPT生成完成，准备渲染预览图...")
 
         self.audit_logger.log(
             event="generate_v2",

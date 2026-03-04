@@ -1,4 +1,4 @@
-"""Jobs API endpoints - Job state management and queries."""
+﻿"""Jobs API endpoints - Job state management and queries."""
 
 from fastapi import APIRouter, HTTPException, status, Query
 from typing import Optional
@@ -82,7 +82,7 @@ async def get_job_status(job_id: str):
             detail=f"Job not found: {job_id}"
         )
 
-    logger.info(f"✓ Retrieved job status: {job_id} ({job.status})")
+    logger.debug(f"Retrieved job status: {job_id} ({job.status})")
     return SuccessResponse(data=job.dict())
 
 
@@ -137,7 +137,7 @@ async def list_jobs(
 
     jobs = job_manager.store.list_jobs(status=status, limit=limit)
 
-    logger.info(f"✓ Listed {len(jobs)} jobs (status={status}, limit={limit})")
+    logger.info(f"鉁?Listed {len(jobs)} jobs (status={status}, limit={limit})")
     return SuccessResponse(data={
         "jobs": [j.dict() for j in jobs],
         "count": len(jobs),
@@ -205,7 +205,7 @@ async def cancel_job(job_id: str):
 
     job_manager.cancel_job(job_id)
 
-    logger.info(f"✓ Cancelled job: {job_id}")
+    logger.info(f"鉁?Cancelled job: {job_id}")
     return SuccessResponse(data={
         "cancelled": True,
         "job_id": job_id
@@ -262,8 +262,9 @@ async def delete_job(job_id: str):
             detail=f"Job not found: {job_id}"
         )
 
-    logger.info(f"✓ Deleted job: {job_id}")
+    logger.info(f"鉁?Deleted job: {job_id}")
     return SuccessResponse(data={
         "deleted": True,
         "job_id": job_id
     })
+

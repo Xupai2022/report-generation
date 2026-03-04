@@ -1,19 +1,26 @@
 """Unified request models for API endpoints."""
 
 from pydantic import BaseModel, Field, validator
-from typing import Optional, List, Dict, Any, Literal
+from typing import Optional, List, Dict, Any, Literal, ClassVar, Set
 
 
 class CreateReportRequest(BaseModel):
     """Request model for creating a new report."""
+    ALLOWED_FOCUS_OPTIONS: ClassVar[Set[str]] = {
+        "vulnerability",
+        "alert",
+        "business_protection",
+    }
+
     input_id: str = Field(..., description="Input data ID", example="tenant_acme_2025-11")
     template_id: str = Field(..., description="Template ID", example="mss_executive_v2")
     use_mock: bool = Field(False, description="Use mock mode (skip AI generation)")
-    focus_options: Optional[List[Literal["vulnerability", "alert"]]] = Field(
-        None,
+    focus_options: List[str] = Field(
+        ...,
+        min_items=1,
         description=(
-            "Optional report focus options. "
-            "If omitted or empty, no additional focus prompt is appended."
+            "Required report focus options (supports multi-select). "
+            "Must contain at least one valid option."
         ),
     )
     session_id: Optional[str] = Field(None, description="Optional session ID")
@@ -29,11 +36,34 @@ class CreateReportRequest(BaseModel):
                 "input_id": "tenant_acme_2025-11",
                 "template_id": "mss_executive_v2",
                 "use_mock": False,
-                "focus_options": ["vulnerability"],
+                "focus_options": ["vulnerability", "alert"],
                 "idempotency_key": "user123-request456"
             }
         }
 
+    @validator("focus_options", pre=True)
+    def validate_focus_options(cls, v):
+        """Normalize focus options list (trim, dedupe, drop empty)."""
+        if v is None:
+            raise ValueError("focus_options is required and must contain at least one option")
+        if not isinstance(v, list):
+            raise ValueError("focus_options must be a list of strings")
+
+        normalized: List[str] = []
+        seen = set()
+        for item in v:
+            if not isinstance(item, str):
+                raise ValueError("focus_options must contain only strings")
+            option = item.strip()
+            if not option or option in seen:
+                continue
+            if option not in cls.ALLOWED_FOCUS_OPTIONS:
+                raise ValueError(f"Unsupported focus option: {option}")
+            seen.add(option)
+            normalized.append(option)
+        if not normalized:
+            raise ValueError("focus_options must contain at least one valid option")
+        return normalized
 
 class SlideUpdate(BaseModel):
     """Single slide update information."""

@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 import hashlib
 import logging
+import os
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta, timezone
@@ -83,6 +84,57 @@ class JobStore:
         key_hash = hashlib.sha256(key.encode()).hexdigest()[:16]
         return self.idempotency_dir / f"{key_hash}.json"
 
+    def _atomic_write_json(
+        self,
+        path: Path,
+        payload: Any,
+        default: Any = None,
+    ) -> None:
+        """Atomically write JSON to a file in the same directory."""
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp_path = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+        try:
+            with tmp_path.open("w", encoding="utf-8") as f:
+                json.dump(payload, f, ensure_ascii=False, indent=2, default=default)
+            os.replace(tmp_path, path)
+        finally:
+            if tmp_path.exists():
+                try:
+                    tmp_path.unlink()
+                except Exception:
+                    pass
+
+    def _read_json_unlocked(self, path: Path) -> Any:
+        """Read JSON from file while caller holds the relevant lock."""
+        if not path.exists():
+            return None
+        with path.open("r", encoding="utf-8") as f:
+            return json.load(f)
+
+    def _load_index_unlocked(self) -> Dict[str, Any]:
+        """Load index while caller already holds index lock."""
+        data = self._read_json_unlocked(self.index_file)
+        return data if isinstance(data, dict) else {}
+
+    def _save_index_unlocked(self, index: Dict[str, Any]) -> None:
+        """Save index while caller already holds index lock."""
+        self._atomic_write_json(self.index_file, index)
+
+    def _load_job_unlocked(self, state_path: Path) -> Optional[JobState]:
+        """Load a job from state file while caller already holds state lock."""
+        data = self._read_json_unlocked(state_path)
+        if data is None:
+            return None
+        return JobState(**data)
+
+    def _save_job_unlocked(self, state_path: Path, job_state: JobState) -> None:
+        """Save a job to state file while caller already holds state lock."""
+        self._atomic_write_json(
+            state_path,
+            job_state.model_dump(),
+            default=self._json_default,
+        )
+
     def _load_index(self) -> Dict[str, Any]:
         """Load job index from file.
 
@@ -91,10 +143,7 @@ class JobStore:
         """
         try:
             with FileLock(self.index_file, timeout=10.0):
-                if not self.index_file.exists():
-                    return {}
-                with self.index_file.open("r", encoding="utf-8") as f:
-                    return json.load(f)
+                return self._load_index_unlocked()
         except Exception as e:
             logger.error(f"Failed to load index: {e}")
             return {}
@@ -107,8 +156,7 @@ class JobStore:
         """
         try:
             with FileLock(self.index_file, timeout=10.0):
-                with self.index_file.open("w", encoding="utf-8") as f:
-                    json.dump(index, f, ensure_ascii=False, indent=2)
+                self._save_index_unlocked(index)
         except Exception as e:
             logger.error(f"Failed to save index: {e}")
 
@@ -132,18 +180,31 @@ class JobStore:
         Args:
             job_state: Job state to index
         """
-        index = self._load_index()
-        index[job_state.job_id] = {
-            "status": job_state.status,
-            "created_at": job_state.created_at.isoformat(),
-            "updated_at": job_state.updated_at.isoformat(),
-            "completed_at": job_state.completed_at.isoformat() if job_state.completed_at else None,
-            "session_id": job_state.session_id,
-            "template_id": job_state.template_id,
-            "input_id": job_state.input_id,
-            "rating": job_state.rating.rating if job_state.rating else None
-        }
-        self._save_index(index)
+        try:
+            with FileLock(self.index_file, timeout=10.0):
+                index = self._load_index_unlocked()
+                index[job_state.job_id] = {
+                    "status": job_state.status,
+                    "created_at": job_state.created_at.isoformat(),
+                    "updated_at": job_state.updated_at.isoformat(),
+                    "completed_at": job_state.completed_at.isoformat() if job_state.completed_at else None,
+                    "session_id": job_state.session_id,
+                    "template_id": job_state.template_id,
+                    "input_id": job_state.input_id,
+                    "rating": job_state.rating.rating if job_state.rating else None
+                }
+                self._save_index_unlocked(index)
+        except Exception as e:
+            logger.error(f"Failed to update index for {job_state.job_id}: {e}")
+            raise
+
+    def _remove_index_entry(self, job_id: str) -> None:
+        """Remove one job from index using atomic read-modify-write."""
+        with FileLock(self.index_file, timeout=10.0):
+            index = self._load_index_unlocked()
+            if job_id in index:
+                del index[job_id]
+                self._save_index_unlocked(index)
 
     def create_job(self, job_state: JobState) -> JobState:
         """Create a new job.
@@ -156,22 +217,13 @@ class JobStore:
         """
         state_path = self._get_state_path(job_state.job_id)
 
-        # Check if already exists
-        if state_path.exists():
-            logger.warning(f"Job {job_state.job_id} already exists, returning existing")
-            return self.get_job(job_state.job_id)
-
-        # Save state file
         try:
             with FileLock(state_path, timeout=10.0):
-                with state_path.open("w", encoding="utf-8") as f:
-                    json.dump(
-                        job_state.dict(),
-                        f,
-                        ensure_ascii=False,
-                        indent=2,
-                        default=self._json_default,
-                    )
+                existing = self._load_job_unlocked(state_path)
+                if existing:
+                    logger.warning(f"Job {job_state.job_id} already exists, returning existing")
+                    return existing
+                self._save_job_unlocked(state_path, job_state)
         except Exception as e:
             logger.error(f"Failed to create job {job_state.job_id}: {e}")
             raise
@@ -184,8 +236,7 @@ class JobStore:
             idem_path = self._get_idempotency_path(job_state.idempotency_key)
             try:
                 with FileLock(idem_path, timeout=10.0):
-                    with idem_path.open("w", encoding="utf-8") as f:
-                        json.dump({"job_id": job_state.job_id}, f)
+                    self._atomic_write_json(idem_path, {"job_id": job_state.job_id})
             except Exception as e:
                 logger.error(f"Failed to save idempotency mapping: {e}")
 
@@ -208,9 +259,7 @@ class JobStore:
 
         try:
             with FileLock(state_path, timeout=10.0):
-                with state_path.open("r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    return JobState(**data)
+                return self._load_job_unlocked(state_path)
         except Exception as e:
             logger.error(f"Failed to load job {job_id}: {e}")
             return None
@@ -228,34 +277,30 @@ class JobStore:
         Raises:
             ValueError: If job not found
         """
-        job = self.get_job(job_id)
-        if not job:
-            raise ValueError(f"Job {job_id} not found")
-
-        # Update fields
-        for key, value in updates.items():
-            if hasattr(job, key):
-                setattr(job, key, value)
-
-        job.updated_at = datetime.now(timezone.utc)
-
-        # Save updated state
         state_path = self._get_state_path(job_id)
+        job: Optional[JobState] = None
         try:
             with FileLock(state_path, timeout=10.0):
-                with state_path.open("w", encoding="utf-8") as f:
-                    json.dump(
-                        job.dict(),
-                        f,
-                        ensure_ascii=False,
-                        indent=2,
-                        default=self._json_default,
-                    )
+                job = self._load_job_unlocked(state_path)
+                if not job:
+                    raise ValueError(f"Job {job_id} not found")
+
+                # Update fields
+                for key, value in updates.items():
+                    if hasattr(job, key):
+                        setattr(job, key, value)
+
+                job.updated_at = datetime.now(timezone.utc)
+                self._save_job_unlocked(state_path, job)
+        except ValueError:
+            raise
         except Exception as e:
             logger.error(f"Failed to update job {job_id}: {e}")
             raise
 
         # Update index
+        if not job:
+            raise ValueError(f"Job {job_id} not found")
         self._update_index(job)
 
         return job
@@ -349,33 +394,35 @@ class JobStore:
         """
         state_path = self._get_state_path(job_id)
 
-        if not state_path.exists():
+        job: Optional[JobState] = None
+        try:
+            with FileLock(state_path, timeout=10.0):
+                job = self._load_job_unlocked(state_path)
+                if not job:
+                    return False
+                if state_path.exists():
+                    state_path.unlink()
+        except Exception as e:
+            logger.error(f"Failed to delete job state: {e}")
             return False
-
-        # Get job to check for idempotency key
-        job = self.get_job(job_id)
 
         # Delete idempotency mapping if exists
         if job and job.idempotency_key:
             idem_path = self._get_idempotency_path(job.idempotency_key)
             if idem_path.exists():
                 try:
-                    idem_path.unlink()
+                    with FileLock(idem_path, timeout=10.0):
+                        data = self._read_json_unlocked(idem_path) or {}
+                        if data.get("job_id") == job_id and idem_path.exists():
+                            idem_path.unlink()
                 except Exception as e:
                     logger.warning(f"Failed to delete idempotency mapping: {e}")
 
-        # Delete state file
-        try:
-            state_path.unlink()
-        except Exception as e:
-            logger.error(f"Failed to delete job state: {e}")
-            return False
-
         # Update index
-        index = self._load_index()
-        if job_id in index:
-            del index[job_id]
-            self._save_index(index)
+        try:
+            self._remove_index_entry(job_id)
+        except Exception as e:
+            logger.warning(f"Failed to remove index entry for {job_id}: {e}")
 
         logger.info(f"Deleted job: {job_id}")
         return True

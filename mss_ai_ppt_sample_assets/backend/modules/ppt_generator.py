@@ -55,14 +55,8 @@ class ChartColors:
     TABLE_ROW_NORMAL = (255, 255, 255)     # White
     TABLE_BORDER = (226, 232, 240)         # #E2E8F0 - Section border
 
-    # Theme-aware text colors
+    # Text colors
     TEXT_LIGHT_THEME = (51, 51, 51)        # #333333 for light backgrounds
-    TEXT_DARK_THEME = (255, 255, 255)      # White for dark backgrounds
-
-    # Dark theme table styles
-    TABLE_HEADER_BG_DARK = (34, 197, 94)   # Green accent for dark theme
-    TABLE_ROW_ALT_DARK = (30, 41, 59)      # Slate-800 (alternating)
-    TABLE_ROW_NORMAL_DARK = (15, 23, 42)   # Slate-900
 
 
 class PPTGeneratorV2:
@@ -74,7 +68,6 @@ class PPTGeneratorV2:
 
     def __init__(self, template_repo: TemplateRepository):
         self.template_repo = template_repo
-        self._is_dark_theme = False  # Track current template theme
         try:
             from pptx import Presentation
             from pptx.util import Inches, Pt, Emu
@@ -397,9 +390,8 @@ class PPTGeneratorV2:
         )
         chart = chart_shape.chart
 
-        # Use theme-aware text color
-        text_color = ChartColors.TEXT_DARK_THEME if self._is_dark_theme else ChartColors.TEXT_LIGHT_THEME
-        axis_text_color = ChartColors.TEXT_DARK_THEME if self._is_dark_theme else (71, 85, 105)  # Slate-500 for light theme
+        text_color = ChartColors.TEXT_LIGHT_THEME
+        axis_text_color = (71, 85, 105)  # Slate-500
 
         # Enhanced styling
         # Set chart title if provided
@@ -490,8 +482,7 @@ class PPTGeneratorV2:
         )
         chart = chart_shape.chart
 
-        # Use theme-aware text color
-        text_color = ChartColors.TEXT_DARK_THEME if self._is_dark_theme else ChartColors.TEXT_LIGHT_THEME
+        text_color = ChartColors.TEXT_LIGHT_THEME
 
         # Enhanced styling
         # Set chart title if provided
@@ -1974,9 +1965,6 @@ class PPTGeneratorV2:
 
         # Load template descriptor to get placeholder types
         template_desc = self.template_repo.get_descriptor_v2(slidespec.template_id)
-
-        # Detect theme from template descriptor style
-        self._is_dark_theme = template_desc.style.get('theme', 'light') == 'dark'
 
         # Build mapping: slide_key -> placeholder_definitions
         placeholder_types = {}

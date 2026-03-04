@@ -518,14 +518,14 @@
         {
           "token": "business_continuity_assurance_conclusion",
           "ai_generate": true,
-          "ai_instruction": "写业务持续性保障结论",
-          "max_length": 100
+          "ai_instruction": "结合**用户偏好**,根据本页数据（incident_effectiveness），给出在安全事件管理维度里关于业务连续性保障的结论：结果需包含因事件发生的危害程度、处置时间、闭环情况等且不脱离材料范围，给出在业务连续性上的成果，重点突出与**用户偏好**的关联性",
+          "max_length": 65
         },
         {
           "token": "user_trust_assurance_conclusion",
           "ai_generate": true,
-          "ai_instruction": "写用户信赖度保障结论",
-          "max_length": 100
+          "ai_instruction": "结合**用户偏好**,根据本页数据（incident_effectiveness），给出在安全事件管理维度里关于用户依赖度保障的结论：基于业务连续性的结论的基础上，给出在用户依赖度上的目标达成情况",
+          "max_length": 65
         },
         {
           "token": "P11_bar",
@@ -570,44 +570,44 @@
         {
           "token": "asset_improve1",
           "ai_generate": true,
-          "ai_instruction": "生成资产安全改进措施1。从asset_improvements[0]获取。",
+          "ai_instruction": "基于本页资产管理数据（asset_management）生成第1条改进措施，梳理在本季/年度工作中，因资产管理工作执行差距产生的安全隐患，并给出可落地建议。",
           "max_length": 100
         },
         {
           "token": "asset_improve2",
           "ai_generate": true,
-          "ai_instruction": "生成资产安全改进措施2。从asset_improvements[1]获取。",
+          "ai_instruction": "基于本页资产管理数据（asset_management）生成第2条改进措施，梳理在本季/年度工作中，因资产管理工作执行差距产生的安全隐患，并给出可落地建议。",
           "max_length": 100
         },
         {
           "token": "asset_improve3",
           "ai_generate": true,
-          "ai_instruction": "生成资产安全改进措施3。从asset_improvements[2]获取。",
+          "ai_instruction": "基于本页资产管理数据（asset_management）生成第3条改进措施，梳理在本季/年度工作中，因资产管理工作执行差距产生的安全隐患，并给出可落地建议。",
           "max_length": 100
         },
         {
           "token": "asset_summary",
           "ai_generate": true,
-          "ai_instruction": "基于资产管理数据，生成资产安全管理工作总结。包括资产覆盖情况、安全状况评估、主要发现和改进方向。",
-          "max_length": 500
+          "ai_instruction": "基于资产相关的事件、风险、暴露端口及其他相关信息数据（asset_management），分析底层关联，给出本季/年度在资产安全管理工作中的非常详细的结论，突出资产管理举措的有效性和安全价值",
+          "max_length": 140
         },
         {
           "token": "asset_value1",
           "ai_generate": true,
-          "ai_instruction": "基于资产管理数据，生成资产安全管理工作待提升项1。",
-          "max_length": 500
+          "ai_instruction": "基于本页资产管理数据（asset_management），输出第一个简短短句（6-8个字）展示本季/年度在资产管理工作中的重点价值。",
+          "max_length": 8
         },
         {
           "token": "asset_value2",
           "ai_generate": true,
-          "ai_instruction": "基于资产管理数据，生成资产安全管理工作待提升项2。",
-          "max_length": 500
+          "ai_instruction": "基于本页资产管理数据（asset_management），输出第二个简短短句（6-8个字）展示本季/年度在资产管理工作中的重点价值。",
+          "max_length": 8
         },
         {
           "token": "asset_value3",
           "ai_generate": true,
-          "ai_instruction": "基于资产管理数据，生成资产安全管理工作待提升项3。",
-          "max_length": 500
+          "ai_instruction": "基于本页资产管理数据（asset_management），输出第三个简短短句（6-8个字）展示本季/年度在资产管理工作中的重点价值。",
+          "max_length": 8
         },
         {
           "token": "internal_network_server_count",
@@ -697,8 +697,8 @@
         {
           "token": "vuln_summary",
           "ai_generate": true,
-          "ai_instruction": "基于漏洞管理数据，生成脆弱性管理工作总结。包括扫描次数、发现漏洞数量、修复进度、重点漏洞类型分析等。",
-          "max_length": 500
+          "ai_instruction": "你要生成的是该句“后半句续写”，前置固定文案已在PPT中写好：`全年开展{{scanning}} 次漏洞扫描，`。请不要重复或改写这段前置文案，不要再次输出扫描次数，不要以“全年开展”开头。仅从逗号后继续写总结：基于 vulnerability_effectiveness 数据，围绕已发现漏洞处置成效，详细说明与**用户偏好**目标的差距与已达成部分，并全量点明对整体安全运营的影响。",
+          "max_length": 120
         },
         {
           "token": "high_risk_exploitable_vulnerability_count",
@@ -881,6 +881,11 @@
         {
           "token": "AES_detected_endpoint_security_risk_count",
           "source": "platform_effectiveness.AES_detected_endpoint_security_risk_count",
+          "default": "失败"
+        },
+        {
+          "token": "XDR_total_security_log_count",
+          "source": "platform_effectiveness.XDR_total_security_log_count",
           "default": "失败"
         },
         {

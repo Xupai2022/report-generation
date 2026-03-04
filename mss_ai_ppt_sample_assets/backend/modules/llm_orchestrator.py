@@ -47,11 +47,14 @@ class LLMOrchestratorV2:
     - Validates only key numerical fields
     """
     _FOCUS_PROMPT_MAP: Dict[str, str] = {
+        "business_protection": (
+            "业务保护：优先围绕业务连续性与关键系统可用性展开分析，明确事件对业务影响、恢复时效、闭环改进与当前保障成果。"
+        ),
         "vulnerability": (
-            "报告重点偏向漏洞：在slide14的vuln_summary突出漏洞总结的成效，重点体现保护成效，并且在最后输出‘mss为你保驾护航’。"
+            "漏洞优先：突出风险暴露面、修复优先级、整改闭环效率与残余风险，强调漏洞治理对整体安全运营的价值。"
         ),
         "alert": (
-            "报告重点偏向告警：优先突出告警态势、处置效率、误报漏报风险与运营优化建议。"
+            "告警优先：突出告警态势、处置效率、误报漏报风险与运营优化建议，强调告警运营的持续改进方向。"
         ),
     }
 
@@ -157,11 +160,11 @@ class LLMOrchestratorV2:
                             formatted_items.append(str(item))
                     else:
                         formatted_items.append(str(item))
-                return "\n".join(f"• {item}" for item in formatted_items)
+                return "\n".join(f"- {item}" for item in formatted_items)
             elif placeholder.format == "join_comma":
                 return ", ".join(str(v) for v in value)
             else:
-                return "\n".join(f"• {str(v)}" for v in value)
+                return "\n".join(f"- {str(v)}" for v in value)
 
         # Apply format template for non-list values
         if placeholder.format:
@@ -171,7 +174,7 @@ class LLMOrchestratorV2:
             elif placeholder.format == "join_comma":
                 return str(value)
             elif "{" in placeholder.format:
-                # Template format like "{value}小时" or "{start} ~ {end}"
+                # Template format like "{value}灏忔椂" or "{start} ~ {end}"
                 if isinstance(value, dict):
                     try:
                         return self._format_template_string(placeholder.format, value)
@@ -246,7 +249,7 @@ class LLMOrchestratorV2:
                 values = source_data.get(y_field, [])
 
                 result['categories'] = categories
-                result['series'] = [{'name': chart_config.get('series_name', '告警数'), 'values': values}]
+                result['series'] = [{'name': chart_config.get('series_name', 'Alerts'), 'values': values}]
             elif isinstance(source_data, list):
                 # List of objects format: [{"category": ..., "count": ...}, ...]
                 categories = []
@@ -261,7 +264,7 @@ class LLMOrchestratorV2:
 
                 if categories:
                     result['categories'] = categories
-                    result['series'] = [{'name': chart_config.get('series_name', '告警数'), 'values': values}]
+                    result['series'] = [{'name': chart_config.get('series_name', 'Alerts'), 'values': values}]
                 else:
                     logger.warning(f"Bar chart data source {data_source} list has no valid items with fields {x_field}/{y_field}")
                     return {}
@@ -310,9 +313,9 @@ class LLMOrchestratorV2:
                 external_attacks = source_data.get('external_attacks', [])
                 malicious_outbound = source_data.get('malicious_outbound', [])
 
-                # 转换为"万"单位（除以10000），保留原始值以便格式化
+                # Convert to 10k unit (divide by 10000), keeping original precision behavior.
                 def to_wan(value):
-                    """Convert value to 万 unit (divide by 10000)"""
+                    """Convert numeric value to 10k unit (divide by 10000)."""
                     if isinstance(value, (int, float)):
                         return value / 10000
                     return value
@@ -510,31 +513,29 @@ class LLMOrchestratorV2:
         """Build the system prompt for AI generation."""
         audience_desc = "管理层（非技术背景）" if template.audience == "management" else "技术团队（安全工程师）"
 
-        return f"""你是一位资深安全分析师，正在为客户撰写MSS（托管安全服务）月度安全报告。
+        return f"""你是一位资深安全分析师，正在为客户撰写 MSS（托管安全服务）安全报告内容。
 
 ## 你的角色
-- 你是安全领域专家，具有丰富的威胁分析和安全运营经验
-- 你擅长从数据中发现安全趋势和洞察
-- 你能用专业但易懂的语言撰写安全报告
+- 你擅长从输入数据中提炼结论、风险与改进建议
+- 你输出的文字需要可直接用于 PPT
 
 ## 报告受众
 本报告面向：{audience_desc}
 
 ## 关键要求
-1. **数据准确性**：所有引用的数字必须与输入数据完全一致，绝不能编造数据
-2. **深度分析**：不要只罗列数据，要给出有洞察力的分析与解读
-3. **具体建议**：建议必须具体可执行，避免泛泛而谈
-4. **语言风格**：使用中文，简洁专业，适合{audience_desc}阅读
-5. **格式要求**：严格按照指定JSON格式返回内容
+1. 所有数字必须与输入数据一致，不得编造
+2. 分析必须有结论，不仅是罗列数据
+3. 建议必须具体、可执行
+4. 输出语言必须是中文，语气专业、简洁
+5. 严格返回 JSON 对象，不要输出 Markdown 代码块或解释文本
 
 ## 输出格式
-你必须返回一个JSON对象，格式如下：
 {{
   "slides": [
     {{
       "slide_key": "slide_key_here",
       "placeholders": {{
-        "TOKEN_NAME": "生成的内容"
+        "TOKEN_NAME": "生成内容"
       }}
     }}
   ]
@@ -548,17 +549,15 @@ class LLMOrchestratorV2:
         focus_options: Optional[List[str]] = None,
     ) -> str:
         """Build the user prompt with data and AI instructions."""
-        period = tenant_input.get("period", {})
-
         prompt_parts = [
             "## 任务",
-            "基于输入的安全数据，生成指定 slide 的占位符内容。",
+            "基于输入安全数据，生成指定 slide 的 AI 占位符内容。",
             "",
             "## 输出要求",
-            "1) 只返回合法JSON，不要输出解释、注释或Markdown。",
-            "2) 输出内容必须为中文。",
-            "3) 所有数字必须与输入数据一致，不得编造。",
-            "4) 只输出下方列出的 slide_key 和占位符。",
+            "1) 仅输出合法 JSON 对象，不要解释说明",
+            "2) 输出内容必须是中文",
+            "3) 数字必须与输入数据一致，不得编造",
+            "4) 仅输出下方列出的 slide_key 和占位符",
             "",
             "## 输出格式",
             "```json",
@@ -600,9 +599,9 @@ class LLMOrchestratorV2:
             if placeholder.max_length:
                 constraints.append(f"最多{placeholder.max_length}字")
             if placeholder.max_items:
-                constraints.append(f"最多{placeholder.max_items}条")
+                constraints.append(f"最多{placeholder.max_items}项")
             if placeholder.max_chars_per_item:
-                constraints.append(f"每条最多{placeholder.max_chars_per_item}字")
+                constraints.append(f"每项最多{placeholder.max_chars_per_item}字")
 
             constraint_str = f" ({', '.join(constraints)})" if constraints else ""
 
@@ -629,37 +628,26 @@ class LLMOrchestratorV2:
         total_batches: int = 1,
         focus_options: Optional[List[str]] = None,
     ) -> str:
-        """Build user prompt for a subset of slides (for batched generation).
-
-        Args:
-            tenant_input: Raw tenant input data
-            template: Template descriptor
-            slide_keys: List of slide_keys to include in this batch
-            batch_index: Current batch index (0-based)
-            total_batches: Total number of batches
-
-        Returns:
-            User prompt string for the specified slides
-        """
+        """Build user prompt for a subset of slides (for batched generation)."""
         period = tenant_input.get("period", {})
 
         prompt_parts = [
             "## 任务",
-            "基于输入的安全数据，生成指定 slide 的占位符内容。",
+            "基于输入安全数据，生成指定 slide 的 AI 占位符内容。",
             f"报告时间：{period.get('start', '')} ~ {period.get('end', '')}",
             "",
             "## 输出要求",
-            "1) 只返回合法JSON，不要输出解释、注释或Markdown。",
-            "2) 输出内容必须为中文。",
-            "3) 所有数字必须与输入数据一致，不得编造。",
-            "4) 只输出下方列出的 slide_key 和占位符。",
+            "1) 仅输出合法 JSON 对象，不要解释说明",
+            "2) 输出内容必须是中文",
+            "3) 数字必须与输入数据一致，不得编造",
+            "4) 仅输出下方列出的 slide_key 和占位符",
             "",
         ]
 
         if total_batches > 1:
             prompt_parts.extend([
                 "## 批次信息",
-                f"这是第 {batch_index + 1}/{total_batches} 批次，请仅生成本批次的内容。",
+                f"这是第 {batch_index + 1}/{total_batches} 批，请只生成本批次内容。",
                 "",
             ])
 
@@ -709,9 +697,9 @@ class LLMOrchestratorV2:
             if placeholder.max_length:
                 constraints.append(f"最多{placeholder.max_length}字")
             if placeholder.max_items:
-                constraints.append(f"最多{placeholder.max_items}条")
+                constraints.append(f"最多{placeholder.max_items}项")
             if placeholder.max_chars_per_item:
-                constraints.append(f"每条最多{placeholder.max_chars_per_item}字")
+                constraints.append(f"每项最多{placeholder.max_chars_per_item}字")
 
             constraint_str = f" ({', '.join(constraints)})" if constraints else ""
 
@@ -750,7 +738,8 @@ class LLMOrchestratorV2:
 
         prompt_parts.extend([
             "",
-            "## 报告重点偏向（用户选择）",
+            "## 用户偏好",
+            "请将以下偏好作为高优先级写作约束，并确保不脱离输入数据：",
         ])
         for option in normalized_focus:
             prompt_parts.append(f"- {self._FOCUS_PROMPT_MAP[option]}")
@@ -1005,7 +994,7 @@ class LLMOrchestratorV2:
         # Available tokens for slide instructions per batch
         available_tokens = max_tokens_per_batch - base_tokens - format_overhead
 
-        logger.info(f"📊 Batch sizing: base={base_tokens} tokens, available={available_tokens} tokens/batch")
+        logger.info(f"Batch sizing: base={base_tokens} tokens, available={available_tokens} tokens/batch")
 
         # Calculate instruction size for each slide with AI placeholders
         slide_sizes: List[tuple] = []  # (slide_key, estimated_tokens)
@@ -1020,7 +1009,7 @@ class LLMOrchestratorV2:
         # If total is small enough, no batching needed
         total_instruction_tokens = sum(t for _, t in slide_sizes)
         if total_instruction_tokens <= available_tokens:
-            logger.info(f"📦 No batching needed: {total_instruction_tokens} tokens fits in {available_tokens}")
+            logger.info(f"No batching needed: {total_instruction_tokens} tokens fits in {available_tokens}")
             return [[s for s, _ in slide_sizes]]
 
         # Greedy batching: add slides until we exceed the limit
@@ -1086,7 +1075,7 @@ class LLMOrchestratorV2:
 
         if total_batches <= 1:
             logger.info("Single batch - using standard generation")
-            send_progress(35, "正在调用AI生成内容...")
+            send_progress(35, "正在调用 AI 生成内容...")
             system_prompt = self._build_system_prompt(template)
             user_prompt = self._build_user_prompt(
                 tenant_input,
@@ -1094,7 +1083,7 @@ class LLMOrchestratorV2:
                 focus_options=focus_options,
             )
             result = self._call_and_parse_with_retry(system_prompt, user_prompt, template)
-            send_progress(60, "AI内容生成完成")
+            send_progress(60, "AI 内容生成完成")
             return result
 
         logger.info(f"Smart batching: splitting into {total_batches} batches")
@@ -1109,7 +1098,7 @@ class LLMOrchestratorV2:
             logger.info(f"Processing batch {i + 1}/{total_batches}: slides {batch_slide_keys}")
 
             current_progress = 30 + int(i * progress_per_batch)
-            send_progress(current_progress, f"AI生成中（第 {i + 1}/{total_batches} 批）...")
+            send_progress(current_progress, f"AI 生成中（第 {i + 1}/{total_batches} 批）...")
 
             user_prompt = self._build_user_prompt_for_slides(
                 tenant_input,
@@ -1132,7 +1121,7 @@ class LLMOrchestratorV2:
 
             logger.info(f"Batch {i + 1}/{total_batches} completed")
 
-        send_progress(60, "所有AI内容生成完成")
+        send_progress(60, "所有 AI 内容生成完成")
         return all_ai_placeholders
 
     def _call_and_parse_with_retry(
@@ -1161,7 +1150,7 @@ class LLMOrchestratorV2:
                     logger.warning("Retrying LLM call due to format error...")
                 else:
                     error_msg = (
-                        f"AI生成失败：重试 {max_parse_retries} 次后仍未成功。"
+                        f"AI 生成失败：重试 {max_parse_retries} 次后仍未成功。"
                         f"请检查提示词与模型输出格式，必要时启用 mock 兜底。"
                         f"原始错误：{e}"
                     )
@@ -1326,7 +1315,7 @@ class LLMOrchestratorV2:
         Returns:
             SlideSpecV2 with all placeholders filled
         """
-        logger.info(f"🎯 Generating V2 slidespec for template: {template_id}, use_mock={use_mock}")
+        logger.info(f"Generating V2 slidespec for template: {template_id}, use_mock={use_mock}")
 
         # Helper to send progress updates
         def send_progress(progress: int, message: str):
@@ -1342,7 +1331,7 @@ class LLMOrchestratorV2:
                     logger.debug(f"Failed to send progress update: {e}")
 
         # Load V2 template descriptor (20%)
-        send_progress(20, "加载模板描述符...")
+        send_progress(20, "加载模板描述...")
         template = self.template_repo.get_descriptor_v2(template_id)
 
         # Create empty slidespec structure
@@ -1350,7 +1339,7 @@ class LLMOrchestratorV2:
         slidespec = create_empty_slidespec_v2(template_id, slide_keys)
 
         # Step 1: Extract data placeholders (non-AI) (25%)
-        logger.info("📊 Extracting data placeholders...")
+        logger.info("Extracting data placeholders...")
         send_progress(25, "提取数据占位符...")
         data_placeholders = self._extract_data_placeholders(tenant_input, template)
 
@@ -1361,8 +1350,8 @@ class LLMOrchestratorV2:
 
         # Step 2: Generate AI placeholders (30% - 70%)
         if config.settings.enable_llm and not use_mock:
-            logger.info("🤖 Generating AI content...")
-            send_progress(30, "调用AI生成内容...")
+            logger.info("Generating AI content...")
+            send_progress(30, "调用 AI 生成内容...")
             try:
                 # Use smart batched generation to avoid timeout issues
                 # Batching is based on estimated token count, not hardcoded limits
@@ -1376,20 +1365,20 @@ class LLMOrchestratorV2:
                 )
 
                 # Merge AI content (65%)
-                send_progress(65, "合并AI生成内容...")
+                send_progress(65, "合并 AI 生成内容...")
                 for slide_key, tokens in ai_placeholders.items():
                     slide = slidespec.get_slide(slide_key)
                     if slide:
                         slide.placeholders.update(tokens)
 
                 # (No validator) Keep generation flow simple
-                send_progress(70, "验证生成内容...")
+                send_progress(70, "校验生成内容...")
 
             except LLMGenerationError as e:
-                logger.error(f"❌ AI generation failed: {e}")
+                logger.error(f"AI generation failed: {e}")
                 raise
         else:
-            logger.info(f"📝 {'Using mock mode' if use_mock else 'LLM disabled'}, using fallback content")
+            logger.info(f"{'Using mock mode' if use_mock else 'LLM disabled'}, using fallback content")
             send_progress(35, "使用快速生成模式...")
             self._fill_ai_placeholders_with_fallback(slidespec, template)
             send_progress(70, "快速生成完成...")
@@ -1445,7 +1434,7 @@ class LLMOrchestrator:
         use_mock: bool = False,
     ) -> SlideSpec:
         """Generate slidespec using V1 logic (legacy)."""
-        logger.info(f"🎯 Generating V1 slidespec for {input_id}/{template_id}")
+        logger.info(f"Generating V1 slidespec for {input_id}/{template_id}")
 
         if use_mock:
             try:
@@ -1484,3 +1473,4 @@ class LLMOrchestrator:
             else:
                 updated_slides.append(slide)
         return SlideSpec(template_id=slide_spec.template_id, slides=updated_slides)
+
