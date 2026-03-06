@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 import logging
@@ -451,8 +451,8 @@ class ReportService:
         slidespec_path = self.session_manager.get_slidespec_path(session_id, template_id)
         logger.debug(f"Output paths: report={report_path.name}, slidespec={slidespec_path.name}")
 
-        # Send progress update for rendering (75%)
-        send_progress(75, "渲染PPT文件...")
+        # Send progress update for rendering
+        send_progress(68, "渲染 PPT 文件...")
 
         # Render with file lock to prevent concurrent write conflicts
         logger.debug("Rendering PPT file with file lock...")
@@ -460,15 +460,15 @@ class ReportService:
             self.ppt_generator_v2.render(slidespec, report_path)
         logger.debug(f"PPT rendered: {report_path.stat().st_size / 1024:.1f} KB")
 
-        # Send progress update after rendering (80%+)
-        send_progress(82, "保存文件...")
+        # Send progress update after rendering
+        send_progress(72, "保存文件...")
 
         # Save slidespec with file lock
         with FileLock(slidespec_path, timeout=60.0):
             slidespec.save(slidespec_path)
 
         # PPT is ready; preview rendering continues in async job flow.
-        send_progress(88, "PPT生成完成，准备渲染预览图...")
+        send_progress(75, "PPT 生成完成，准备渲染预览图...")
 
         self.audit_logger.log(
             event="generate_v2",
@@ -546,8 +546,23 @@ class ReportService:
         slide_key: str,
         user_prompt: str,
         target_tokens: List[str] | None = None,
+        ws_manager=None,
+        event_loop=None,
     ) -> Dict[str, Any]:
         """AI rewrite for a single slide using user preference prompt."""
+        def send_progress(progress: int, message: str):
+            if ws_manager and event_loop:
+                import asyncio
+                try:
+                    session = job_id.split(":", 1)[0]
+                    asyncio.run_coroutine_threadsafe(
+                        ws_manager.send_progress_update(session, progress, message),
+                        event_loop
+                    )
+                except Exception:
+                    pass
+
+        send_progress(10, "Loading slide for AI rewrite...")
         try:
             session_id, template_id = job_id.split(":", 1)
         except ValueError as e:
@@ -584,6 +599,7 @@ class ReportService:
             session_id=session_id,
         )
 
+        send_progress(48, "AI generating content...")
         ai_result = self.llm_orchestrator_v2.rewrite_single_slide_v2(
             tenant_input=tenant_input,
             template_id=template_id,
@@ -593,6 +609,7 @@ class ReportService:
             target_tokens=target_tokens,
         )
 
+        send_progress(68, "Applying AI rewrite result...")
         rewritten_placeholders = ai_result.get("placeholders", {})
         if rewritten_placeholders:
             target_slide.placeholders.update(rewritten_placeholders)
@@ -602,9 +619,11 @@ class ReportService:
         slidespec_path = self.session_manager.get_slidespec_path(session_id, template_id)
 
         # Persist rewritten slidespec and rerender report
+        send_progress(76, "Saving slide specification...")
         with FileLock(slidespec_path, timeout=60.0):
             slidespec.save(slidespec_path)
 
+        send_progress(75, "Rendering PPT...")
         with FileLock(report_path, timeout=60.0):
             self.ppt_generator_v2.render(slidespec, report_path)
 
@@ -629,6 +648,7 @@ class ReportService:
             job_id=job_id,
         )
 
+        send_progress(98, "AI rewrite completed...")
         return {
             "job_id": job_id,
             "session_id": session_id,
@@ -647,7 +667,9 @@ class ReportService:
         job_id: str,
         slide_key: str = None,
         new_content: Dict[str, Any] = None,
-        slides: list[Dict[str, Any]] = None
+        slides: list[Dict[str, Any]] = None,
+        ws_manager=None,
+        event_loop=None,
     ) -> Dict[str, Any]:
         """Rewrite one or multiple slides with new content.
 
@@ -664,6 +686,20 @@ class ReportService:
         Returns:
             Dict with job_id, updated_slides, report_path, etc.
         """
+        def send_progress(progress: int, message: str):
+            if ws_manager and event_loop:
+                import asyncio
+                try:
+                    session = job_id.split(":", 1)[0]
+                    asyncio.run_coroutine_threadsafe(
+                        ws_manager.send_progress_update(session, progress, message),
+                        event_loop
+                    )
+                except Exception:
+                    pass
+
+        send_progress(8, "Validating update request...")
+
         try:
             session_id, template_id = job_id.split(":", 1)
         except ValueError as e:
@@ -680,6 +716,7 @@ class ReportService:
             raise ValueError("Cannot provide both single mode and batch mode simultaneously")
 
         # Load slidespec
+        send_progress(22, "Loading report content...")
         slidespec = self._load_slidespec(session_id, template_id)
         chart_tokens_by_slide = self._get_chart_tokens_by_slide(template_id)
 
@@ -699,6 +736,10 @@ class ReportService:
         for slide_update in slides_to_update:
             key = slide_update.get("slide_key")
             content = slide_update.get("new_content", {})
+            total_slides = max(1, len(slides_to_update))
+            current_idx = len(updated_slides) + len(not_found_slides) + 1
+            current_progress = 28 + int((current_idx / total_slides) * 34)
+            send_progress(current_progress, f"Applying updates ({current_idx}/{total_slides})...")
 
             slide = slidespec.get_slide(key)
             if slide:
@@ -745,9 +786,11 @@ class ReportService:
         slidespec_path = self.session_manager.get_slidespec_path(session_id, template_id)
 
         # Save with file locks
+        send_progress(74, "Saving slide specification...")
         with FileLock(slidespec_path, timeout=60.0):
             slidespec.save(slidespec_path)
 
+        send_progress(86, "Rendering PPT...")
         with FileLock(report_path, timeout=60.0):
             self.ppt_generator_v2.render(slidespec, report_path)
 
@@ -776,7 +819,7 @@ class ReportService:
         # Add warnings for not found slides
         if not_found_slides:
             result["warnings"].append(
-                f"以下幻灯片未找到: {', '.join(not_found_slides)}"
+                f"浠ヤ笅骞荤伅鐗囨湭鎵惧埌: {', '.join(not_found_slides)}"
             )
             result["not_found_slides"] = not_found_slides
 
@@ -793,6 +836,7 @@ class ReportService:
         if has_single:
             result["slide_key"] = slide_key
 
+        send_progress(98, "Slide update completed...")
         return result
 
     def read_logs(self, limit: int = 100) -> str:

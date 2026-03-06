@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 import logging
@@ -46,17 +46,29 @@ class LLMOrchestratorV2:
     - Generates content based on ai_instruction fields
     - Validates only key numerical fields
     """
-    _FOCUS_PROMPT_MAP: Dict[str, str] = {
-        "business_protection": (
-            "业务保护：优先围绕业务连续性与关键系统可用性展开分析，明确事件对业务影响、恢复时效、闭环改进与当前保障成果。"
-        ),
-        "vulnerability": (
-            "漏洞优先：突出风险暴露面、修复优先级、整改闭环效率与残余风险，强调漏洞治理对整体安全运营的价值。"
-        ),
-        "alert": (
-            "告警优先：突出告警态势、处置效率、误报漏报风险与运营优化建议，强调告警运营的持续改进方向。"
-        ),
-    }
+    _ANNOTATIONS: List[Dict[str, str]] = [
+        {
+            "id": "business_protection",
+            "title": "Business Protection",
+            "content": (
+                "Emphasize business continuity, risk containment, and actionable protection outcomes."
+            ),
+        },
+        {
+            "id": "vulnerability",
+            "title": "Vulnerability",
+            "content": (
+                "Focus on vulnerability exposure, root causes, and remediation priorities."
+            ),
+        },
+        {
+            "id": "alert",
+            "title": "Alert",
+            "content": (
+                "Focus on threat alerts, incident patterns, and response effectiveness."
+            ),
+        },
+    ]
 
     def __init__(self, template_repo: Optional[TemplateRepository] = None):
         self.template_repo = template_repo or TemplateRepository()
@@ -174,7 +186,7 @@ class LLMOrchestratorV2:
             elif placeholder.format == "join_comma":
                 return str(value)
             elif "{" in placeholder.format:
-                # Template format like "{value}灏忔椂" or "{start} ~ {end}"
+                # Template format like "{value} units" or "{start} ~ {end}"
                 if isinstance(value, dict):
                     try:
                         return self._format_template_string(placeholder.format, value)
@@ -287,11 +299,11 @@ class LLMOrchestratorV2:
 
                     # Map severity levels to Chinese names
                     severity_map = chart_config.get('category_map', {
-                        'critical': '严重',
-                        'high': '高危',
-                        'medium': '中危',
-                        'low': '低危',
-                        'info': '信息'
+                        'critical': 'Critical',
+                        'high': 'High',
+                        'medium': 'Medium',
+                        'low': 'Low',
+                        'info': 'Info'
                     })
 
                     for key, value in source_data.items():
@@ -511,37 +523,21 @@ class LLMOrchestratorV2:
 
     def _build_system_prompt(self, template: TemplateDescriptorV2) -> str:
         """Build the system prompt for AI generation."""
-        audience_desc = "管理层（非技术背景）" if template.audience == "management" else "技术团队（安全工程师）"
+        audience_desc = "management audience" if template.audience == "management" else "technical audience"
 
-        return f"""你是一位资深安全分析师，正在为客户撰写 MSS（托管安全服务）安全报告内容。
+        return f"""You are a professional MSS security report writing assistant.
 
-## 你的角色
-- 你擅长从输入数据中提炼结论、风险与改进建议
-- 你输出的文字需要可直接用于 PPT
+## Writing Goal
+- Produce evidence-based, insight-rich text for PowerPoint slides.
+- Ensure wording matches an {audience_desc}.
 
-## 报告受众
-本报告面向：{audience_desc}
-
-## 关键要求
-1. 所有数字必须与输入数据一致，不得编造
-2. 分析必须有结论，不仅是罗列数据
-3. 建议必须具体、可执行
-4. 输出语言必须是中文，语气专业、简洁
-5. 严格返回 JSON 对象，不要输出 Markdown 代码块或解释文本
-
-## 输出格式
-{{
-  "slides": [
-    {{
-      "slide_key": "slide_key_here",
-      "placeholders": {{
-        "TOKEN_NAME": "生成内容"
-      }}
-    }}
-  ]
-}}
+## Output Constraints
+1. Keep statements factual and directly tied to provided data.
+2. Avoid unsupported claims.
+3. Prefer action-oriented recommendations when applicable.
+4. Keep language clear and business-ready.
+5. Return valid JSON only (no markdown wrappers).
 """
-
     def _build_user_prompt(
         self,
         tenant_input: TenantInput,
@@ -549,75 +545,15 @@ class LLMOrchestratorV2:
         focus_options: Optional[List[str]] = None,
     ) -> str:
         """Build the user prompt with data and AI instructions."""
-        prompt_parts = [
-            "## 任务",
-            "基于输入安全数据，生成指定 slide 的 AI 占位符内容。",
-            "",
-            "## 输出要求",
-            "1) 仅输出合法 JSON 对象，不要解释说明",
-            "2) 输出内容必须是中文",
-            "3) 数字必须与输入数据一致，不得编造",
-            "4) 仅输出下方列出的 slide_key 和占位符",
-            "",
-            "## 输出格式",
-            "```json",
-            "{",
-            '  "slides": [',
-        ]
-
-        slide_examples = []
-        for slide in template.slides:
-            ai_tokens = [ph.token for ph in slide.placeholders if ph.ai_generate]
-            if ai_tokens:
-                tokens_str = ", ".join(f'"{t}": "..."' for t in ai_tokens)
-                slide_examples.append(f'    {{"slide_key": "{slide.slide_key}", "placeholders": {{{tokens_str}}}}}')
-
-        prompt_parts.append(",\n".join(slide_examples))
-        prompt_parts.extend([
-            "  ]",
-            "}",
-            "```",
-            "",
-            "## 需要生成的内容",
-            "",
-        ])
-
-        self._append_focus_prompt_section(prompt_parts, focus_options)
-
-        ai_placeholders = template.get_ai_placeholders()
-        current_slide = None
-
-        for slide_key, token, placeholder in ai_placeholders:
-            if slide_key != current_slide:
-                for slide in template.slides:
-                    if slide.slide_key == slide_key:
-                        prompt_parts.append(f"### 页面: {slide.title} ({slide_key})")
-                        break
-                current_slide = slide_key
-
-            constraints = []
-            if placeholder.max_length:
-                constraints.append(f"最多{placeholder.max_length}字")
-            if placeholder.max_items:
-                constraints.append(f"最多{placeholder.max_items}项")
-            if placeholder.max_chars_per_item:
-                constraints.append(f"每项最多{placeholder.max_chars_per_item}字")
-
-            constraint_str = f" ({', '.join(constraints)})" if constraints else ""
-
-            prompt_parts.append(f"\n**{token}**{constraint_str}")
-            prompt_parts.append(f"{placeholder.ai_instruction}")
-            prompt_parts.append("")
-
-        prompt_parts.extend([
-            "",
-            "## 安全数据",
-            "```json",
-            json.dumps(tenant_input.raw, ensure_ascii=False, indent=2),
-            "```",
-        ])
-
-        return "\n".join(prompt_parts)
+        slide_keys = [slide.slide_key for slide in template.slides]
+        return self._build_user_prompt_for_slides(
+            tenant_input=tenant_input,
+            template=template,
+            slide_keys=slide_keys,
+            batch_index=0,
+            total_batches=1,
+            focus_options=focus_options,
+        )
 
     def _build_user_prompt_for_slides(
         self,
@@ -629,33 +565,28 @@ class LLMOrchestratorV2:
         focus_options: Optional[List[str]] = None,
     ) -> str:
         """Build user prompt for a subset of slides (for batched generation)."""
-        period = tenant_input.get("period", {})
+        selected_annotations = self._resolve_selected_annotations(focus_options)
+        preference_titles_text = self._build_preference_titles_text(selected_annotations)
 
-        prompt_parts = [
-            "## 任务",
-            "基于输入安全数据，生成指定 slide 的 AI 占位符内容。",
-            f"报告时间：{period.get('start', '')} ~ {period.get('end', '')}",
-            "",
-            "## 输出要求",
-            "1) 仅输出合法 JSON 对象，不要解释说明",
-            "2) 输出内容必须是中文",
-            "3) 数字必须与输入数据一致，不得编造",
-            "4) 仅输出下方列出的 slide_key 和占位符",
+        prompt_parts: List[str] = [
+            "## Task",
+            "Generate AI content for the requested slides and placeholders.",
+            "Output must be valid JSON only.",
             "",
         ]
 
         if total_batches > 1:
             prompt_parts.extend([
-                "## 批次信息",
-                f"这是第 {batch_index + 1}/{total_batches} 批，请只生成本批次内容。",
+                "## Batch Context",
+                f"Current batch: {batch_index + 1}/{total_batches}",
                 "",
             ])
 
         prompt_parts.extend([
-            "## 输出格式",
+            "## Output Format",
             "```json",
             "{",
-            '  "slides": [',
+            "  \"slides\": [",
         ])
 
         slide_examples = []
@@ -664,8 +595,8 @@ class LLMOrchestratorV2:
                 continue
             ai_tokens = [ph.token for ph in slide.placeholders if ph.ai_generate]
             if ai_tokens:
-                tokens_str = ", ".join(f'"{t}": "..."' for t in ai_tokens)
-                slide_examples.append(f'    {{"slide_key": "{slide.slide_key}", "placeholders": {{{tokens_str}}}}}')
+                tokens_str = ", ".join(f"\"{t}\": \"...\"" for t in ai_tokens)
+                slide_examples.append(f"    {{\"slide_key\": \"{slide.slide_key}\", \"placeholders\": {{{tokens_str}}}}}")
 
         prompt_parts.append(",\n".join(slide_examples))
         prompt_parts.extend([
@@ -673,11 +604,11 @@ class LLMOrchestratorV2:
             "}",
             "```",
             "",
-            "## 需要生成的内容",
+            "## Placeholder Instructions",
             "",
         ])
 
-        self._append_focus_prompt_section(prompt_parts, focus_options)
+        self._append_annotation_section(prompt_parts, selected_annotations)
 
         ai_placeholders = template.get_ai_placeholders()
         current_slide = None
@@ -689,27 +620,30 @@ class LLMOrchestratorV2:
             if slide_key != current_slide:
                 for slide in template.slides:
                     if slide.slide_key == slide_key:
-                        prompt_parts.append(f"### 页面: {slide.title} ({slide_key})")
+                        prompt_parts.append(f"### Slide: {slide.title} ({slide_key})")
                         break
                 current_slide = slide_key
 
-            constraints = []
+            constraints: List[str] = []
             if placeholder.max_length:
-                constraints.append(f"最多{placeholder.max_length}字")
+                constraints.append(f"max_length={placeholder.max_length}")
             if placeholder.max_items:
-                constraints.append(f"最多{placeholder.max_items}项")
+                constraints.append(f"max_items={placeholder.max_items}")
             if placeholder.max_chars_per_item:
-                constraints.append(f"每项最多{placeholder.max_chars_per_item}字")
+                constraints.append(f"max_chars_per_item={placeholder.max_chars_per_item}")
 
             constraint_str = f" ({', '.join(constraints)})" if constraints else ""
 
             prompt_parts.append(f"\n**{token}**{constraint_str}")
-            prompt_parts.append(f"{placeholder.ai_instruction}")
+            prompt_parts.append(self._render_ai_instruction(
+                placeholder.ai_instruction,
+                preference_titles_text,
+            ))
             prompt_parts.append("")
 
         prompt_parts.extend([
             "",
-            "## 安全数据",
+            "## Input Data",
             "```json",
             json.dumps(tenant_input.raw, ensure_ascii=False, indent=2),
             "```",
@@ -717,32 +651,82 @@ class LLMOrchestratorV2:
 
         return "\n".join(prompt_parts)
 
-    def _normalize_focus_options(self, focus_options: Optional[List[str]]) -> List[str]:
-        """Normalize report focus options (filter invalid and dedupe)."""
+    def _build_annotation_indexes(self) -> tuple[Dict[str, Dict[str, str]], Dict[str, List[Dict[str, str]]]]:
+        """Build lookup indexes for annotation id and title."""
+        by_id: Dict[str, Dict[str, str]] = {}
+        by_title: Dict[str, List[Dict[str, str]]] = {}
+        for annotation in self._ANNOTATIONS:
+            by_id[annotation["id"]] = annotation
+            by_title.setdefault(annotation["title"], []).append(annotation)
+        return by_id, by_title
+
+    def _resolve_selected_annotations(self, focus_options: Optional[List[str]]) -> List[Dict[str, str]]:
+        """Resolve selected preferences to unique annotations by id/title."""
         if not focus_options:
             return []
 
-        normalized: List[str] = []
-        seen = set()
-        for option in focus_options:
-            if option in self._FOCUS_PROMPT_MAP and option not in seen:
-                seen.add(option)
-                normalized.append(option)
-        return normalized
+        by_id, by_title = self._build_annotation_indexes()
+        resolved: List[Dict[str, str]] = []
+        seen_ids = set()
 
-    def _append_focus_prompt_section(self, prompt_parts: List[str], focus_options: Optional[List[str]]) -> None:
-        """Append user-selected full-report focus preferences to prompt."""
-        normalized_focus = self._normalize_focus_options(focus_options)
-        if not normalized_focus:
+        for option in focus_options:
+            option_text = (option or "").strip()
+            if not option_text:
+                continue
+
+            annotation = by_id.get(option_text)
+            if not annotation:
+                matches = by_title.get(option_text, [])
+                if len(matches) > 1:
+                    raise ValueError(f"Ambiguous annotation title: {option_text}")
+                annotation = matches[0] if matches else None
+
+            if not annotation:
+                raise ValueError(f"Unsupported focus option: {option_text}")
+
+            annotation_id = annotation["id"]
+            if annotation_id in seen_ids:
+                continue
+            seen_ids.add(annotation_id)
+            resolved.append(annotation)
+
+        return resolved
+
+    @staticmethod
+    def _build_preference_titles_text(selected_annotations: List[Dict[str, str]]) -> str:
+        """Build a compact text for replacing {preference} placeholders."""
+        if not selected_annotations:
+            return ""
+        return ", ".join(item["title"] for item in selected_annotations)
+
+    @staticmethod
+    def _render_ai_instruction(ai_instruction: Optional[str], preference_titles_text: str) -> str:
+        """Render ai_instruction with runtime preference placeholders."""
+        instruction = ai_instruction or ""
+        if not preference_titles_text:
+            return instruction
+
+        rendered = instruction.replace("{preference}", preference_titles_text)
+        rendered = rendered.replace("**偏好重点**", f"**{preference_titles_text}**")
+        rendered = rendered.replace("偏好重点", preference_titles_text)
+        return rendered
+
+    def _append_annotation_section(
+        self,
+        prompt_parts: List[str],
+        selected_annotations: List[Dict[str, str]],
+    ) -> None:
+        """Append selected annotation knowledge for the chosen preferences only."""
+        if not selected_annotations:
             return
 
         prompt_parts.extend([
             "",
-            "## 用户偏好",
-            "请将以下偏好作为高优先级写作约束，并确保不脱离输入数据：",
+            "## Focus Preference Guidance",
+            "Use the selected focus options below to guide style and emphasis.",
         ])
-        for option in normalized_focus:
-            prompt_parts.append(f"- {self._FOCUS_PROMPT_MAP[option]}")
+        for annotation in selected_annotations:
+            prompt_parts.append(f"- {annotation['title']}: {annotation['content']}")
 
     def _build_rewrite_base_prompt(
         self,
@@ -981,7 +965,7 @@ class LLMOrchestratorV2:
         tenant = tenant_input.get("tenant", {})
         period = tenant_input.get("period", {})
         base_prompt = "\n".join([
-            "## 安全数据",
+            "## Input Data",
             "```json",
             json.dumps(tenant_input.raw, ensure_ascii=False, indent=2),
             "```",
@@ -1083,7 +1067,7 @@ class LLMOrchestratorV2:
                 focus_options=focus_options,
             )
             result = self._call_and_parse_with_retry(system_prompt, user_prompt, template)
-            send_progress(60, "AI 内容生成完成")
+            send_progress(60, "AI content generation completed")
             return result
 
         logger.info(f"Smart batching: splitting into {total_batches} batches")
@@ -1121,7 +1105,7 @@ class LLMOrchestratorV2:
 
             logger.info(f"Batch {i + 1}/{total_batches} completed")
 
-        send_progress(60, "所有 AI 内容生成完成")
+        send_progress(60, "All AI content generation completed")
         return all_ai_placeholders
 
     def _call_and_parse_with_retry(
@@ -1150,9 +1134,9 @@ class LLMOrchestratorV2:
                     logger.warning("Retrying LLM call due to format error...")
                 else:
                     error_msg = (
-                        f"AI 生成失败：重试 {max_parse_retries} 次后仍未成功。"
-                        f"请检查提示词与模型输出格式，必要时启用 mock 兜底。"
-                        f"原始错误：{e}"
+                        f"AI generation failed after {max_parse_retries} parse retries. "
+                        f"Please check model output format or switch to mock mode. "
+                        f"Last error: {e}"
                     )
                     logger.error(error_msg)
                     raise LLMGenerationError(error_msg) from e
@@ -1330,17 +1314,19 @@ class LLMOrchestratorV2:
                 except Exception as e:
                     logger.debug(f"Failed to send progress update: {e}")
 
-        # Load V2 template descriptor (20%)
-        send_progress(20, "加载模板描述...")
+        # Weighted progress model:
+        # preparation 0-5, template/data 5-25, ai 25-65, ppt 65-75, preview 75-95, finalization 95-100.
+        # Load V2 template descriptor (template/data stage)
+        send_progress(12, "加载模板描述...")
         template = self.template_repo.get_descriptor_v2(template_id)
 
         # Create empty slidespec structure
         slide_keys = [(s.slide_no, s.slide_key) for s in template.slides]
         slidespec = create_empty_slidespec_v2(template_id, slide_keys)
 
-        # Step 1: Extract data placeholders (non-AI) (25%)
+        # Step 1: Extract data placeholders (non-AI)
         logger.info("Extracting data placeholders...")
-        send_progress(25, "提取数据占位符...")
+        send_progress(24, "提取数据占位符...")
         data_placeholders = self._extract_data_placeholders(tenant_input, template)
 
         for slide_key, tokens in data_placeholders.items():
@@ -1348,10 +1334,10 @@ class LLMOrchestratorV2:
             if slide:
                 slide.placeholders.update(tokens)
 
-        # Step 2: Generate AI placeholders (30% - 70%)
+        # Step 2: Generate AI placeholders (25% - 65%)
         if config.settings.enable_llm and not use_mock:
             logger.info("Generating AI content...")
-            send_progress(30, "调用 AI 生成内容...")
+            send_progress(28, "调用 AI 生成内容...")
             try:
                 # Use smart batched generation to avoid timeout issues
                 # Batching is based on estimated token count, not hardcoded limits
@@ -1372,16 +1358,16 @@ class LLMOrchestratorV2:
                         slide.placeholders.update(tokens)
 
                 # (No validator) Keep generation flow simple
-                send_progress(70, "校验生成内容...")
+                send_progress(65, "校验生成内容...")
 
             except LLMGenerationError as e:
                 logger.error(f"AI generation failed: {e}")
                 raise
         else:
             logger.info(f"{'Using mock mode' if use_mock else 'LLM disabled'}, using fallback content")
-            send_progress(35, "使用快速生成模式...")
+            send_progress(45, "使用快速生成模式...")
             self._fill_ai_placeholders_with_fallback(slidespec, template)
-            send_progress(70, "快速生成完成...")
+            send_progress(65, "快速生成完成...")
 
         logger.info(f"V2 slidespec generation complete: {len(slidespec.slides)} slides")
         return slidespec
@@ -1395,7 +1381,7 @@ class LLMOrchestratorV2:
         for slide_key, token, placeholder in template.get_ai_placeholders():
             slide = slidespec.get_slide(slide_key)
             if slide and token not in slide.placeholders:
-                slide.placeholders[token] = f"[{token}: AI生成内容占位]"
+                slide.placeholders[token] = f"[{token}: AI generated content]"
 
 
 # ============================================================================
@@ -1473,4 +1459,5 @@ class LLMOrchestrator:
             else:
                 updated_slides.append(slide)
         return SlideSpec(template_id=slide_spec.template_id, slides=updated_slides)
+
 

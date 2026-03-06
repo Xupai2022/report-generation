@@ -1,4 +1,4 @@
-"""Unified request models for API endpoints."""
+﻿"""Unified request models for API endpoints."""
 
 from pydantic import BaseModel, Field, validator
 from typing import Optional, List, Dict, Any, Literal, ClassVar, Set
@@ -11,6 +11,21 @@ class CreateReportRequest(BaseModel):
         "alert",
         "business_protection",
     }
+    # Accept common aliases (Chinese/English/display text)
+    # and normalize everything to stable internal keys above.
+    FOCUS_OPTION_ALIASES: ClassVar[Dict[str, str]] = {
+        "vulnerability": "vulnerability",
+        "alert": "alert",
+        "business_protection": "business_protection",
+        "漏洞优先": "vulnerability",
+        "告警优先": "alert",
+        "业务保护": "business_protection",
+        "vulnerability priority": "vulnerability",
+        "alert priority": "alert",
+        "business protection": "business_protection",
+        "vulnerability focus": "vulnerability",
+        "alert focus": "alert",
+    }
 
     input_id: str = Field(..., description="Input data ID", example="tenant_acme_2025-11")
     template_id: str = Field(..., description="Template ID", example="mss_executive_v2")
@@ -20,7 +35,9 @@ class CreateReportRequest(BaseModel):
         min_items=1,
         description=(
             "Required report focus options (supports multi-select). "
-            "Must contain at least one valid option."
+            "Each item can be either option key "
+            "('vulnerability'/'alert'/'business_protection') "
+            "or a preference title ('漏洞优先'/'告警优先'/'业务保护')."
         ),
     )
     session_id: Optional[str] = Field(None, description="Optional session ID")
@@ -57,10 +74,16 @@ class CreateReportRequest(BaseModel):
             option = item.strip()
             if not option or option in seen:
                 continue
-            if option not in cls.ALLOWED_FOCUS_OPTIONS:
+            canonical = cls.FOCUS_OPTION_ALIASES.get(option)
+            if canonical is None:
+                canonical = cls.FOCUS_OPTION_ALIASES.get(option.lower())
+            if canonical in cls.ALLOWED_FOCUS_OPTIONS:
+                if canonical in seen:
+                    continue
+                seen.add(canonical)
+                normalized.append(canonical)
+            else:
                 raise ValueError(f"Unsupported focus option: {option}")
-            seen.add(option)
-            normalized.append(option)
         if not normalized:
             raise ValueError("focus_options must contain at least one valid option")
         return normalized
@@ -85,6 +108,7 @@ class SlideUpdate(BaseModel):
 class UpdateSlidesRequest(BaseModel):
     """Request model for batch updating slides."""
     slides: List[SlideUpdate] = Field(..., description="List of slide updates")
+    client_id: Optional[str] = Field(None, description="Optional WebSocket client ID")
 
     class Config:
         json_schema_extra = {
@@ -119,6 +143,7 @@ class AISlideRewriteRequest(BaseModel):
             "If omitted or empty, backend rewrites all ai_generate=true tokens on the slide."
         ),
     )
+    client_id: Optional[str] = Field(None, description="Optional WebSocket client ID")
 
     @validator("user_prompt")
     def validate_user_prompt(cls, v: str):

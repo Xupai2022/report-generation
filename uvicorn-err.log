@@ -1,0 +1,141 @@
+INFO:     Started server process [33656]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:57137 - "WebSocket /ws/client_1772677926298_ck8zjq8h" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:57289 - "WebSocket /ws/client_1772677959325_7udwrpg7" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:58702 - "WebSocket /ws/client_1772678298336_wvbl5fl8" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:63250 - "WebSocket /ws/client_1772679550469_3ka3if4d" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:64883 - "WebSocket /ws/client_1772679996096_ccvoqfgq" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:65185 - "WebSocket /ws/client_1772680089433_rsfyjmkj" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:51286 - "WebSocket /ws/client_1772680753920_m5btr9tj" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:53211 - "WebSocket /ws/client_1772681271390_dg23pqgr" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:54538 - "WebSocket /ws/client_1772681597483_o517nydy" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:55289 - "WebSocket /ws/client_1772681783593_lweru14p" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:55557 - "WebSocket /ws/client_1772681862405_pghkxwdg" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:56050 - "WebSocket /ws/client_1772681979360_0zp8qyiy" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:56485 - "WebSocket /ws/client_1772682073656_uw8zt437" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:56497 - "WebSocket /ws/client_1772682075899_bzuin7w5" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:56506 - "WebSocket /ws/client_1772682077444_94ibp2u1" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:56509 - "WebSocket /ws/client_1772682078184_h5iif1ie" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:56520 - "WebSocket /ws/client_1772682079050_g04qa5bn" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:56536 - "WebSocket /ws/client_1772682081497_7yv1fgx9" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:56538 - "WebSocket /ws/client_1772682082156_lzxm0zbi" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:56574 - "WebSocket /ws/client_1772682092234_it6lnhpz" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:59151 - "WebSocket /ws/client_1772682814057_irne3msa" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:61079 - "WebSocket /ws/client_1772683335661_9aebvxk0" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:62954 - "WebSocket /ws/client_1772683789755_y2ious92" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:63662 - "WebSocket /ws/client_1772683949222_vt4j420p" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:63690 - "WebSocket /ws/client_1772683954611_qp2pbw4h" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:63697 - "WebSocket /ws/client_1772683955373_kzug7a4w" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:63701 - "WebSocket /ws/client_1772683956888_bxrgzfjr" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:63749 - "WebSocket /ws/client_1772683965695_6dn9mso8" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:64885 - "WebSocket /ws/client_1772684254168_hi01k0dd" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:55367 - "WebSocket /ws/client_1772686093445_v1ea864o" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:55381 - "WebSocket /ws/client_1772686095515_5jzxk9l6" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:55394 - "WebSocket /ws/client_1772686097587_xvu5498u" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:57020 - "WebSocket /ws/client_1772686480941_ssc69vr0" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:57454 - "WebSocket /ws/client_1772686582363_t86rd7wk" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:57938 - "WebSocket /ws/client_1772686697214_u3jl997m" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:58876 - "WebSocket /ws/client_1772686907632_oonzxudv" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:59191 - "WebSocket /ws/client_1772686975452_ijqe0i36" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:58627 - "WebSocket /ws/client_1772691264084_3kok9pst" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:59233 - "WebSocket /ws/client_1772691425740_hmpw8b4f" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:59503 - "WebSocket /ws/client_1772691498853_b3evpvc5" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:60054 - "WebSocket /ws/client_1772691644670_ioe243qk" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:60210 - "WebSocket /ws/client_1772691682173_vqjm77tk" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:60252 - "WebSocket /ws/client_1772691695251_0e59mupv" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:60313 - "WebSocket /ws/client_1772691708032_361zrm4o" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:64788 - "WebSocket /ws/client_1772692974517_llpti3nr" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:64926 - "WebSocket /ws/client_1772693012211_dgfy9lkm" [accepted]
+INFO:     connection open

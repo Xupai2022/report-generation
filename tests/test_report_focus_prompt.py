@@ -1,6 +1,6 @@
-from types import SimpleNamespace
 from pathlib import Path
 import sys
+from types import SimpleNamespace
 
 import pytest
 from pydantic import ValidationError
@@ -12,11 +12,11 @@ from mss_ai_ppt_sample_assets.backend.modules.llm_orchestrator import LLMOrchest
 from mss_ai_ppt_sample_assets.backend.schemas.requests import CreateReportRequest
 
 
-def _build_template_stub():
+def _build_template_stub(ai_instruction: str):
     ai_placeholder = SimpleNamespace(
         token="AI_TEXT",
         ai_generate=True,
-        ai_instruction="生成摘要内容",
+        ai_instruction=ai_instruction,
         max_length=None,
         max_items=None,
         max_chars_per_item=None,
@@ -33,109 +33,68 @@ def _build_template_stub():
 
 
 def _build_orchestrator():
-    orchestrator = LLMOrchestratorV2.__new__(LLMOrchestratorV2)
-    return orchestrator
+    return LLMOrchestratorV2.__new__(LLMOrchestratorV2)
 
 
-def test_build_user_prompt_without_focus_options():
+def test_build_user_prompt_replaces_preference_placeholder_and_includes_selected_annotation():
     orchestrator = _build_orchestrator()
-    template = _build_template_stub()
+    template = _build_template_stub(
+        "根据已选{preference}从注解中寻找基础知识，重点突出与用户偏好的关联性。"
+    )
     tenant_input = TenantInput(raw={"period": {"start": "2026-01-01", "end": "2026-01-31"}})
 
     prompt = orchestrator._build_user_prompt(
         tenant_input=tenant_input,
         template=template,
-        focus_options=None,
+        focus_options=["业务保护"],
     )
 
-    assert "报告重点偏向（用户选择）" not in prompt
+    assert "## 参考注解（按用户已选偏好唯一匹配）" in prompt
+    assert "- 业务保护：" in prompt
+    assert "{preference}" not in prompt
+    assert "根据已选业务保护从注解中寻找基础知识" in prompt
 
 
-def test_build_user_prompt_with_vulnerability_focus():
+def test_build_user_prompt_supports_internal_focus_key_and_legacy_user_preference_marker():
     orchestrator = _build_orchestrator()
-    template = _build_template_stub()
+    template = _build_template_stub("结合**用户偏好**，生成本页结论。")
     tenant_input = TenantInput(raw={"period": {"start": "2026-01-01", "end": "2026-01-31"}})
 
     prompt = orchestrator._build_user_prompt(
         tenant_input=tenant_input,
         template=template,
-        focus_options=["vulnerability"],
+        focus_options=["business_protection"],
     )
 
-    assert "报告重点偏向（用户选择）" in prompt
-    assert "报告重点偏向漏洞" in prompt
+    assert "结合**业务保护**，生成本页结论。" in prompt
+    assert "用户偏好" not in prompt
 
 
-def test_build_user_prompt_with_alert_focus():
+def test_build_user_prompt_rejects_unsupported_focus_option():
     orchestrator = _build_orchestrator()
-    template = _build_template_stub()
+    template = _build_template_stub("test")
     tenant_input = TenantInput(raw={"period": {"start": "2026-01-01", "end": "2026-01-31"}})
 
-    prompt = orchestrator._build_user_prompt(
-        tenant_input=tenant_input,
-        template=template,
-        focus_options=["alert"],
-    )
-
-    assert "报告重点偏向（用户选择）" in prompt
-    assert "报告重点偏向告警" in prompt
+    with pytest.raises(ValueError):
+        orchestrator._build_user_prompt(
+            tenant_input=tenant_input,
+            template=template,
+            focus_options=["not-exists"],
+        )
 
 
-def test_build_user_prompt_with_both_focus_options():
-    orchestrator = _build_orchestrator()
-    template = _build_template_stub()
-    tenant_input = TenantInput(raw={"period": {"start": "2026-01-01", "end": "2026-01-31"}})
-
-    prompt = orchestrator._build_user_prompt(
-        tenant_input=tenant_input,
-        template=template,
-        focus_options=["vulnerability", "alert"],
-    )
-
-    assert "报告重点偏向漏洞" in prompt
-    assert "报告重点偏向告警" in prompt
-    assert prompt.index("报告重点偏向漏洞") < prompt.index("报告重点偏向告警")
-
-
-def test_build_user_prompt_for_slides_includes_focus_section():
-    orchestrator = _build_orchestrator()
-    template = _build_template_stub()
-    tenant_input = TenantInput(raw={"period": {"start": "2026-01-01", "end": "2026-01-31"}})
-
-    prompt = orchestrator._build_user_prompt_for_slides(
-        tenant_input=tenant_input,
-        template=template,
-        slide_keys=["summary"],
-        batch_index=0,
-        total_batches=1,
-        focus_options=["vulnerability", "alert"],
-    )
-
-    assert "报告重点偏向（用户选择）" in prompt
-    assert "报告重点偏向漏洞" in prompt
-    assert "报告重点偏向告警" in prompt
-
-
-def test_create_report_request_focus_options_optional():
+def test_create_report_request_normalizes_focus_options_to_titles():
     req = CreateReportRequest(
         input_id="tenant_acme_2025-11",
         template_id="mss_executive_v2",
         use_mock=False,
+        focus_options=["business_protection", "业务保护", "alert"],
     )
-    assert req.focus_options is None
+
+    assert req.focus_options == ["业务保护", "告警优先"]
 
 
-def test_create_report_request_focus_options_empty_list_allowed():
-    req = CreateReportRequest(
-        input_id="tenant_acme_2025-11",
-        template_id="mss_executive_v2",
-        use_mock=False,
-        focus_options=[],
-    )
-    assert req.focus_options == []
-
-
-def test_create_report_request_focus_options_invalid_value_rejected():
+def test_create_report_request_rejects_invalid_focus_option():
     with pytest.raises(ValidationError):
         CreateReportRequest(
             input_id="tenant_acme_2025-11",

@@ -63,7 +63,7 @@ def _resolve_job_id_by_session(session_id: str) -> Optional[str]:
             return cached_job_id
         _session_job_map.pop(session_id, None)
 
-    for status_value in (JobStatus.RUNNING, JobStatus.PENDING):
+    for status_value in (JobStatus.RUNNING, JobStatus.PENDING, JobStatus.COMPLETED):
         jobs = job_manager.store.list_jobs(status=status_value, limit=0)
         for job in jobs:
             if job.session_id == session_id:
@@ -209,7 +209,7 @@ async def _do_generation(
     # Send WebSocket progress updates
     if ws_manager:
         await ws_manager.send_progress_update(
-            job.session_id, 10, "Loading template and input data..."
+            job.session_id, 5, "Loading template and input data..."
         )
 
     # Get the current event loop to pass to synchronous code
@@ -234,7 +234,7 @@ async def _do_generation(
     # Continue generation flow with preview rendering before marking job completed.
     if ws_manager:
         await ws_manager.send_progress_update(
-            job.session_id, 92, "Rendering preview images..."
+            job.session_id, 78, "Rendering preview images..."
         )
 
     try:
@@ -255,7 +255,7 @@ async def _do_generation(
 
         if ws_manager:
             await ws_manager.send_progress_update(
-                job.session_id, 98, "Preview rendering completed..."
+                job.session_id, 95, "Preview rendering completed..."
             )
     except Exception as preview_error:
         logger.warning("Preview generation failed for job %s: %s", job_id, preview_error)
@@ -267,8 +267,13 @@ async def _do_generation(
 
         if ws_manager:
             await ws_manager.send_progress_update(
-                job.session_id, 98, "Report generated. Preview can be retried later."
+                job.session_id, 95, "Report generated. Preview can be retried later."
             )
+
+    if ws_manager:
+        await ws_manager.send_progress_update(
+            job.session_id, 99, "Finalizing report..."
+        )
 
     # Mark job as completed
     job_manager.complete_job(job_id, result)
@@ -633,12 +638,22 @@ async def preview_report(
 async def update_slides(report_id: str, req: UpdateSlidesRequest):
     """Batch update report slides."""
     try:
+        if ws_manager and req.client_id:
+            session_id = report_id.split(":", 1)[0]
+            ws_manager.register_session(session_id, req.client_id)
+
         # Convert UpdateSlidesRequest to service format
         slides_data = [{"slide_key": s.slide_key, "new_content": s.new_content} for s in req.slides]
 
-        result = service.rewrite(
-            job_id=report_id,
-            slides=slides_data
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(
+            None,
+            lambda: service.rewrite(
+                job_id=report_id,
+                slides=slides_data,
+                ws_manager=ws_manager,
+                event_loop=loop,
+            )
         )
 
         logger.info(f"Updated {len(req.slides)} slides in report: {report_id}")
@@ -690,11 +705,21 @@ async def update_slides(report_id: str, req: UpdateSlidesRequest):
 async def ai_rewrite_slide(report_id: str, req: AISlideRewriteRequest):
     """AI rewrite a single slide with user preference prompt."""
     try:
-        result = service.ai_rewrite_slide(
-            job_id=report_id,
-            slide_key=req.slide_key,
-            user_prompt=req.user_prompt,
-            target_tokens=req.target_tokens,
+        if ws_manager and req.client_id:
+            session_id = report_id.split(":", 1)[0]
+            ws_manager.register_session(session_id, req.client_id)
+
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(
+            None,
+            lambda: service.ai_rewrite_slide(
+                job_id=report_id,
+                slide_key=req.slide_key,
+                user_prompt=req.user_prompt,
+                target_tokens=req.target_tokens,
+                ws_manager=ws_manager,
+                event_loop=loop,
+            )
         )
         logger.info(f"AI rewrite completed: report={report_id}, slide={req.slide_key}")
         return SuccessResponse(data=result)

@@ -44,14 +44,14 @@ cp .env.example .env
 编辑`.env`文件，填入您的OpenAI API密钥：
 
 ```env
-# OpenAI API Configuration
-OPENAI_API_KEY=sk-your-openai-api-key-here
+# OpenAI-compatible API Configuration (e.g. Zhipu BigModel)
+OPENAI_API_KEY=your-zhipu-api-key-here
 
-# Optional: 自定义OpenAI端点 (Azure OpenAI或其他兼容服务)
-# OPENAI_BASE_URL=https://api.openai.com/v1
+# Optional: 自定义OpenAI兼容端点
+OPENAI_BASE_URL=https://open.bigmodel.cn/api/paas/v4
 
-# OpenAI模型选择
-OPENAI_MODEL=gpt-4o-mini
+# 模型选择
+OPENAI_MODEL=glm-4.6
 
 # 启用LLM功能
 ENABLE_LLM=true
