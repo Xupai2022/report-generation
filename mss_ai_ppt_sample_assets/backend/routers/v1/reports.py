@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, HTTPException, status, Request, Response
 from fastapi.responses import FileResponse
-from datetime import datetime
+from datetime import datetime, timezone
 import asyncio
 import logging
 import uuid
@@ -132,6 +132,91 @@ def _find_running_job_for_browser(browser_id: str) -> Optional[Any]:
         if metadata.get("browser_id") == browser_id:
             return running_job
     return None
+
+
+def _mark_job_running_for_rewrite(job_id: str, browser_id: str, message: str):
+    """Mark an existing job as running for rewrite flows."""
+    try:
+        if not job_manager:
+            return
+        existing = job_manager.get_job(job_id)
+        if not existing:
+            return
+
+        metadata = dict(existing.metadata or {})
+        metadata["browser_id"] = browser_id
+
+        job_manager.store.update_job(
+            job_id,
+            {
+                "status": JobStatus.RUNNING,
+                "started_at": datetime.now(timezone.utc),
+                "completed_at": None,
+                "progress": 0,
+                "message": message,
+                "metadata": metadata,
+            },
+        )
+        _session_job_map[existing.session_id] = job_id
+    except Exception as e:
+        logger.warning("Failed to mark rewrite job as running: job_id=%s err=%s", job_id, e)
+
+
+def _mark_job_completed_for_rewrite(job_id: str, result: Dict[str, Any], message: str):
+    """Mark rewrite flow as completed without creating a new job."""
+    try:
+        if not job_manager:
+            return
+        existing = job_manager.get_job(job_id)
+        if not existing:
+            return
+
+        metadata = dict(existing.metadata or {})
+        metadata["warnings"] = result.get("warnings", [])
+        metadata["version"] = result.get("version", metadata.get("version", "v2"))
+        preview_timings = result.get("preview_timings")
+        if isinstance(preview_timings, dict):
+            metadata["preview_timings"] = preview_timings
+
+        update_payload = {
+            "status": JobStatus.COMPLETED,
+            "completed_at": datetime.now(timezone.utc),
+            "progress": 100,
+            "message": message,
+            "report_path": result.get("report_path", existing.report_path),
+            "slidespec_path": result.get("slidespec_path", existing.slidespec_path),
+            "metadata": metadata,
+        }
+        if result.get("preview_urls") is not None:
+            update_payload["preview_urls"] = result.get("preview_urls")
+
+        job_manager.store.update_job(job_id, update_payload)
+        _session_job_map.pop(existing.session_id, None)
+    except Exception as e:
+        logger.warning("Failed to mark rewrite job as completed: job_id=%s err=%s", job_id, e)
+
+
+def _mark_job_failed_for_rewrite(job_id: str, error_message: str):
+    """Mark rewrite flow as failed for polling fallback."""
+    try:
+        if not job_manager:
+            return
+        existing = job_manager.get_job(job_id)
+        if not existing:
+            return
+
+        job_manager.store.update_job(
+            job_id,
+            {
+                "status": JobStatus.FAILED,
+                "completed_at": datetime.now(timezone.utc),
+                "message": error_message,
+                "last_error": error_message,
+            },
+        )
+        _session_job_map.pop(existing.session_id, None)
+    except Exception as e:
+        logger.warning("Failed to mark rewrite job as failed: job_id=%s err=%s", job_id, e)
 
 
 async def _process_report_async(
@@ -362,13 +447,14 @@ async def create_report(request: Request, response: Response, req: CreateReportR
                 browser_id,
                 running_job.job_id,
             )
+            running_message = (running_job.message or "").strip() or "Generating report, please wait..."
             return SuccessResponse(data={
                 "job_id": running_job.job_id,
                 "session_id": running_job.session_id,
                 "status": "running",
                 "progress": running_job.progress,
                 "existing_job": True,
-                "message": "A report is already generating in this browser. Reusing the running task.",
+                "message": running_message,
                 "check_status_url": f"/api/v1/jobs/{running_job.job_id}/status",
             })
 
@@ -635,9 +721,16 @@ async def preview_report(
         400: {"description": "Invalid request"}
     }
 )
-async def update_slides(report_id: str, req: UpdateSlidesRequest):
+async def update_slides(report_id: str, req: UpdateSlidesRequest, request: Request):
     """Batch update report slides."""
     try:
+        browser_id = _get_or_create_browser_id(request)
+        _mark_job_running_for_rewrite(
+            report_id,
+            browser_id,
+            "Rewriting slides, please wait...",
+        )
+
         if ws_manager and req.client_id:
             session_id = report_id.split(":", 1)[0]
             ws_manager.register_session(session_id, req.client_id)
@@ -653,18 +746,43 @@ async def update_slides(report_id: str, req: UpdateSlidesRequest):
                 slides=slides_data,
                 ws_manager=ws_manager,
                 event_loop=loop,
+                progress_callback=(lambda progress, message: job_manager.update_progress(report_id, progress, message)) if job_manager else None,
             )
         )
 
+        # Keep rewrite job in RUNNING state until preview generation finishes.
+        session_id = report_id.split(":", 1)[0]
+        if job_manager:
+            job_manager.update_progress(report_id, 78, "Rendering preview images...")
+        if ws_manager:
+            await ws_manager.send_progress_update(session_id, 78, "Rendering preview images...")
+        preview_result = await loop.run_in_executor(
+            None,
+            lambda: service.preview(
+                report_id,
+                regenerate_if_missing=True,
+                force_regenerate=True,
+            ),
+        )
+        preview_urls = preview_result.get("preview_urls") or preview_result.get("images") or []
+        if isinstance(preview_urls, list):
+            result["preview_urls"] = preview_urls
+        if isinstance(preview_result.get("timings"), dict):
+            result["preview_timings"] = preview_result.get("timings")
+
+        _mark_job_completed_for_rewrite(report_id, result, "Slide rewrite completed")
         logger.info(f"Updated {len(req.slides)} slides in report: {report_id}")
         return SuccessResponse(data=result)
     except SlideSpecNotFoundError as e:
+        _mark_job_failed_for_rewrite(report_id, str(e))
         logger.error(f"Report not found: {e}")
         raise HTTPException(status_code=404, detail=str(e))
     except ValueError as e:
+        _mark_job_failed_for_rewrite(report_id, str(e))
         logger.error(f"Invalid request: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        _mark_job_failed_for_rewrite(report_id, str(e))
         logger.exception(f"Slide update failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -702,9 +820,16 @@ async def update_slides(report_id: str, req: UpdateSlidesRequest):
         500: {"description": "AI generation failed"}
     }
 )
-async def ai_rewrite_slide(report_id: str, req: AISlideRewriteRequest):
+async def ai_rewrite_slide(report_id: str, req: AISlideRewriteRequest, request: Request):
     """AI rewrite a single slide with user preference prompt."""
     try:
+        browser_id = _get_or_create_browser_id(request)
+        _mark_job_running_for_rewrite(
+            report_id,
+            browser_id,
+            "AI rewriting slide, please wait...",
+        )
+
         if ws_manager and req.client_id:
             session_id = report_id.split(":", 1)[0]
             ws_manager.register_session(session_id, req.client_id)
@@ -719,19 +844,46 @@ async def ai_rewrite_slide(report_id: str, req: AISlideRewriteRequest):
                 target_tokens=req.target_tokens,
                 ws_manager=ws_manager,
                 event_loop=loop,
+                progress_callback=(lambda progress, message: job_manager.update_progress(report_id, progress, message)) if job_manager else None,
             )
         )
+
+        # Keep rewrite job in RUNNING state until preview generation finishes.
+        session_id = report_id.split(":", 1)[0]
+        if job_manager:
+            job_manager.update_progress(report_id, 78, "Rendering preview images...")
+        if ws_manager:
+            await ws_manager.send_progress_update(session_id, 78, "Rendering preview images...")
+        preview_result = await loop.run_in_executor(
+            None,
+            lambda: service.preview(
+                report_id,
+                regenerate_if_missing=True,
+                force_regenerate=True,
+            ),
+        )
+        preview_urls = preview_result.get("preview_urls") or preview_result.get("images") or []
+        if isinstance(preview_urls, list):
+            result["preview_urls"] = preview_urls
+        if isinstance(preview_result.get("timings"), dict):
+            result["preview_timings"] = preview_result.get("timings")
+
+        _mark_job_completed_for_rewrite(report_id, result, "AI rewrite completed")
         logger.info(f"AI rewrite completed: report={report_id}, slide={req.slide_key}")
         return SuccessResponse(data=result)
     except (SlideSpecNotFoundError, ServiceSlideSpecNotFoundError) as e:
+        _mark_job_failed_for_rewrite(report_id, str(e))
         logger.error(f"Report not found: {e}")
         raise HTTPException(status_code=404, detail=str(e))
     except ValueError as e:
+        _mark_job_failed_for_rewrite(report_id, str(e))
         logger.error(f"Invalid AI rewrite request: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     except (LLMGenerationError, OrchestratorLLMGenerationError, RateLimitError) as e:
+        _mark_job_failed_for_rewrite(report_id, str(e))
         logger.error(f"AI rewrite failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
+        _mark_job_failed_for_rewrite(report_id, str(e))
         logger.exception(f"AI rewrite failed unexpectedly: {e}")
         raise HTTPException(status_code=500, detail=str(e))

@@ -185,6 +185,71 @@ class ExcelDataExtractor:
         return value
 
     @staticmethod
+    def _to_chart_number(value: Any) -> Any:
+        """Convert numeric-like values used by chart payloads back to numbers."""
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (int, float)):
+            return ExcelDataExtractor._normalize_number(value)
+        if not isinstance(value, str):
+            return value
+
+        text = value.strip()
+        if text == "":
+            return value
+        try:
+            if text.endswith("%"):
+                return ExcelDataExtractor._normalize_number(float(text[:-1]) / 100)
+            return ExcelDataExtractor._normalize_number(float(text.replace(",", "")))
+        except Exception:
+            return value
+
+    @staticmethod
+    def _normalize_chart_payload_numbers(value: Any) -> Any:
+        """Normalize chart metric arrays to numeric types for downstream chart rendering."""
+        numeric_array_keys = {
+            "avg_response_minutes",
+            "external_attacks",
+            "malicious_outbound",
+            "alert_counts",
+            "valid_incident_counts",
+            "risk_host_counts",
+            "internal_lateral_attack_counts",
+            "attack_counts",
+            "defense_rates",
+        }
+
+        if isinstance(value, list):
+            return [ExcelDataExtractor._normalize_chart_payload_numbers(v) for v in value]
+
+        if not isinstance(value, dict):
+            return value
+
+        normalized: Dict[str, Any] = {}
+        for key, item in value.items():
+            if key in numeric_array_keys and isinstance(item, list):
+                normalized[key] = [ExcelDataExtractor._to_chart_number(v) for v in item]
+                continue
+
+            if key == "series" and isinstance(item, list):
+                next_series = []
+                for series_item in item:
+                    if not isinstance(series_item, dict):
+                        next_series.append(series_item)
+                        continue
+                    next_item = dict(series_item)
+                    raw_values = next_item.get("values")
+                    if isinstance(raw_values, list):
+                        next_item["values"] = [ExcelDataExtractor._to_chart_number(v) for v in raw_values]
+                    next_series.append(next_item)
+                normalized[key] = next_series
+                continue
+
+            normalized[key] = ExcelDataExtractor._normalize_chart_payload_numbers(item)
+
+        return normalized
+
+    @staticmethod
     def _to_text(value: Any, default: str = "") -> str:
         raw_value, number_format = ExcelDataExtractor._unwrap_cell(value)
 
@@ -676,6 +741,7 @@ class ExcelDataExtractor:
         ExcelDataExtractor._add_section(output, "platform_effectiveness", platform_effectiveness)
 
         output = ExcelDataExtractor._format_numbers_for_output(output)
+        output = ExcelDataExtractor._normalize_chart_payload_numbers(output)
         return ExcelDataExtractor._remove_ai_generated_fields(output)
 
     @staticmethod

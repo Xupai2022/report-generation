@@ -518,14 +518,12 @@
         {
           "token": "business_continuity_assurance_conclusion",
           "ai_generate": true,
-          "ai_instruction": "请基于本页数据（incident_effectiveness）输出“安全事件管理对业务连续性保障成效”的结论，且必须与用户已选重点{preference}直接关联。写作要求：1）不要泛化空话，必须引用至少2个关键数据（如事件总量、平均响应时长、平均处置时长、闭环率、事件等级分布/趋势）；2）必须同时覆盖三层信息：风险影响程度（高危/中危占比或分布特征）、处置效率（响应与处置时效）、治理结果（闭环与风险遏制效果）；3）在给出结果后补一句“业务连续性价值”，明确说明对核心业务可用性/中断风险/恢复能力的实际影响；4）可做合理归纳，但严禁编造未提供的数据或结论；5）避免仅罗列指标，需形成“数据依据→管理成效→业务连续性价值”的完整因果表达。",
-          "max_length": 140
+          "ai_instruction": "请基于本页数据（incident_effectiveness）输出“安全事件管理对业务连续性保障成效”的结论，且必须与用户已选重点{preference}直接关联。写作要求：1）不要泛化空话，必须引用至少2个关键数据（如事件总量、平均响应时长、平均处置时长、闭环率、事件等级分布/趋势）；2）必须同时覆盖三层信息：风险影响程度（高危/中危占比或分布特征）、处置效率（响应与处置时效）、治理结果（闭环与风险遏制效果）；3）在给出结果后补一句“业务连续性价值”，明确说明对核心业务可用性/中断风险/恢复能力的实际影响；4）可做合理归纳，但严禁编造未提供的数据或结论；5）避免仅罗列指标，需形成“数据依据→管理成效→业务连续性价值”的完整因果表达。"
         },
         {
           "token": "user_trust_assurance_conclusion",
           "ai_generate": true,
-          "ai_instruction": "基于以下内容及业务连续性结论、结合本页数据（incident_effectiveness），输出用户依赖度目标达成情况结论：。资产维度：核心数据、业务流程、账号权限高度集中在某一资产 / 服务商，资产不可迁移、不可导出。脆弱性维度：因过度依赖形成单点脆弱性，架构、接口、数据格式被锁定，替代成本极高。威胁维度：厂商停服、断供、涨价、漏洞、合规风险、供应链风险等，均直接构成业务威胁。事件维度：一旦发生中断、入侵、违约等安全事件，业务将直接受冲击，且无快速替代方案。",
-          "max_length": 65
+          "ai_instruction": "基于以下内容及业务连续性结论、结合本页数据（incident_effectiveness），输出用户依赖度目标达成情况结论：1.资产维度：核心数据、业务流程、账号权限高度集中在某一资产 / 服务商，资产不可迁移、不可导出。2.脆弱性维度：因过度依赖形成单点脆弱性，架构、接口、数据格式被锁定，替代成本极高。3.威胁维度：厂商停服、断供、涨价、漏洞、合规风险、供应链风险等，均直接构成业务威胁。4.事件维度：一旦发生中断、入侵、违约等安全事件，业务将直接受冲击，且无快速替代方案。"
         },
         {
           "token": "P11_bar",
@@ -554,7 +552,8 @@
           },
           "source": "incident_effectiveness.P11_pie"
         }
-      ]
+      ],
+      "context_policy": "local_only"
     },
     {
       "slide_no": 12,
@@ -570,44 +569,37 @@
         {
           "token": "asset_improve1",
           "ai_generate": true,
-          "ai_instruction": "基于本页资产管理数据（asset_management）生成第1条改进措施，梳理在本季/年度工作中，因资产管理工作执行差距产生的安全隐患，并给出可落地建议。",
-          "max_length": 100
+          "ai_instruction": "基于本页资产管理数据（asset_management）生成第1条改进措施，梳理在本季/年度工作中，因资产管理工作执行差距产生的安全隐患，并给出可落地建议。"
         },
         {
           "token": "asset_improve2",
           "ai_generate": true,
-          "ai_instruction": "基于本页资产管理数据（asset_management）生成第2条改进措施，梳理在本季/年度工作中，因资产管理工作执行差距产生的安全隐患，并给出可落地建议。",
-          "max_length": 100
+          "ai_instruction": "基于本页资产管理数据（asset_management）生成第2条改进措施，梳理在本季/年度工作中，因资产管理工作执行差距产生的安全隐患，并给出可落地建议。"
         },
         {
           "token": "asset_improve3",
           "ai_generate": true,
-          "ai_instruction": "基于本页资产管理数据（asset_management）生成第3条改进措施，梳理在本季/年度工作中，因资产管理工作执行差距产生的安全隐患，并给出可落地建议。",
-          "max_length": 100
+          "ai_instruction": "基于本页资产管理数据（asset_management）生成第3条改进措施，梳理在本季/年度工作中，因资产管理工作执行差距产生的安全隐患，并给出可落地建议。"
         },
         {
           "token": "asset_summary",
           "ai_generate": true,
-          "ai_instruction": "基于资产相关的事件、风险、暴露端口及其他相关信息数据（asset_management），分析底层关联，给出本季/年度在资产安全管理工作中的非常详细的结论，突出资产管理举措的有效性和安全价值",
-          "max_length": 140
+          "ai_instruction": "基于围绕资产产生的事件、风险、存在的暴露端口及其他相关信息，给出本季/年度在资产安全管理工作中的重点结论，突出资产管理举措的有效性和安全价值"
         },
         {
           "token": "asset_value1",
           "ai_generate": true,
-          "ai_instruction": "基于本页资产管理数据（asset_management），输出第一个简短短句（6-8个字）展示本季/年度在资产管理工作中的重点价值。",
-          "max_length": 8
+          "ai_instruction": "基于本页资产管理数据（asset_management），输出第一个简短短句（6-8个字）展示本季/年度在资产管理工作中的重点价值。"
         },
         {
           "token": "asset_value2",
           "ai_generate": true,
-          "ai_instruction": "基于本页资产管理数据（asset_management），输出第二个简短短句（6-8个字）展示本季/年度在资产管理工作中的重点价值。",
-          "max_length": 8
+          "ai_instruction": "基于本页资产管理数据（asset_management），输出第二个简短短句（6-8个字）展示本季/年度在资产管理工作中的重点价值。"
         },
         {
           "token": "asset_value3",
           "ai_generate": true,
-          "ai_instruction": "基于本页资产管理数据（asset_management），输出第三个简短短句（6-8个字）展示本季/年度在资产管理工作中的重点价值。",
-          "max_length": 8
+          "ai_instruction": "基于本页资产管理数据（asset_management），输出第三个简短短句（6-8个字）展示本季/年度在资产管理工作中的重点价值。"
         },
         {
           "token": "internal_network_server_count",
@@ -687,7 +679,8 @@
           },
           "source": "asset_management.P13_pie"
         }
-      ]
+      ],
+      "context_policy": "local_only"
     },
     {
       "slide_no": 14,
@@ -697,8 +690,7 @@
         {
           "token": "vuln_summary",
           "ai_generate": true,
-          "ai_instruction": "你要生成的是该句“后半句续写”，前置固定文案已在PPT中写好：`全年开展{{scanning}} 次漏洞扫描，`。请不要重复或改写这段前置文案，不要再次输出扫描次数，不要以“全年开展”开头。仅从逗号后继续写总结：根据已选{preference}从注解中寻找基础知识，基于 vulnerability_effectiveness 数据，围绕已发现漏洞处置成效，详细说明与{preference}目标的差距与已达成部分，并全量点明对整体安全运营的影响。",
-          "max_length": 120
+          "ai_instruction": "你要生成的是该句“后半句续写”，前置固定文案已在PPT中写好：`全年开展{{scanning}} 次漏洞扫描，`。请不要重复或改写这段前置文案，不要再次输出扫描次数，不要以“全年开展”开头。仅从逗号后继续写总结：根据已选{preference}，基于 vulnerability_effectiveness 数据，围绕已发现漏洞处置成效，详细说明与{preference}目标的差距与已达成部分，并全量点明对整体安全运营的影响。"
         },
         {
           "token": "high_risk_exploitable_vulnerability_count",
@@ -733,7 +725,8 @@
           },
           "source": "vulnerability_effectiveness.P14_pie"
         }
-      ]
+      ],
+      "context_policy": "local_only"
     },
     {
       "slide_no": 15,
@@ -783,26 +776,22 @@
         {
           "token": "threat_improve1",
           "ai_generate": true,
-          "ai_instruction": "生成威胁运营改进措施1。从threat_improvements[0]获取。",
-          "max_length": 100
+          "ai_instruction": "生成威胁运营改进措施1。从threat_improvements[0]获取。"
         },
         {
           "token": "threat_improve2",
           "ai_generate": true,
-          "ai_instruction": "生成威胁运营改进措施2。从threat_improvements[1]获取。",
-          "max_length": 100
+          "ai_instruction": "生成威胁运营改进措施2。从threat_improvements[1]获取。"
         },
         {
           "token": "threat_improve3",
           "ai_generate": true,
-          "ai_instruction": "生成威胁运营改进措施3。从threat_improvements[2]获取。",
-          "max_length": 100
+          "ai_instruction": "生成威胁运营改进措施3。从threat_improvements[2]获取。"
         },
         {
           "token": "threat_summary",
           "ai_generate": true,
-          "ai_instruction": "基于威胁运营数据，生成威胁运营工作总结。包括威胁检测覆盖、告警处置效率、主要威胁类型、防护效果等。",
-          "max_length": 500
+          "ai_instruction": "基于威胁运营数据，生成威胁运营工作总结。包括威胁检测覆盖、告警处置效率、主要威胁类型、防护效果等。"
         },
         {
           "token": "P15_line",
@@ -812,7 +801,8 @@
           },
           "source": "threat_effectiveness.P15_line"
         }
-      ]
+      ],
+      "context_policy": "local_only"
     },
     {
       "slide_no": 16,
@@ -822,8 +812,7 @@
         {
           "token": "duty_summary",
           "ai_generate": true,
-          "ai_instruction": "基于period_comparison的每个节日，生成差不多的话术，突出保障效果。模板参考‘中秋节值守保障\n2024年9月15日-9月17日 7*24小时全程值守，保障网络安全0事故'，并且对于峰值特殊的的节日加上‘实时攻击达到峰值’等突出趋势的话术",
-          "max_length": 500
+          "ai_instruction": "基于period_comparison的每个节日，生成差不多的话术，突出保障效果。模板参考‘中秋节值守保障\n2024年9月15日-9月17日 7*24小时全程值守，保障网络安全0事故'，并且对于峰值特殊的的节日加上‘实时攻击达到峰值’等突出趋势的话术"
         },
         {
           "token": "duty_critical",
@@ -843,20 +832,17 @@
         {
           "token": "security_value1",
           "ai_generate": true,
-          "ai_instruction": "基于重保值守数据，生成重保值守工作总结。包括值守时间、保障期间的安全态势、应急响应情况、重点防护措施等。",
-          "max_length": 500
+          "ai_instruction": "基于重保值守数据，生成重保值守工作总结。包括值守时间、保障期间的安全态势、应急响应情况、重点防护措施等。"
         },
         {
           "token": "security_value2",
           "ai_generate": true,
-          "ai_instruction": "基于重保值守数据，生成重保值守工作总结。包括值守时间、保障期间的安全态势、应急响应情况、重点防护措施等。",
-          "max_length": 500
+          "ai_instruction": "基于重保值守数据，生成重保值守工作总结。包括值守时间、保障期间的安全态势、应急响应情况、重点防护措施等。"
         },
         {
           "token": "security_value3",
           "ai_generate": true,
-          "ai_instruction": "基于重保值守数据，生成重保值守工作总结。包括值守时间、保障期间的安全态势、应急响应情况、重点防护措施等。",
-          "max_length": 500
+          "ai_instruction": "基于重保值守数据，生成重保值守工作总结。包括值守时间、保障期间的安全态势、应急响应情况、重点防护措施等。"
         },
         {
           "token": "P16_combo",
@@ -866,7 +852,8 @@
           },
           "source": "critical_assurance.P16_combo"
         }
-      ]
+      ],
+      "context_policy": "local_only"
     },
     {
       "slide_no": 17,
@@ -971,22 +958,20 @@
         {
           "token": "platform_improve1",
           "ai_generate": true,
-          "ai_instruction": "生成平台运营改进措施1。从platform_improvements[0]获取。",
-          "max_length": 100
+          "ai_instruction": "生成平台运营改进措施1。从platform_improvements[0]获取。"
         },
         {
           "token": "platform_improve2",
           "ai_generate": true,
-          "ai_instruction": "生成平台运营改进措施2。从platform_improvements[1]获取。",
-          "max_length": 100
+          "ai_instruction": "生成平台运营改进措施2。从platform_improvements[1]获取。"
         },
         {
           "token": "platform_improve3",
           "ai_generate": true,
-          "ai_instruction": "生成平台运营改进措施3。从platform_improvements[2]获取。",
-          "max_length": 100
+          "ai_instruction": "生成平台运营改进措施3。从platform_improvements[2]获取。"
         }
-      ]
+      ],
+      "context_policy": "local_only"
     },
     {
       "slide_no": 18,
@@ -998,7 +983,8 @@
       "slide_no": 19,
       "slide_key": "case_study",
       "title": "具体案例",
-      "placeholders": []
+      "placeholders": [],
+      "context_policy": "full_data"
     },
     {
       "slide_no": 20,
@@ -1010,7 +996,8 @@
       "slide_no": 21,
       "slide_key": "next_plan",
       "title": "下阶段工作规划",
-      "placeholders": []
+      "placeholders": [],
+      "context_policy": "full_data"
     },
     {
       "slide_no": 22,
@@ -1028,7 +1015,8 @@
       "slide_no": 24,
       "slide_key": "summary_recommendations",
       "title": "总结与建议",
-      "placeholders": []
+      "placeholders": [],
+      "context_policy": "full_data"
     },
     {
       "slide_no": 25,
@@ -1038,6 +1026,3 @@
     }
   ]
 }
-
-
-

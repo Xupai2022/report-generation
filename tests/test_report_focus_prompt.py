@@ -12,6 +12,11 @@ from mss_ai_ppt_sample_assets.backend.modules.llm_orchestrator import LLMOrchest
 from mss_ai_ppt_sample_assets.backend.schemas.requests import CreateReportRequest
 
 
+ZH_FOCUS_SECTION = "## \u504f\u597d\u91cd\u70b9\u6307\u5f15"
+ZH_BUSINESS_PROTECTION = "\u4e1a\u52a1\u4fdd\u62a4"
+ZH_USER_PREFERENCE = "\u7528\u6237\u504f\u597d"
+
+
 def _build_template_stub(ai_instruction: str):
     ai_placeholder = SimpleNamespace(
         token="AI_TEXT",
@@ -20,10 +25,12 @@ def _build_template_stub(ai_instruction: str):
         max_length=None,
         max_items=None,
         max_chars_per_item=None,
+        source=None,
     )
     slide = SimpleNamespace(
         slide_key="summary",
         title="Summary",
+        context_policy="local_only",
         placeholders=[ai_placeholder],
     )
     return SimpleNamespace(
@@ -39,25 +46,8 @@ def _build_orchestrator():
 def test_build_user_prompt_replaces_preference_placeholder_and_includes_selected_annotation():
     orchestrator = _build_orchestrator()
     template = _build_template_stub(
-        "根据已选{preference}从注解中寻找基础知识，重点突出与用户偏好的关联性。"
+        "\u6839\u636e\u5df2\u9009{preference}\u4ece\u6ce8\u89e3\u4e2d\u5bfb\u627e\u57fa\u7840\u77e5\u8bc6\uff0c\u91cd\u70b9\u7a81\u51fa\u4e0e\u7528\u6237\u504f\u597d\u7684\u5173\u8054\u6027\u3002"
     )
-    tenant_input = TenantInput(raw={"period": {"start": "2026-01-01", "end": "2026-01-31"}})
-
-    prompt = orchestrator._build_user_prompt(
-        tenant_input=tenant_input,
-        template=template,
-        focus_options=["业务保护"],
-    )
-
-    assert "## 参考注解（按用户已选偏好唯一匹配）" in prompt
-    assert "- 业务保护：" in prompt
-    assert "{preference}" not in prompt
-    assert "根据已选业务保护从注解中寻找基础知识" in prompt
-
-
-def test_build_user_prompt_supports_internal_focus_key_and_legacy_user_preference_marker():
-    orchestrator = _build_orchestrator()
-    template = _build_template_stub("结合**用户偏好**，生成本页结论。")
     tenant_input = TenantInput(raw={"period": {"start": "2026-01-01", "end": "2026-01-31"}})
 
     prompt = orchestrator._build_user_prompt(
@@ -66,8 +56,25 @@ def test_build_user_prompt_supports_internal_focus_key_and_legacy_user_preferenc
         focus_options=["business_protection"],
     )
 
-    assert "结合**业务保护**，生成本页结论。" in prompt
-    assert "用户偏好" not in prompt
+    assert ZH_FOCUS_SECTION in prompt
+    assert f"- {ZH_BUSINESS_PROTECTION}:" in prompt
+    assert "{preference}" not in prompt
+    assert f"\u6839\u636e\u5df2\u9009{ZH_BUSINESS_PROTECTION}\u4ece\u6ce8\u89e3\u4e2d\u5bfb\u627e\u57fa\u7840\u77e5\u8bc6" in prompt
+
+
+def test_build_user_prompt_supports_internal_focus_key_and_legacy_user_preference_marker():
+    orchestrator = _build_orchestrator()
+    template = _build_template_stub(f"\u7ed3\u5408**{ZH_USER_PREFERENCE}**\uff0c\u751f\u6210\u672c\u9875\u7ed3\u8bba\u3002")
+    tenant_input = TenantInput(raw={"period": {"start": "2026-01-01", "end": "2026-01-31"}})
+
+    prompt = orchestrator._build_user_prompt(
+        tenant_input=tenant_input,
+        template=template,
+        focus_options=["business_protection"],
+    )
+
+    assert f"\u7ed3\u5408**{ZH_BUSINESS_PROTECTION}**\uff0c\u751f\u6210\u672c\u9875\u7ed3\u8bba\u3002" in prompt
+    assert ZH_USER_PREFERENCE not in prompt
 
 
 def test_build_user_prompt_rejects_unsupported_focus_option():
@@ -83,15 +90,15 @@ def test_build_user_prompt_rejects_unsupported_focus_option():
         )
 
 
-def test_create_report_request_normalizes_focus_options_to_titles():
+def test_create_report_request_normalizes_focus_options_to_internal_keys():
     req = CreateReportRequest(
         input_id="tenant_acme_2025-11",
         template_id="mss_executive_v2",
         use_mock=False,
-        focus_options=["business_protection", "业务保护", "alert"],
+        focus_options=["business_protection", "business protection", "alert"],
     )
 
-    assert req.focus_options == ["业务保护", "告警优先"]
+    assert req.focus_options == ["business_protection", "alert"]
 
 
 def test_create_report_request_rejects_invalid_focus_option():

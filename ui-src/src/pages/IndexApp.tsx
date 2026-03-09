@@ -42,9 +42,9 @@ import { useI18n } from '../shared/useI18n';
 import { ensureArray, toClientId, toSessionId } from '../shared/utils';
 
 const FOCUS_OPTIONS = [
+  { value: 'business_protection', labelKey: 'focusOptionBusinessProtection', descKey: 'focusOptionBusinessProtectionDesc' },
   { value: 'vulnerability', labelKey: 'focusOptionVulnerability', descKey: 'focusOptionVulnerabilityDesc' },
   { value: 'alert', labelKey: 'focusOptionAlert', descKey: 'focusOptionAlertDesc' },
-  { value: 'business_protection', labelKey: 'focusOptionBusinessProtection', descKey: 'focusOptionBusinessProtectionDesc' },
 ] as const;
 
 type FocusValue = (typeof FOCUS_OPTIONS)[number]['value'];
@@ -194,6 +194,17 @@ function firstSlide(slidespec: SlideSpec | null): string | null {
   return slidespec.slides[0]?.slide_key || null;
 }
 
+function isReloadNavigation(): boolean {
+  try {
+    const entries = window.performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+    if (entries.length > 0) return entries[0].type === 'reload';
+  } catch {
+    // ignore
+  }
+  const legacy = (window.performance as unknown as { navigation?: { type?: number } }).navigation;
+  return legacy?.type === 1;
+}
+
 export function IndexApp() {
   const { lang, toggleLang, t } = useI18n();
 
@@ -206,7 +217,7 @@ export function IndexApp() {
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [selectedInput, setSelectedInput] = useState('');
   const [useMock, setUseMock] = useState(true);
-  const [selectedFocus, setSelectedFocus] = useState<FocusValue[]>(['vulnerability']);
+  const [selectedFocus, setSelectedFocus] = useState<FocusValue[]>(['business_protection']);
 
   const [inWorkspace, setInWorkspace] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -240,6 +251,7 @@ export function IndexApp() {
   const [ratingChoice, setRatingChoice] = useState<'liked' | 'disliked' | null>(null);
   const [ratingComment, setRatingComment] = useState('');
   const [ratedJobs, setRatedJobs] = useState<Set<string>>(new Set());
+  const [previewLoadErrorKeys, setPreviewLoadErrorKeys] = useState<Record<string, true>>({});
 
   const [presentOpen, setPresentOpen] = useState(false);
   const [presentIndex, setPresentIndex] = useState(0);
@@ -251,6 +263,9 @@ export function IndexApp() {
   const wsRef = useRef<WebSocket | null>(null);
   const wsRetryRef = useRef<number | null>(null);
   const pollRef = useRef<number | null>(null);
+  const progressValueRef = useRef<number>(0);
+  const actionRef = useRef<'generate' | 'rewrite' | 'ai-rewrite' | null>(null);
+  const completionHandledJobRef = useRef<string | null>(null);
   const previewWheelAtRef = useRef<number>(0);
   const previewWheelAccumRef = useRef<number>(0);
   const previewScrollRafRef = useRef<number | null>(null);
@@ -367,10 +382,7 @@ export function IndexApp() {
     if (!text) return t('progressInit', lang === 'zh-CN' ? '初始化' : 'Initializing');
     const lower = text.toLowerCase();
     if (lower.includes('already generating') || lower.includes('reusing the running task')) {
-      return t(
-        'msgReusingRunningTask',
-        lang === 'zh-CN' ? '检测到你已有正在生成的任务，已继续该任务进度。' : 'An existing running task was found in this browser. Continuing that task.',
-      );
+      return t('progressGenerateContent', lang === 'zh-CN' ? 'AI 生成内容' : 'AI generating content');
     }
     if (lower.includes('init')) return t('progressInit', lang === 'zh-CN' ? '初始化' : 'Initializing');
     if (lower.includes('load') && lower.includes('template')) return t('progressLoadTemplate', lang === 'zh-CN' ? '加载模板' : 'Loading template');
@@ -386,7 +398,27 @@ export function IndexApp() {
     if (lower.includes('complete') || lower.includes('done') || lower.includes('finished')) {
       return t('progressComplete', lang === 'zh-CN' ? '完成' : 'Completed');
     }
-    return text;
+    return t('statusProcessing', lang === 'zh-CN' ? '生成中' : 'Processing');
+  };
+
+  const applyIncomingProgress = (nextProgress: number | undefined, message?: string) => {
+    const numeric = typeof nextProgress === 'number' ? nextProgress : 0;
+    if (numeric < progressValueRef.current) return;
+    progressValueRef.current = numeric;
+    setProgress(numeric);
+    if (message) {
+      const localized = localizeProgressMessage(message);
+      const completedLabel = t('progressComplete', lang === 'zh-CN' ? '完成' : 'Completed');
+      if (numeric < 100 && localized === completedLabel) {
+        if (actionRef.current === 'rewrite' || actionRef.current === 'ai-rewrite') {
+          setProgressText(t('progressRenderPreview', lang === 'zh-CN' ? '渲染预览图' : 'Rendering preview images'));
+        } else {
+          setProgressText(t('statusProcessing', lang === 'zh-CN' ? '生成中' : 'Processing'));
+        }
+      } else {
+        setProgressText(localized);
+      }
+    }
   };
 
   const loadTemplateSlides = async (templateId: string) => {
@@ -423,8 +455,7 @@ export function IndexApp() {
         return;
       }
       if (payload.type === 'progress') {
-        setProgress(typeof payload.progress === 'number' ? payload.progress : 0);
-        setProgressText(localizeProgressMessage(payload.message));
+        applyIncomingProgress(payload.progress, payload.message);
         return;
       }
       if (payload.type === 'completed') {
@@ -454,6 +485,21 @@ export function IndexApp() {
   };
 
   useEffect(() => {
+    if (isReloadNavigation()) {
+      // Browser refresh should always return user to the configuration screen.
+      setInWorkspace(false);
+      setLoading(false);
+      setGenerationInProgress(false);
+      setProgress(0);
+      setProgressText('');
+      setJobId(null);
+      setSlidespec(null);
+      setPreviews([]);
+      setActiveSlideKey(null);
+      setModifiedSlides({});
+      setExportOpen(false);
+      setAiModalOpen(false);
+    }
     const cid = toClientId();
     setClientId(cid);
     connectWebSocket(cid);
@@ -499,12 +545,16 @@ export function IndexApp() {
   };
 
   const handleGenerationComplete = async (result: GenerateResult) => {
-    setGenerationInProgress(false);
-    stopPolling();
-    setProgress(100);
-    setProgressText(t('progressComplete', lang === 'zh-CN' ? '完成' : 'Completed'));
     const nextJobId = result.job_id || jobId;
     if (!nextJobId) return;
+    if (completionHandledJobRef.current === nextJobId) return;
+    completionHandledJobRef.current = nextJobId;
+    const shouldToastSuccess = actionRef.current === 'generate';
+    setGenerationInProgress(false);
+    stopPolling();
+    progressValueRef.current = 100;
+    setProgress(100);
+    setProgressText(t('progressComplete', lang === 'zh-CN' ? '完成' : 'Completed'));
     setJobId(nextJobId);
     const templateId = nextJobId.split(':')[1] || selectedTemplate;
     if (templateId) {
@@ -521,7 +571,8 @@ export function IndexApp() {
       setModifiedSlides({});
     }
     const resultPreviews = ensureArray(result.preview_urls);
-    if (resultPreviews.length > 0) {
+    const expectedPreviewCount = nextSlidespec?.slides?.length || 0;
+    if (resultPreviews.length > 0 && (expectedPreviewCount === 0 || resultPreviews.length >= expectedPreviewCount)) {
       setPreviews(resultPreviews);
     } else {
       try {
@@ -530,24 +581,29 @@ export function IndexApp() {
         console.error('Failed to load previews after completion', error);
       }
     }
-    showToast('success', lt('msgSuccess', '报告生成成功！', 'Report generated successfully!'));
+    if (shouldToastSuccess) {
+      showToast('success', lt('msgSuccess', '报告生成成功！', 'Report generated successfully!'));
+    }
+    actionRef.current = null;
   };
 
   const handleGenerationFailed = (message: string) => {
     setGenerationInProgress(false);
     stopPolling();
+    progressValueRef.current = 0;
     setProgress(0);
     setProgressText('');
+    actionRef.current = null;
     showToast('error', message || lt('errorGenerationFailed', '报告生成失败', 'Report generation failed'));
   };
 
   const checkCurrentJobStatus = async () => {
     if (!jobId || !generationInProgress) return;
+    if (actionRef.current && actionRef.current !== 'generate') return;
     try {
       const statusData = (await MainApi.getJobStatus(jobId)) as JobStatusResp & { slidespec_path?: string };
       if (statusData.status === 'running' || statusData.status === 'pending') {
-        setProgress(typeof statusData.progress === 'number' ? statusData.progress : 0);
-        setProgressText(localizeProgressMessage(statusData.message));
+        applyIncomingProgress(statusData.progress, statusData.message);
         return;
       }
       if (statusData.status === 'failed' || statusData.status === 'cancelled') {
@@ -568,7 +624,7 @@ export function IndexApp() {
   };
 
   useEffect(() => {
-    if (!generationInProgress || !jobId || wsReady) {
+    if (!generationInProgress || !jobId) {
       stopPolling();
       return;
     }
@@ -579,7 +635,7 @@ export function IndexApp() {
     return () => {
       stopPolling();
     };
-  }, [generationInProgress, jobId, wsReady]);
+  }, [generationInProgress, jobId]);
 
   const normalizeFocus = (values: FocusValue[]) => {
     const set = new Set<FocusValue>();
@@ -605,9 +661,16 @@ export function IndexApp() {
     setSessionId(sid);
     setLoading(true);
     setGenerationInProgress(true);
+    actionRef.current = 'generate';
+    completionHandledJobRef.current = null;
+    progressValueRef.current = 0;
     setProgress(0);
     setProgressText(t('progressInit', lang === 'zh-CN' ? '初始化' : 'Initializing'));
     try {
+      const firstSlideKey = firstSlide(slidespec);
+      if (firstSlideKey) {
+        setActiveSlideKey(firstSlideKey);
+      }
       const payload = {
         input_id: selectedInput,
         template_id: selectedTemplate,
@@ -623,8 +686,7 @@ export function IndexApp() {
         await handleGenerationComplete(result as CreateReportResp & GenerateResult);
         return;
       }
-      if (typeof result.progress === 'number') setProgress(result.progress);
-      if (result.message) setProgressText(localizeProgressMessage(result.message));
+      applyIncomingProgress(result.progress, result.message);
       setPreviews([]);
       setSlidespec(null);
       setActiveSlideKey(null);
@@ -654,6 +716,14 @@ export function IndexApp() {
         },
       };
     });
+  };
+
+  const handleReconfigure = () => {
+    setInWorkspace(false);
+    // Clear identifiers so next generate always creates a new job.
+    setSessionId('');
+    setJobId(null);
+    completionHandledJobRef.current = null;
   };
 
   const markRestoredFields = (restoredFields: string[]) => {
@@ -820,8 +890,22 @@ export function IndexApp() {
       markRestoredFields(restoredFields);
       showStructuredRestoreToast();
     }
-    if (payload.length === 0) return showToast('warning', t('msgNoChangesToApply'));
+    if (payload.length === 0) {
+      // If structured keys were restored, the restore toast already explains the outcome.
+      if (restoredFields.length > 0) return;
+      return showToast('warning', t('msgNoChangesToApply'));
+    }
+    const firstSlideKey = firstSlide(slidespec);
+    if (firstSlideKey) {
+      setActiveSlideKey(firstSlideKey);
+      window.requestAnimationFrame(() => {
+        const firstView = document.getElementById(`view-${firstSlideKey}`);
+        if (firstView) firstView.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      });
+    }
     setGenerationInProgress(true);
+    actionRef.current = 'rewrite';
+    progressValueRef.current = 0;
     setProgress(0);
     setProgressText(t('progressInit', lang === 'zh-CN' ? '初始化' : 'Initializing'));
     setLoading(true);
@@ -830,16 +914,19 @@ export function IndexApp() {
       if (result.slidespec) setSlidespec(result.slidespec);
       setModifiedSlides({});
       await syncPreviewUrls(jobId, true);
+      progressValueRef.current = 100;
       setProgress(100);
       setProgressText(t('progressComplete', lang === 'zh-CN' ? '完成' : 'Completed'));
       showToast('success', t('msgUpdateSlidesSuccess').replace('{count}', String(result.updated_count || 0)));
     } catch (error) {
       showToast('error', error instanceof Error ? error.message : t('titleUpdateFailed'));
+      progressValueRef.current = 0;
       setProgress(0);
       setProgressText('');
     } finally {
       setGenerationInProgress(false);
       setLoading(false);
+      actionRef.current = null;
     }
   };
 
@@ -856,8 +943,18 @@ export function IndexApp() {
     if (selectedAiMode === 'selected' && selectedAiTokens.length === 0) {
       return showToast('warning', t('msgSelectAtLeastOneAiToken'));
     }
+    const firstSlideKey = firstSlide(slidespec);
+    if (firstSlideKey) {
+      setActiveSlideKey(firstSlideKey);
+      window.requestAnimationFrame(() => {
+        const firstView = document.getElementById(`view-${firstSlideKey}`);
+        if (firstView) firstView.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      });
+    }
     setAiModalOpen(false);
     setGenerationInProgress(true);
+    actionRef.current = 'ai-rewrite';
+    progressValueRef.current = 0;
     setProgress(0);
     setProgressText(t('progressInit', lang === 'zh-CN' ? '初始化' : 'Initializing'));
     setLoading(true);
@@ -880,17 +977,20 @@ export function IndexApp() {
         };
       });
       setAiPrompt('');
+      progressValueRef.current = 100;
       setProgress(100);
       setProgressText(t('progressComplete', lang === 'zh-CN' ? '完成' : 'Completed'));
       if ((result.updated_count || 0) > 0) showToast('success', t('msgAiRewriteSuccess').replace('{slide}', activeSlideKey));
       else showToast('warning', t('msgAiRewriteNoChanges'));
     } catch (error) {
       showToast('error', error instanceof Error ? error.message : t('titleUpdateFailed'));
+      progressValueRef.current = 0;
       setProgress(0);
       setProgressText('');
     } finally {
       setGenerationInProgress(false);
       setLoading(false);
+      actionRef.current = null;
     }
   };
 
@@ -984,7 +1084,11 @@ export function IndexApp() {
 
   const toggleFocus = (value: FocusValue) => {
     setSelectedFocus((prev) => {
-      if (prev.includes(value)) return prev.filter((item) => item !== value);
+      if (prev.includes(value)) {
+        // Keep at least one focus option selected.
+        if (prev.length <= 1) return prev;
+        return prev.filter((item) => item !== value);
+      }
       return [...prev, value];
     });
   };
@@ -1245,6 +1349,18 @@ export function IndexApp() {
     nextPresentation(event.deltaY > 0 ? 1 : -1);
   };
 
+  const getPreviewImgKey = (channel: 'thumb' | 'main' | 'present', idx: number, url?: string) => `${channel}:${idx}:${url || ''}`;
+  const hasPreviewImgError = (channel: 'thumb' | 'main' | 'present', idx: number, url?: string) =>
+    Boolean(previewLoadErrorKeys[getPreviewImgKey(channel, idx, url)]);
+  const markPreviewImgError = (channel: 'thumb' | 'main' | 'present', idx: number, url?: string) => {
+    const key = getPreviewImgKey(channel, idx, url);
+    setPreviewLoadErrorKeys((prev) => (prev[key] ? prev : { ...prev, [key]: true }));
+  };
+
+  useEffect(() => {
+    setPreviewLoadErrorKeys({});
+  }, [previews]);
+
   useEffect(() => {
     if (!activeSlideKey) return;
     const thumb = document.getElementById(`thumb-${activeSlideKey}`);
@@ -1424,7 +1540,7 @@ export function IndexApp() {
             <div className="header-left">
               <button
                 className="workspace-icon-btn tooltip-card-btn"
-                onClick={() => setInWorkspace(false)}
+                onClick={handleReconfigure}
                 disabled={loading || generationInProgress}
                 data-tooltip={t('btnReconfigure')}
                 aria-label={t('btnReconfigure')}
@@ -1598,7 +1714,7 @@ export function IndexApp() {
                       setExportFormat('ppt');
                       performExport('ppt');
                     }}
-                    disabled={!jobId}
+                    disabled={!jobId || generationInProgress}
                   >
                     <Download size={14} /> {exportPrimaryLabel}
                   </button>
@@ -1608,7 +1724,7 @@ export function IndexApp() {
                       setAiModalOpen(false);
                       setExportOpen((prev) => !prev);
                     }}
-                    disabled={!jobId}
+                    disabled={!jobId || generationInProgress}
                     aria-label={t('msgChooseExportFormat')}
                   >
                     <ChevronDown size={14} />
@@ -1664,7 +1780,20 @@ export function IndexApp() {
                       onClick={() => focusSlidePreview(slide.slide_key, 'smooth')}
                     >
                       <div className="thumb-index">{idx + 1}</div>
-                      {previews[idx] ? <img src={`${previews[idx]}?v=${Date.now()}`} alt={slide.title || slide.slide_key} /> : <div className="thumb-placeholder" />}
+                      {previews[idx] && !hasPreviewImgError('thumb', idx, previews[idx]) ? (
+                        <img
+                          src={`${previews[idx]}?v=${Date.now()}`}
+                          alt={slide.title || slide.slide_key}
+                          onError={() => markPreviewImgError('thumb', idx, previews[idx])}
+                        />
+                      ) : generationInProgress ? (
+                        <div className="thumb-placeholder loading">
+                          <Funnel size={14} />
+                          <span>{t('msgGeneratingPreview', lang === 'zh-CN' ? '预览生成中...' : 'Generating preview...')}</span>
+                        </div>
+                      ) : (
+                        <div className="thumb-placeholder" />
+                      )}
                       <div className="thumb-title">{slide.title || slide.slide_key}</div>
                     </button>
                   ))
@@ -1696,8 +1825,12 @@ export function IndexApp() {
                         openPresentationAtSlide(slide.slide_key);
                       }}
                     >
-                      {previews[idx] ? (
-                        <img src={`${previews[idx]}?v=${Date.now()}`} alt={slide.title || slide.slide_key} />
+                      {previews[idx] && !hasPreviewImgError('main', idx, previews[idx]) ? (
+                        <img
+                          src={`${previews[idx]}?v=${Date.now()}`}
+                          alt={slide.title || slide.slide_key}
+                          onError={() => markPreviewImgError('main', idx, previews[idx])}
+                        />
                       ) : (
                         <div className="preview-placeholder">{t('msgGeneratingPreview')}</div>
                       )}
@@ -1775,8 +1908,8 @@ export function IndexApp() {
       )}
 
       {ratingOpen && (
-        <div className="rating-modal-overlay" onClick={() => setRatingOpen(false)}>
-          <div className="rating-modal" role="dialog" aria-modal="true" aria-label={t('ratingTitle')} onClick={(e) => e.stopPropagation()}>
+        <div className="rating-modal-overlay">
+          <div className="rating-modal" role="dialog" aria-modal="false" aria-label={t('ratingTitle')}>
             <button className="rating-modal-close" onClick={() => setRatingOpen(false)} aria-label={t('btnCancel')}>
               <X size={16} />
             </button>
@@ -1840,7 +1973,11 @@ export function IndexApp() {
             <ChevronLeft size={20} />
           </button>
           <div className="present-body" onClick={(e) => e.stopPropagation()}>
-            {currentPresentUrl ? <img src={`${currentPresentUrl}?v=${Date.now()}`} alt="slide" /> : <div className="present-empty">{t('msgNoPreview')}</div>}
+            {currentPresentUrl && !hasPreviewImgError('present', presentIndex, currentPresentUrl) ? (
+              <img src={`${currentPresentUrl}?v=${Date.now()}`} alt="slide" onError={() => markPreviewImgError('present', presentIndex, currentPresentUrl)} />
+            ) : (
+              <div className="present-empty">{t('msgNoPreview')}</div>
+            )}
             <div className="present-foot">
               {t('msgPageNumber')} {presentIndex + 1} / {slidespec?.slides.length || 0}
             </div>

@@ -105,6 +105,7 @@ export interface RewriteSlidesResp {
   updated_count: number;
   warnings?: string[];
   slidespec?: SlideSpec;
+  preview_urls?: string[];
 }
 
 export interface AiRewriteResp extends RewriteSlidesResp {

@@ -1404,15 +1404,13 @@ button:disabled {
 
 .rating-modal-overlay {
   position: fixed;
-  inset: 0;
-  z-index: 2400;
-  background:
-    radial-gradient(900px 340px at 12% 0%, rgba(29, 78, 216, .16), transparent 62%),
-    rgba(15, 23, 42, .46);
+  right: 16px;
+  bottom: 16px;
+  z-index: 2200;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
+  align-items: flex-end;
+  justify-content: flex-end;
+  pointer-events: none;
   animation: ratingOverlayIn .2s ease;
 }
 @keyframes ratingOverlayIn {
@@ -1421,12 +1419,13 @@ button:disabled {
 }
 .rating-modal {
   position: relative;
-  width: min(560px, calc(100vw - 32px));
+  width: min(420px, calc(100vw - 32px));
   border-radius: 18px;
   border: 1px solid #d8e2f2;
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-  box-shadow: 0 24px 56px rgba(15, 23, 42, .3);
-  padding: 22px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, .24);
+  padding: 16px;
+  pointer-events: auto;
   animation: ratingModalIn .24s ease;
 }
 @keyframes ratingModalIn {
@@ -1486,10 +1485,10 @@ button:disabled {
   text-overflow: ellipsis;
 }
 .rating-choice-grid {
-  margin-top: 16px;
+  margin-top: 12px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 8px;
 }
 .rating-choice-card {
   border: 1px solid #dbe4f2;
@@ -1583,13 +1582,13 @@ button:disabled {
 }
 @media (max-width: 720px) {
   .rating-modal-overlay {
-    padding: 12px;
-    align-items: flex-end;
+    right: 8px;
+    bottom: 8px;
   }
   .rating-modal {
-    width: 100%;
-    border-radius: 16px 16px 12px 12px;
-    padding: 18px 14px 14px;
+    width: min(420px, calc(100vw - 16px));
+    border-radius: 14px;
+    padding: 14px;
   }
   .rating-choice-grid {
     grid-template-columns: 1fr;

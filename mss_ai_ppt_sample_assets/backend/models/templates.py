@@ -76,6 +76,7 @@ class SlideDefinitionV2(BaseModel):
     slide_no: int
     slide_key: str
     title: str
+    context_policy: Literal["auto", "local_only", "full_data"] = "auto"
     placeholders: List[PlaceholderDefinition]
 
 

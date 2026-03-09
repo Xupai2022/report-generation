@@ -548,9 +548,15 @@ class ReportService:
         target_tokens: List[str] | None = None,
         ws_manager=None,
         event_loop=None,
+        progress_callback=None,
     ) -> Dict[str, Any]:
         """AI rewrite for a single slide using user preference prompt."""
         def send_progress(progress: int, message: str):
+            if progress_callback:
+                try:
+                    progress_callback(progress, message)
+                except Exception:
+                    pass
             if ws_manager and event_loop:
                 import asyncio
                 try:
@@ -609,7 +615,7 @@ class ReportService:
             target_tokens=target_tokens,
         )
 
-        send_progress(68, "Applying AI rewrite result...")
+        send_progress(58, "Applying AI rewrite result...")
         rewritten_placeholders = ai_result.get("placeholders", {})
         if rewritten_placeholders:
             target_slide.placeholders.update(rewritten_placeholders)
@@ -619,11 +625,11 @@ class ReportService:
         slidespec_path = self.session_manager.get_slidespec_path(session_id, template_id)
 
         # Persist rewritten slidespec and rerender report
-        send_progress(76, "Saving slide specification...")
+        send_progress(66, "Saving slide specification...")
         with FileLock(slidespec_path, timeout=60.0):
             slidespec.save(slidespec_path)
 
-        send_progress(75, "Rendering PPT...")
+        send_progress(72, "Rendering PPT...")
         with FileLock(report_path, timeout=60.0):
             self.ppt_generator_v2.render(slidespec, report_path)
 
@@ -648,7 +654,8 @@ class ReportService:
             job_id=job_id,
         )
 
-        send_progress(98, "AI rewrite completed...")
+        # Keep progress below preview stage completion; final completion is handled by router after preview generation.
+        send_progress(76, "AI rewrite applied...")
         return {
             "job_id": job_id,
             "session_id": session_id,
@@ -670,6 +677,7 @@ class ReportService:
         slides: list[Dict[str, Any]] = None,
         ws_manager=None,
         event_loop=None,
+        progress_callback=None,
     ) -> Dict[str, Any]:
         """Rewrite one or multiple slides with new content.
 
@@ -687,6 +695,11 @@ class ReportService:
             Dict with job_id, updated_slides, report_path, etc.
         """
         def send_progress(progress: int, message: str):
+            if progress_callback:
+                try:
+                    progress_callback(progress, message)
+                except Exception:
+                    pass
             if ws_manager and event_loop:
                 import asyncio
                 try:
@@ -738,7 +751,7 @@ class ReportService:
             content = slide_update.get("new_content", {})
             total_slides = max(1, len(slides_to_update))
             current_idx = len(updated_slides) + len(not_found_slides) + 1
-            current_progress = 28 + int((current_idx / total_slides) * 34)
+            current_progress = 28 + int((current_idx / total_slides) * 30)
             send_progress(current_progress, f"Applying updates ({current_idx}/{total_slides})...")
 
             slide = slidespec.get_slide(key)
@@ -786,11 +799,11 @@ class ReportService:
         slidespec_path = self.session_manager.get_slidespec_path(session_id, template_id)
 
         # Save with file locks
-        send_progress(74, "Saving slide specification...")
+        send_progress(66, "Saving slide specification...")
         with FileLock(slidespec_path, timeout=60.0):
             slidespec.save(slidespec_path)
 
-        send_progress(86, "Rendering PPT...")
+        send_progress(72, "Rendering PPT...")
         with FileLock(report_path, timeout=60.0):
             self.ppt_generator_v2.render(slidespec, report_path)
 
@@ -836,7 +849,8 @@ class ReportService:
         if has_single:
             result["slide_key"] = slide_key
 
-        send_progress(98, "Slide update completed...")
+        # Keep progress below preview stage completion; final completion is handled by router after preview generation.
+        send_progress(76, "Slide update applied...")
         return result
 
     def read_logs(self, limit: int = 100) -> str:

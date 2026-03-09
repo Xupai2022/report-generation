@@ -4,7 +4,8 @@ import json
 import logging
 import re
 import time
-from typing import Any, Dict, List, Optional
+from functools import lru_cache
+from typing import Any, Dict, FrozenSet, List, Optional, Set, Tuple
 
 import httpx
 from openai import OpenAI, APIError, RateLimitError, APIConnectionError
@@ -49,23 +50,23 @@ class LLMOrchestratorV2:
     _ANNOTATIONS: List[Dict[str, str]] = [
         {
             "id": "business_protection",
-            "title": "Business Protection",
+            "title": "业务保护",
             "content": (
-                "Emphasize business continuity, risk containment, and actionable protection outcomes."
+                "定义为：围绕关键资产，明确保护对象；消除脆弱性，减少被攻击面；抵御威胁，防止业务被破坏；快速处置安全事件，保障业务持续不中断。保护业务不中断、数据不失控、运行可持续。此用户选择偏好强调业务连续性、风险遏制和可执行防护结果。"
             ),
         },
         {
             "id": "vulnerability",
-            "title": "Vulnerability",
+            "title": "漏洞优先",
             "content": (
-                "Focus on vulnerability exposure, root causes, and remediation priorities."
+                "优先关注漏洞暴露面、根因和修复优先级。"
             ),
         },
         {
             "id": "alert",
-            "title": "Alert",
+            "title": "告警优先",
             "content": (
-                "Focus on threat alerts, incident patterns, and response effectiveness."
+                "优先关注威胁告警、事件模式和响应成效。"
             ),
         },
     ]
@@ -521,22 +522,106 @@ class LLMOrchestratorV2:
 
         return result
 
+    @staticmethod
+    def _resolve_slide_context_policy(slide: Any) -> str:
+        """Resolve context policy for a slide definition."""
+        policy = (getattr(slide, "context_policy", None) or "auto").strip().lower()
+        if policy in {"local_only", "full_data", "auto"}:
+            return policy
+        return "auto"
+
+    @staticmethod
+    def _extract_instruction_roots(ai_instruction: Optional[str], available_roots: Set[str]) -> Set[str]:
+        """Extract potential top-level data roots from ai_instruction text."""
+        if not ai_instruction:
+            return set()
+
+        roots: Set[str] = set()
+        for token in re.findall(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*(?:\[\d+\])?", ai_instruction):
+            root = token.split(".")[0]
+            if root in available_roots:
+                roots.add(root)
+        return roots
+
+    def _collect_slide_context_roots(
+        self,
+        tenant_input: TenantInput,
+        template: TemplateDescriptorV2,
+        slide_key: str,
+    ) -> Set[str]:
+        """Collect top-level data roots relevant to one slide."""
+        available_roots = set(tenant_input.raw.keys())
+        roots: Set[str] = set()
+
+        slide = next((item for item in template.slides if item.slide_key == slide_key), None)
+        if not slide:
+            return roots
+
+        for placeholder in slide.placeholders:
+            if placeholder.source:
+                roots.add(placeholder.source.split(".")[0])
+            roots.update(
+                self._extract_instruction_roots(
+                    getattr(placeholder, "ai_instruction", None),
+                    available_roots,
+                )
+            )
+
+        if slide.slide_key in available_roots:
+            roots.add(slide.slide_key)
+
+        return {root for root in roots if root in available_roots}
+
+    def _batch_requires_full_data(
+        self,
+        template: TemplateDescriptorV2,
+        slide_keys: List[str],
+    ) -> bool:
+        """Whether any slide in this batch requires full-data context."""
+        key_set = set(slide_keys)
+        for slide in template.slides:
+            if slide.slide_key not in key_set:
+                continue
+            if self._resolve_slide_context_policy(slide) == "full_data":
+                return True
+        return False
+
+    def _build_context_payload_for_slides(
+        self,
+        tenant_input: TenantInput,
+        template: TemplateDescriptorV2,
+        slide_keys: List[str],
+    ) -> Dict[str, Any]:
+        """Build context payload according to slide context policies."""
+        if self._batch_requires_full_data(template, slide_keys):
+            return tenant_input.raw
+
+        roots: Set[str] = set()
+        for slide_key in slide_keys:
+            roots.update(self._collect_slide_context_roots(tenant_input, template, slide_key))
+
+        if not roots:
+            return {}
+
+        ordered_roots = [key for key in tenant_input.raw.keys() if key in roots]
+        return {key: tenant_input.raw[key] for key in ordered_roots}
+
     def _build_system_prompt(self, template: TemplateDescriptorV2) -> str:
         """Build the system prompt for AI generation."""
-        audience_desc = "management audience" if template.audience == "management" else "technical audience"
+        audience_desc = "管理层受众" if template.audience == "management" else "技术受众"
 
-        return f"""You are a professional MSS security report writing assistant.
+        return f"""你是一名专业的 MSS 安全报告写作助手。
 
-## Writing Goal
-- Produce evidence-based, insight-rich text for PowerPoint slides.
-- Ensure wording matches an {audience_desc}.
+## 写作目标
+- 为 PPT 页面产出基于证据、富有洞察的内容。
+- 确保表述风格与{audience_desc}匹配。
 
-## Output Constraints
-1. Keep statements factual and directly tied to provided data.
-2. Avoid unsupported claims.
-3. Prefer action-oriented recommendations when applicable.
-4. Keep language clear and business-ready.
-5. Return valid JSON only (no markdown wrappers).
+## 输出约束
+1. 所有表述必须基于输入数据，保持事实准确。
+2. 禁止输出无依据的判断或结论。
+3. 在合适场景下优先给出可执行、可落地的建议。
+4. 语言清晰、专业，满足业务汇报语境。
+5. 仅返回合法 JSON（不要使用 markdown 包裹）。
 """
     def _build_user_prompt(
         self,
@@ -545,7 +630,10 @@ class LLMOrchestratorV2:
         focus_options: Optional[List[str]] = None,
     ) -> str:
         """Build the user prompt with data and AI instructions."""
-        slide_keys = [slide.slide_key for slide in template.slides]
+        slide_keys = [
+            slide.slide_key for slide in template.slides
+            if any(placeholder.ai_generate for placeholder in slide.placeholders)
+        ]
         return self._build_user_prompt_for_slides(
             tenant_input=tenant_input,
             template=template,
@@ -567,23 +655,29 @@ class LLMOrchestratorV2:
         """Build user prompt for a subset of slides (for batched generation)."""
         selected_annotations = self._resolve_selected_annotations(focus_options)
         preference_titles_text = self._build_preference_titles_text(selected_annotations)
+        context_payload = self._build_context_payload_for_slides(tenant_input, template, slide_keys)
 
         prompt_parts: List[str] = [
-            "## Task",
-            "Generate AI content for the requested slides and placeholders.",
-            "Output must be valid JSON only.",
+            "## 任务",
+            "请为指定页面和占位符生成 AI 内容。",
+            "输出必须是合法 JSON，且只能输出 JSON。",
+            "",
+            "## 写作硬约束",
+            "1) 严禁空话和套话（如“持续提升”“稳步推进”）单独成句。",
+            "2) 每条结论至少包含“数据依据 + 判断”，优先补充“业务影响或行动建议”。",
+            "3) 不得编造数据，不得输出与输入数据冲突的结论。",
             "",
         ]
 
         if total_batches > 1:
             prompt_parts.extend([
-                "## Batch Context",
-                f"Current batch: {batch_index + 1}/{total_batches}",
+                "## 批次信息",
+                f"当前批次：{batch_index + 1}/{total_batches}",
                 "",
             ])
 
         prompt_parts.extend([
-            "## Output Format",
+            "## 输出格式",
             "```json",
             "{",
             "  \"slides\": [",
@@ -604,8 +698,6 @@ class LLMOrchestratorV2:
             "}",
             "```",
             "",
-            "## Placeholder Instructions",
-            "",
         ])
 
         self._append_annotation_section(prompt_parts, selected_annotations)
@@ -620,7 +712,7 @@ class LLMOrchestratorV2:
             if slide_key != current_slide:
                 for slide in template.slides:
                     if slide.slide_key == slide_key:
-                        prompt_parts.append(f"### Slide: {slide.title} ({slide_key})")
+                        prompt_parts.append(f"### 页面：{slide.title} ({slide_key})")
                         break
                 current_slide = slide_key
 
@@ -643,9 +735,9 @@ class LLMOrchestratorV2:
 
         prompt_parts.extend([
             "",
-            "## Input Data",
+            "## 输入数据",
             "```json",
-            json.dumps(tenant_input.raw, ensure_ascii=False, indent=2),
+            json.dumps(context_payload, ensure_ascii=False, indent=2),
             "```",
         ])
 
@@ -709,6 +801,8 @@ class LLMOrchestratorV2:
         rendered = instruction.replace("{preference}", preference_titles_text)
         rendered = rendered.replace("**偏好重点**", f"**{preference_titles_text}**")
         rendered = rendered.replace("偏好重点", preference_titles_text)
+        rendered = rendered.replace("**用户偏好**", f"**{preference_titles_text}**")
+        rendered = rendered.replace("用户偏好", preference_titles_text)
         return rendered
 
     def _append_annotation_section(
@@ -722,24 +816,24 @@ class LLMOrchestratorV2:
 
         prompt_parts.extend([
             "",
-            "## Focus Preference Guidance",
-            "Use the selected focus options below to guide style and emphasis.",
+            "## 偏好重点指引",
+            "请根据用户已选偏好控制内容重点与表达风格。",
         ])
         for annotation in selected_annotations:
             prompt_parts.append(f"- {annotation['title']}: {annotation['content']}")
 
     def _build_rewrite_base_prompt(
         self,
-        tenant_input: TenantInput,
+        context_payload: Dict[str, Any],
+        use_full_data: bool = False,
     ) -> str:
         """Build additional context block for single-slide rewrite."""
-        period = tenant_input.get("period", {})
-
+        section_title = "## 全量安全数据（仅上下文）" if use_full_data else "## 当前页面相关数据（仅上下文）"
         prompt_parts = [
-            "## Full Security Data (Context Only)",
-            "Use this for background context. If there is any conflict, follow Current Slide Structured Data first.",
+            section_title,
+            "如与当前页面结构化数据冲突，必须以当前页面结构化数据为准。",
             "```json",
-            json.dumps(tenant_input.raw, ensure_ascii=False, indent=2),
+            json.dumps(context_payload, ensure_ascii=False, indent=2),
             "```",
         ]
         return "\n".join(prompt_parts)
@@ -758,26 +852,26 @@ class LLMOrchestratorV2:
         output_tokens_preview = ", ".join(f'"{token}": "..."' for token in ai_tokens)
 
         task_section = "\n".join([
-            "## Rewrite Task",
-            f"Rewrite only this slide: {slide_key}",
-            f"Dynamic target placeholders: {ai_tokens_text}",
+            "## 改写任务",
+            f"仅改写该页面：{slide_key}",
+            f"本次目标占位符：{ai_tokens_text}",
             "",
-            "## User Preference (High Priority)",
-            "Follow the user preference as much as possible without fabricating data:",
+            "## 用户偏好（高优先级）",
+            "在不编造数据的前提下，尽量遵循用户偏好：",
             user_prompt.strip(),
             "",
-            "## Data Priority",
-            "1) Current Slide Structured Data (Highest Priority)",
-            "2) Full Security Data (Context Only)",
-            "3) Previous AI Copy (Style Reference Only)",
+            "## 数据优先级",
+            "1) 当前页面结构化数据（最高优先级）",
+            "2) 上下文数据（仅辅助理解）",
+            "3) 历史 AI 文案（仅风格参考）",
         ])
 
         structured_data_section = ""
         if structured_slide_data:
             structured_data_section = "\n".join([
                 "",
-                "## Current Slide Structured Data (Highest Priority)",
-                "Numbers in the rewritten text must be consistent with these values.",
+                "## 当前页面结构化数据（最高优先级）",
+                "改写后的数字必须与本节数据保持一致。",
                 "```json",
                 json.dumps(structured_slide_data, ensure_ascii=False, indent=2),
                 "```",
@@ -789,22 +883,23 @@ class LLMOrchestratorV2:
         if historical_ai_content:
             historical_content_section = "\n".join([
                 "",
-                "## Previous AI Copy (Style Reference Only)",
-                "If any number conflicts with data, ignore old numbers and follow data priority.",
+                "## 历史 AI 文案（仅风格参考）",
+                "若历史文案与数据冲突，必须忽略历史文案并遵循数据优先级。",
                 "```json",
                 json.dumps(historical_ai_content, ensure_ascii=False, indent=2),
                 "```",
             ])
 
         hard_constraints_and_output = "\n".join([
-            "## Hard Constraints",
-            "1) All numbers must match Current Slide Structured Data first.",
-            "2) If Structured Data is missing a needed field, infer from Full Security Data.",
-            "3) If old copy conflicts with data, ignore old copy and follow data priority.",
-            f"4) Output only these dynamic target placeholders: {ai_tokens_text}.",
-            "5) Output must be Chinese and in the required JSON format.",
+            "## 硬约束",
+            "1) 所有数字必须优先匹配当前页面结构化数据。",
+            "2) 禁止空话套话（如“持续提升”“稳步推进”）单独成句。",
+            "3) 每条结论至少包含“数据依据 + 判断”。",
+            "4) 若历史文案与数据冲突，必须忽略历史文案。",
+            f"5) 只输出以下目标占位符：{ai_tokens_text}。",
+            "6) 输出必须为中文，并严格使用指定 JSON 格式。",
             "",
-            "## Output Format",
+            "## 输出格式",
             "```json",
             "{",
             '  "slides": [',
@@ -851,7 +946,12 @@ class LLMOrchestratorV2:
             ai_tokens = target_tokens
 
         system_prompt = self._build_system_prompt(template)
-        base_user_prompt = self._build_rewrite_base_prompt(tenant_input)
+        context_payload = self._build_context_payload_for_slides(tenant_input, template, [slide_key])
+        use_full_data = self._batch_requires_full_data(template, [slide_key])
+        base_user_prompt = self._build_rewrite_base_prompt(
+            context_payload=context_payload,
+            use_full_data=use_full_data,
+        )
         historical_ai_content: Dict[str, Any] = {}
         if isinstance(current_slide_content, dict):
             for token in ai_tokens:
@@ -922,100 +1022,393 @@ class LLMOrchestratorV2:
         """
         return len(text) // 2
 
-    def _estimate_slide_instruction_size(
+    def _estimate_batch_prompt_tokens(
         self,
-        slide_key: str,
+        tenant_input: TenantInput,
         template: TemplateDescriptorV2,
+        slide_keys: List[str],
+        focus_options: Optional[List[str]] = None,
     ) -> int:
-        """Estimate the instruction size for a slide's AI placeholders."""
-        size = 0
-        for slide in template.slides:
-            if slide.slide_key == slide_key:
-                # Add slide header
-                size += len(f"### Slide: {slide.title} ({slide_key})\n")
-                for ph in slide.placeholders:
-                    if ph.ai_generate and ph.ai_instruction:
-                        size += len(f"\n**{ph.token}**\n")
-                        size += len(ph.ai_instruction or "")
-                        size += 50  # constraints and formatting overhead
+        """Estimate prompt tokens for a batch using the real prompt builder."""
+        prompt = self._build_user_prompt_for_slides(
+            tenant_input=tenant_input,
+            template=template,
+            slide_keys=slide_keys,
+            batch_index=0,
+            total_batches=1,
+            focus_options=focus_options,
+        )
+        return self._estimate_prompt_tokens(prompt)
+
+    @staticmethod
+    def _stats_variance_fraction(stats: Tuple[int, int, int, int]) -> Tuple[int, int]:
+        """Variance fraction numerator/denominator from (max, sum, sumsq, k)."""
+        _, total, total_sq, count = stats
+        if count <= 0:
+            return 0, 1
+        numerator = total_sq * count - total * total
+        denominator = count * count
+        return numerator, denominator
+
+    @classmethod
+    def _is_better_stats(
+        cls,
+        candidate: Tuple[int, int, int, int],
+        baseline: Tuple[int, int, int, int],
+    ) -> bool:
+        """Compare batch stats by objective: max -> variance -> batch count."""
+        if candidate[0] != baseline[0]:
+            return candidate[0] < baseline[0]
+
+        c_num, c_den = cls._stats_variance_fraction(candidate)
+        b_num, b_den = cls._stats_variance_fraction(baseline)
+        left = c_num * b_den
+        right = b_num * c_den
+        if left != right:
+            return left < right
+
+        return candidate[3] < baseline[3]
+
+    @staticmethod
+    def _sort_batch_by_slide_no(batch: List[str], slide_no_map: Dict[str, int]) -> List[str]:
+        return sorted(batch, key=lambda key: (slide_no_map.get(key, 10**9), key))
+
+    @staticmethod
+    def _batch_sort_key(batch: List[str], slide_no_map: Dict[str, int]) -> Tuple[int, str]:
+        if not batch:
+            return 10**9, ""
+        first = min(batch, key=lambda key: (slide_no_map.get(key, 10**9), key))
+        return slide_no_map.get(first, 10**9), first
+
+    def _optimize_local_batches_exact(
+        self,
+        tenant_input: TenantInput,
+        template: TemplateDescriptorV2,
+        local_slide_keys: List[str],
+        slide_no_map: Dict[str, int],
+        hard_cap: int,
+        focus_options: Optional[List[str]] = None,
+        max_batches: Optional[int] = None,
+    ) -> List[List[str]]:
+        """Exact partition search for local_only slides (n <= 14)."""
+        n = len(local_slide_keys)
+        if n == 0:
+            return []
+
+        token_cache: Dict[int, int] = {}
+
+        def mask_to_keys(mask: int) -> List[str]:
+            keys = [local_slide_keys[idx] for idx in range(n) if mask & (1 << idx)]
+            return self._sort_batch_by_slide_no(keys, slide_no_map)
+
+        def batch_tokens(mask: int) -> int:
+            if mask not in token_cache:
+                token_cache[mask] = self._estimate_batch_prompt_tokens(
+                    tenant_input=tenant_input,
+                    template=template,
+                    slide_keys=mask_to_keys(mask),
+                    focus_options=focus_options,
+                )
+            return token_cache[mask]
+
+        @lru_cache(maxsize=None)
+        def solve(mask: int, budget_batches: int) -> Optional[Tuple[int, int, int, int, Tuple[int, ...]]]:
+            if mask == 0:
+                return 0, 0, 0, 0, tuple()
+            if budget_batches <= 0:
+                return None
+
+            first = mask & -mask
+            best: Optional[Tuple[int, int, int, int, Tuple[int, ...]]] = None
+            sub = mask
+
+            while sub:
+                if sub & first:
+                    tokens = batch_tokens(sub)
+                    if tokens <= hard_cap:
+                        remain = mask ^ sub
+                        remain_result = solve(remain, budget_batches - 1)
+                        if remain_result is not None:
+                            rem_max, rem_sum, rem_sum_sq, rem_count, rem_parts = remain_result
+                            candidate_count = rem_count + 1
+                            candidate = (
+                                max(tokens, rem_max),
+                                rem_sum + tokens,
+                                rem_sum_sq + tokens * tokens,
+                                candidate_count,
+                                rem_parts + (sub,),
+                            )
+                            if best is None:
+                                best = candidate
+                            else:
+                                if self._is_better_stats(candidate[:4], best[:4]):
+                                    best = candidate
+                                elif candidate[:4] == best[:4] and candidate[4] < best[4]:
+                                    best = candidate
+                sub = (sub - 1) & mask
+
+            return best
+
+        full_mask = (1 << n) - 1
+        budget = max_batches if max_batches is not None else n
+        result = solve(full_mask, budget)
+        if result is None:
+            logger.warning("Exact local batch partition could not satisfy hard cap=%s, fallback to single-slide batches", hard_cap)
+            return [[key] for key in local_slide_keys]
+
+        _, _, _, _, masks = result
+        batches = [mask_to_keys(mask) for mask in masks]
+        return sorted(batches, key=lambda batch: self._batch_sort_key(batch, slide_no_map))
+
+    def _optimize_local_batches_heuristic(
+        self,
+        tenant_input: TenantInput,
+        template: TemplateDescriptorV2,
+        local_slide_keys: List[str],
+        slide_no_map: Dict[str, int],
+        hard_cap: int,
+        focus_options: Optional[List[str]] = None,
+        max_batches: Optional[int] = None,
+    ) -> List[List[str]]:
+        """Heuristic optimizer for larger local_only sets (best-fit merge + local move)."""
+        if not local_slide_keys:
+            return []
+
+        token_cache: Dict[FrozenSet[str], int] = {}
+
+        def normalize(batch: List[str]) -> List[str]:
+            return self._sort_batch_by_slide_no(sorted(set(batch)), slide_no_map)
+
+        def batch_token(batch: List[str]) -> int:
+            key = frozenset(batch)
+            if key not in token_cache:
+                token_cache[key] = self._estimate_batch_prompt_tokens(
+                    tenant_input=tenant_input,
+                    template=template,
+                    slide_keys=normalize(batch),
+                    focus_options=focus_options,
+                )
+            return token_cache[key]
+
+        def calc_stats(batches: List[List[str]]) -> Tuple[int, int, int, int]:
+            if not batches:
+                return 0, 0, 0, 0
+            tokens = [batch_token(batch) for batch in batches]
+            return max(tokens), sum(tokens), sum(item * item for item in tokens), len(tokens)
+
+        def sort_batches(batches: List[List[str]]) -> List[List[str]]:
+            normalized = [normalize(batch) for batch in batches if batch]
+            return sorted(normalized, key=lambda batch: self._batch_sort_key(batch, slide_no_map))
+
+        batches = sort_batches([[slide_key] for slide_key in local_slide_keys])
+
+        # Stage 1: best-fit merge if objective improves and cap satisfied
+        while True:
+            base_stats = calc_stats(batches)
+            best_candidate: Optional[List[List[str]]] = None
+            best_stats: Optional[Tuple[int, int, int, int]] = None
+
+            for i in range(len(batches)):
+                for j in range(i + 1, len(batches)):
+                    merged = normalize(batches[i] + batches[j])
+                    if batch_token(merged) > hard_cap:
+                        continue
+                    candidate = [batch for idx, batch in enumerate(batches) if idx not in {i, j}]
+                    candidate.append(merged)
+                    candidate = sort_batches(candidate)
+                    candidate_stats = calc_stats(candidate)
+                    if not self._is_better_stats(candidate_stats, base_stats):
+                        continue
+                    if best_stats is None or self._is_better_stats(candidate_stats, best_stats):
+                        best_candidate = candidate
+                        best_stats = candidate_stats
+
+            if best_candidate is None:
                 break
-        return size
+            batches = best_candidate
+
+        # Stage 2: local move refinement
+        improved = True
+        while improved:
+            improved = False
+            base_stats = calc_stats(batches)
+
+            for i, source_batch in enumerate(batches):
+                if len(source_batch) <= 1:
+                    continue
+                for slide_key in list(source_batch):
+                    for j, target_batch in enumerate(batches):
+                        if i == j:
+                            continue
+                        moved_target = normalize(target_batch + [slide_key])
+                        if batch_token(moved_target) > hard_cap:
+                            continue
+
+                        moved_source = [item for item in source_batch if item != slide_key]
+                        candidate = []
+                        for idx, batch in enumerate(batches):
+                            if idx == i:
+                                if moved_source:
+                                    candidate.append(moved_source)
+                            elif idx == j:
+                                candidate.append(moved_target)
+                            else:
+                                candidate.append(batch)
+
+                        candidate = sort_batches(candidate)
+                        candidate_stats = calc_stats(candidate)
+                        if self._is_better_stats(candidate_stats, base_stats):
+                            batches = candidate
+                            improved = True
+                            break
+                    if improved:
+                        break
+                if improved:
+                    break
+
+        return sort_batches(batches)
+
+        # Unreachable; keep for clarity.
+
+    def _force_merge_to_max_batches(
+        self,
+        tenant_input: TenantInput,
+        template: TemplateDescriptorV2,
+        batches: List[List[str]],
+        slide_no_map: Dict[str, int],
+        hard_cap: int,
+        focus_options: Optional[List[str]] = None,
+        max_batches: Optional[int] = None,
+    ) -> List[List[str]]:
+        """Best-effort merge to reduce batch count under hard cap."""
+        if max_batches is None or max_batches <= 0:
+            return batches
+        if len(batches) <= max_batches:
+            return batches
+
+        token_cache: Dict[FrozenSet[str], int] = {}
+
+        def normalize(batch: List[str]) -> List[str]:
+            return self._sort_batch_by_slide_no(sorted(set(batch)), slide_no_map)
+
+        def batch_token(batch: List[str]) -> int:
+            key = frozenset(batch)
+            if key not in token_cache:
+                token_cache[key] = self._estimate_batch_prompt_tokens(
+                    tenant_input=tenant_input,
+                    template=template,
+                    slide_keys=normalize(batch),
+                    focus_options=focus_options,
+                )
+            return token_cache[key]
+
+        def calc_stats(items: List[List[str]]) -> Tuple[int, int, int, int]:
+            if not items:
+                return 0, 0, 0, 0
+            vals = [batch_token(item) for item in items]
+            return max(vals), sum(vals), sum(v * v for v in vals), len(vals)
+
+        working = [normalize(batch) for batch in batches]
+        working = sorted(working, key=lambda batch: self._batch_sort_key(batch, slide_no_map))
+
+        while len(working) > max_batches:
+            best_candidate: Optional[List[List[str]]] = None
+            best_stats: Optional[Tuple[int, int, int, int]] = None
+
+            for i in range(len(working)):
+                for j in range(i + 1, len(working)):
+                    merged = normalize(working[i] + working[j])
+                    if batch_token(merged) > hard_cap:
+                        continue
+                    candidate = [batch for idx, batch in enumerate(working) if idx not in {i, j}]
+                    candidate.append(merged)
+                    candidate = sorted(candidate, key=lambda batch: self._batch_sort_key(batch, slide_no_map))
+                    candidate_stats = calc_stats(candidate)
+                    if best_stats is None or self._is_better_stats(candidate_stats, best_stats):
+                        best_candidate = candidate
+                        best_stats = candidate_stats
+
+            if best_candidate is None:
+                break
+            working = best_candidate
+
+        return working
 
     def _get_smart_slide_batches(
         self,
         tenant_input: TenantInput,
         template: TemplateDescriptorV2,
         max_tokens_per_batch: int = 15000,
+        focus_options: Optional[List[str]] = None,
+        preferred_max_local_batches: Optional[int] = 2,
     ) -> List[List[str]]:
-        """Split slides into batches based on estimated token count.
+        """Smart batching with context policy and stability-first optimization."""
+        ai_slides = [
+            slide for slide in template.slides
+            if any(placeholder.ai_generate for placeholder in slide.placeholders)
+        ]
+        if not ai_slides:
+            return []
 
-        This method intelligently groups slides to keep each batch under
-        the token limit, avoiding API timeouts.
+        hard_cap = max(1000, int(max_tokens_per_batch * 0.70))
+        slide_no_map = {slide.slide_key: slide.slide_no for slide in template.slides}
 
-        Args:
-            tenant_input: Raw tenant input data (needed for base prompt size)
-            template: Template descriptor
-            max_tokens_per_batch: Maximum estimated tokens per batch
+        local_slide_keys: List[str] = []
+        full_data_slide_keys: List[str] = []
+        for slide in ai_slides:
+            policy = self._resolve_slide_context_policy(slide)
+            if policy == "full_data":
+                full_data_slide_keys.append(slide.slide_key)
+            else:
+                local_slide_keys.append(slide.slide_key)
 
-        Returns:
-            List of batches, where each batch is a list of slide_keys
-        """
-        # Calculate base prompt size (customer info + input data)
-        # This is constant across all batches
-        tenant = tenant_input.get("tenant", {})
-        period = tenant_input.get("period", {})
-        base_prompt = "\n".join([
-            "## Input Data",
-            "```json",
-            json.dumps(tenant_input.raw, ensure_ascii=False, indent=2),
-            "```",
-        ])
-        base_tokens = self._estimate_prompt_tokens(base_prompt)
+        local_slide_keys = self._sort_batch_by_slide_no(local_slide_keys, slide_no_map)
+        full_data_slide_keys = self._sort_batch_by_slide_no(full_data_slide_keys, slide_no_map)
 
-        # Reserve tokens for JSON output format instructions (~500 tokens)
-        format_overhead = 500
+        if len(local_slide_keys) <= 14:
+            local_batches = self._optimize_local_batches_exact(
+                tenant_input=tenant_input,
+                template=template,
+                local_slide_keys=local_slide_keys,
+                slide_no_map=slide_no_map,
+                hard_cap=hard_cap,
+                focus_options=focus_options,
+                max_batches=preferred_max_local_batches,
+            )
+        else:
+            local_batches = self._optimize_local_batches_heuristic(
+                tenant_input=tenant_input,
+                template=template,
+                local_slide_keys=local_slide_keys,
+                slide_no_map=slide_no_map,
+                hard_cap=hard_cap,
+                focus_options=focus_options,
+                max_batches=preferred_max_local_batches,
+            )
 
-        # Available tokens for slide instructions per batch
-        available_tokens = max_tokens_per_batch - base_tokens - format_overhead
+        local_batches = self._force_merge_to_max_batches(
+            tenant_input=tenant_input,
+            template=template,
+            batches=local_batches,
+            slide_no_map=slide_no_map,
+            hard_cap=hard_cap,
+            focus_options=focus_options,
+            max_batches=preferred_max_local_batches,
+        )
 
-        logger.info(f"Batch sizing: base={base_tokens} tokens, available={available_tokens} tokens/batch")
+        full_data_batches = [[slide_key] for slide_key in full_data_slide_keys]
+        batches = local_batches + full_data_batches
+        batches = sorted(batches, key=lambda batch: self._batch_sort_key(batch, slide_no_map))
 
-        # Calculate instruction size for each slide with AI placeholders
-        slide_sizes: List[tuple] = []  # (slide_key, estimated_tokens)
-        for slide in template.slides:
-            ai_count = sum(1 for ph in slide.placeholders if ph.ai_generate)
-            if ai_count == 0:
-                continue
-            instruction_size = self._estimate_slide_instruction_size(slide.slide_key, template)
-            estimated_tokens = self._estimate_prompt_tokens(" " * instruction_size)
-            slide_sizes.append((slide.slide_key, estimated_tokens))
-
-        # If total is small enough, no batching needed
-        total_instruction_tokens = sum(t for _, t in slide_sizes)
-        if total_instruction_tokens <= available_tokens:
-            logger.info(f"No batching needed: {total_instruction_tokens} tokens fits in {available_tokens}")
-            return [[s for s, _ in slide_sizes]]
-
-        # Greedy batching: add slides until we exceed the limit
-        batches: List[List[str]] = []
-        current_batch: List[str] = []
-        current_tokens = 0
-
-        for slide_key, tokens in slide_sizes:
-            # If adding this slide would exceed the limit, start a new batch
-            if current_tokens + tokens > available_tokens and current_batch:
-                batches.append(current_batch)
-                logger.info(f"  Batch {len(batches)}: {current_batch} (~{current_tokens} tokens)")
-                current_batch = []
-                current_tokens = 0
-
-            current_batch.append(slide_key)
-            current_tokens += tokens
-
-        # Don't forget the last batch
-        if current_batch:
-            batches.append(current_batch)
-            logger.info(f"  Batch {len(batches)}: {current_batch} (~{current_tokens} tokens)")
+        logger.info("Smart batching hard cap=%s", hard_cap)
+        for index, batch in enumerate(batches, start=1):
+            estimated = self._estimate_batch_prompt_tokens(
+                tenant_input=tenant_input,
+                template=template,
+                slide_keys=batch,
+                focus_options=focus_options,
+            )
+            logger.info("  Batch %s: slides=%s, estimated_tokens=%s", index, batch, estimated)
 
         return batches
 
@@ -1042,7 +1435,12 @@ class LLMOrchestratorV2:
         Returns:
             Dict[slide_key, Dict[token, value]] with all AI-generated content
         """
-        batches = self._get_smart_slide_batches(tenant_input, template, max_tokens_per_batch)
+        batches = self._get_smart_slide_batches(
+            tenant_input=tenant_input,
+            template=template,
+            max_tokens_per_batch=max_tokens_per_batch,
+            focus_options=focus_options,
+        )
         total_batches = len(batches)
 
         # Helper to send progress updates
@@ -1176,7 +1574,7 @@ class LLMOrchestratorV2:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            temperature=0.4,
+            temperature=1,
             response_format={"type": "json_object"},
             stream=True,
         )
