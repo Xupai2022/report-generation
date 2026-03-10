@@ -27,6 +27,7 @@ from mss_ai_ppt_sample_assets.backend.modules.preview_generator import (
     sanitize_job_id,
 )
 from mss_ai_ppt_sample_assets.backend.modules.excel_handler import ExcelDataExtractor
+from mss_ai_ppt_sample_assets.backend.services.rag_service import get_rag_service
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +51,7 @@ class ReportService:
         )
         self.inputs_catalog = self._load_inputs_catalog()
         self.session_manager = SessionManager(config.SESSIONS_DIR)
+        self.rag_service = get_rag_service()
 
         # V2 (AI-driven) generators
         self.ppt_generator_v2 = PPTGeneratorV2(self.template_repo)
@@ -332,6 +334,7 @@ class ReportService:
         template_id: str,
         use_mock: bool = False,
         focus_options: Optional[List[str]] = None,
+        use_rag: bool = True,
         session_id: str = None,
         ws_manager=None,
         event_loop=None,
@@ -383,6 +386,7 @@ class ReportService:
             session_id=session_id,
             use_mock=use_mock,
             focus_options=focus_options,
+            use_rag=use_rag,
             ws_manager=ws_manager,
             event_loop=event_loop,
         )
@@ -395,6 +399,7 @@ class ReportService:
         session_id: str,
         use_mock: bool = False,
         focus_options: Optional[List[str]] = None,
+        use_rag: bool = True,
         ws_manager=None,
         event_loop=None,
     ) -> Dict[str, Any]:
@@ -413,38 +418,67 @@ class ReportService:
         Returns:
             Dict with job_id, report_path, warnings, etc.
         """
+        def send_progress(progress: int, message: str):
+            if ws_manager and session_id and event_loop:
+                import asyncio
+                try:
+                    asyncio.run_coroutine_threadsafe(
+                        ws_manager.send_progress_update(session_id, progress, message),
+                        event_loop
+                    )
+                except Exception:
+                    pass
 
         # Clear template cache to ensure latest descriptor is loaded
         self.template_repo.clear_cache()
         logger.debug(f"Template cache cleared for: {template_id}")
+        template_descriptor = self.template_repo.get_descriptor_v2(template_id)
 
         # V2: Direct to LLM with raw data
         # Pass ws_manager, session_id, and event_loop to enable real-time progress updates
+        rag_context = None
+        rag_context_by_slide: Dict[str, str] = {}
+        retrieval_trace: List[Dict[str, Any]] = []
+        retrieval_stats: Dict[str, Any] = {}
+        rag_used = False
+        if use_rag:
+            send_progress(26, "检索知识库...")
+            try:
+                rag_result = self.rag_service.retrieve_for_generation(
+                    tenant_input=tenant_input,
+                    input_id=input_id,
+                    template_id=template_id,
+                    focus_options=focus_options,
+                    use_rag=use_rag,
+                    template_descriptor=template_descriptor,
+                    session_id=session_id,
+                )
+                rag_context = rag_result.context
+                rag_context_by_slide = dict(rag_result.context_by_slide or {})
+                retrieval_trace = rag_result.retrieval_trace
+                retrieval_stats = dict(rag_result.retrieval_stats or {})
+                rag_used = rag_result.rag_used
+            except Exception as e:
+                logger.warning("RAG retrieval failed in generate flow: %s", e)
+                warnings = [f"RAG retrieval failed: {e}"]
+            else:
+                warnings = []
+        else:
+            warnings = []
+
         logger.debug(f"Generating slidespec via LLM orchestrator...")
         slidespec: SlideSpecV2 = self.llm_orchestrator_v2.generate_slidespec_v2(
             tenant_input=tenant_input,
             template_id=template_id,
             use_mock=use_mock,
             focus_options=focus_options,
+            rag_context=rag_context,
+            rag_context_by_slide=rag_context_by_slide,
             session_id=session_id,
             ws_manager=ws_manager,
             event_loop=event_loop,
         )
         logger.debug(f"Slidespec generated: {len(slidespec.slides)} slides")
-        warnings: list[str] = []
-
-        # Helper to send progress updates
-        def send_progress(progress: int, message: str):
-            if ws_manager and session_id and event_loop:
-                import asyncio
-                try:
-                    # Schedule coroutine in the main event loop
-                    asyncio.run_coroutine_threadsafe(
-                        ws_manager.send_progress_update(session_id, progress, message),
-                        event_loop
-                    )
-                except Exception as e:
-                    pass
 
         # Use session-isolated paths
         report_path = self.session_manager.get_report_path(session_id, template_id)
@@ -481,6 +515,9 @@ class ReportService:
             "session_id": session_id,
             "report_path": config.outputs_url_for(report_path),
             "warnings": warnings,
+            "rag_used": rag_used,
+            "retrieval_trace": retrieval_trace,
+            "retrieval_stats": retrieval_stats,
             "slidespec": slidespec.model_dump(),
             "slidespec_path": config.outputs_url_for(slidespec_path),
             "version": "v2",
@@ -546,6 +583,7 @@ class ReportService:
         slide_key: str,
         user_prompt: str,
         target_tokens: List[str] | None = None,
+        use_rag: bool = True,
         ws_manager=None,
         event_loop=None,
         progress_callback=None,
@@ -584,6 +622,7 @@ class ReportService:
 
         # Ensure latest template descriptor is used for prompt construction.
         self.template_repo.clear_cache()
+        template_descriptor = self.template_repo.get_descriptor_v2(template_id)
 
         slidespec = self._load_slidespec(session_id, template_id)
         target_slide = slidespec.get_slide(slide_key)
@@ -605,6 +644,47 @@ class ReportService:
             session_id=session_id,
         )
 
+        rag_context = None
+        retrieval_trace: List[Dict[str, Any]] = []
+        retrieval_stats: Dict[str, Any] = {}
+        rag_used = False
+        if use_rag:
+            send_progress(36, "检索知识库...")
+            try:
+                descriptor_slide = next(
+                    (slide for slide in template_descriptor.slides if slide.slide_key == slide_key),
+                    None,
+                )
+                non_ai_tokens = {
+                    placeholder.token
+                    for placeholder in (descriptor_slide.placeholders if descriptor_slide else [])
+                    if not placeholder.ai_generate
+                }
+                structured_slide_data = {
+                    token: value
+                    for token, value in dict(target_slide.placeholders or {}).items()
+                    if token in non_ai_tokens
+                }
+                rag_result = self.rag_service.retrieve_for_rewrite(
+                    tenant_input=tenant_input,
+                    input_id=input_id,
+                    template_id=template_id,
+                    slide_key=slide_key,
+                    user_prompt=user_prompt,
+                    current_slide_content=dict(target_slide.placeholders or {}),
+                    use_rag=use_rag,
+                    template_descriptor=template_descriptor,
+                    target_tokens=target_tokens,
+                    structured_slide_data=structured_slide_data,
+                    session_id=session_id,
+                )
+                rag_context = rag_result.context
+                retrieval_trace = rag_result.retrieval_trace
+                retrieval_stats = dict(rag_result.retrieval_stats or {})
+                rag_used = rag_result.rag_used
+            except Exception as e:
+                logger.warning("RAG retrieval failed in rewrite flow: %s", e)
+
         send_progress(48, "AI generating content...")
         ai_result = self.llm_orchestrator_v2.rewrite_single_slide_v2(
             tenant_input=tenant_input,
@@ -613,6 +693,8 @@ class ReportService:
             user_prompt=user_prompt,
             current_slide_content=dict(target_slide.placeholders or {}),
             target_tokens=target_tokens,
+            rag_context=rag_context,
+            session_id=session_id,
         )
 
         send_progress(58, "Applying AI rewrite result...")
@@ -663,6 +745,9 @@ class ReportService:
             "report_path": config.outputs_url_for(report_path),
             "slidespec": slidespec.model_dump(),
             "version": "v2",
+            "rag_used": rag_used,
+            "retrieval_trace": retrieval_trace,
+            "retrieval_stats": retrieval_stats,
             "updated_slides": updated_slides,
             "updated_count": updated_count,
             "updated_tokens": updated_tokens,

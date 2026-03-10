@@ -1,0 +1,99 @@
+from pathlib import Path
+import sys
+
+import pytest
+from pydantic import ValidationError
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from mss_ai_ppt_sample_assets.backend.models.inputs import TenantInput
+from mss_ai_ppt_sample_assets.backend.models.templates import TemplateDescriptorV2
+from mss_ai_ppt_sample_assets.backend.modules.llm_orchestrator import LLMOrchestratorV2
+from mss_ai_ppt_sample_assets.backend.schemas.requests import CreateReportRequest
+from mss_ai_ppt_sample_assets.backend.services.rag_service import RAGService
+
+
+def _minimal_template() -> TemplateDescriptorV2:
+    return TemplateDescriptorV2.model_validate(
+        {
+            "template_id": "mss_test_rag",
+            "name": "RAG Test Template",
+            "version": "1.0.0",
+            "pptx_file": "demo.pptx",
+            "audience": "management",
+            "language": "zh-CN",
+            "slides": [
+                {
+                    "slide_no": 1,
+                    "slide_key": "summary",
+                    "title": "Summary",
+                    "placeholders": [
+                        {"token": "metric", "source": "metrics.total", "ai_generate": False},
+                        {
+                            "token": "insight",
+                            "ai_generate": True,
+                            "ai_instruction": "根据数据给出洞察结论",
+                            "max_length": 100,
+                        },
+                    ],
+                }
+            ],
+        }
+    )
+
+
+def test_prompt_contains_rag_context_section():
+    orchestrator = LLMOrchestratorV2.__new__(LLMOrchestratorV2)
+    tenant_input = TenantInput(raw={"metrics": {"total": 10}})
+    template = _minimal_template()
+
+    prompt = orchestrator._build_user_prompt_for_slides(
+        tenant_input=tenant_input,
+        template=template,
+        slide_keys=["summary"],
+        rag_context="[1] source=kb.md, page=None, score=0.91\n关键知识点",
+    )
+
+    assert "检索证据（辅助上下文）" in prompt
+    assert "关键知识点" in prompt
+
+
+def test_rewrite_base_prompt_contains_rag_context():
+    orchestrator = LLMOrchestratorV2.__new__(LLMOrchestratorV2)
+    prompt = orchestrator._build_rewrite_base_prompt(
+        context_payload={"metric": 10},
+        use_full_data=False,
+        rag_context="source=kb.md\n建议采用分层治理策略",
+    )
+    assert "检索证据（辅助上下文）" in prompt
+    assert "分层治理策略" in prompt
+
+
+def test_create_report_request_accepts_default_rag_scope():
+    req = CreateReportRequest(
+        input_id="tenant_demo",
+        template_id="mss_test_rag",
+        focus_options=["alert"],
+    )
+    assert req.use_rag is True
+    assert req.rag_scope == ["domain_knowledge"]
+
+
+def test_create_report_request_rejects_invalid_rag_scope():
+    with pytest.raises(ValidationError):
+        CreateReportRequest(
+            input_id="tenant_demo",
+            template_id="mss_test_rag",
+            focus_options=["alert"],
+            rag_scope=["unknown_scope"],
+        )
+
+
+def test_rag_service_split_text_respects_overlap():
+    service = RAGService()
+    text = "A" * 5000
+    chunks = service._split_text(text, page_no=1)
+
+    assert len(chunks) >= 2
+    assert all(chunk["page_no"] == 1 for chunk in chunks)
+    assert all(chunk["text"] for chunk in chunks)

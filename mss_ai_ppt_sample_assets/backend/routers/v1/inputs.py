@@ -251,8 +251,10 @@ async def get_input(input_id: str):
                                     "endpoint": "/api/v1/reports",
                                     "body": {
                                         "input_id": "custom",
-                                        "template_id": "mss_executive_v2",
-                                        "session_id": "session_1769760502379_rh3o0q4ja"
+                                        "template_id": "mss_classic_ops",
+                                        "session_id": "session_1769760502379_rh3o0q4ja",
+                                        "use_rag": True,
+                                        "focus_options": ["vulnerability"]
                                     }
                                 }
                             }
@@ -315,8 +317,10 @@ async def upload_excel(file: UploadFile = File(...)):
                     "endpoint": "/api/v1/reports",
                     "body": {
                         "input_id": "custom",
-                        "template_id": "mss_executive_v2",
-                        "session_id": session_id
+                        "template_id": "mss_classic_ops",
+                        "session_id": session_id,
+                        "use_rag": True,
+                        "focus_options": ["vulnerability"]
                     }
                 }
             }

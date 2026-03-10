@@ -4,7 +4,9 @@ import json
 import logging
 import re
 import time
+from datetime import datetime
 from functools import lru_cache
+from pathlib import Path
 from typing import Any, Dict, FrozenSet, List, Optional, Set, Tuple
 
 import httpx
@@ -82,6 +84,77 @@ class LLMOrchestratorV2:
             except Exception as e:
                 logger.error(f"Failed to initialize OpenAI client: {e}")
                 raise LLMGenerationError(f"OpenAI client initialization failed: {e}") from e
+
+    @staticmethod
+    def _sanitize_filename(value: str) -> str:
+        text = re.sub(r"[^0-9A-Za-z._-]+", "_", value or "").strip("._")
+        return text or "unknown"
+
+    def _dump_prompt_markdown(
+        self,
+        *,
+        session_id: Optional[str],
+        scene: str,
+        template_id: str,
+        system_prompt: str,
+        user_prompt: str,
+        slide_key: Optional[str] = None,
+        batch_index: Optional[int] = None,
+        total_batches: Optional[int] = None,
+    ) -> None:
+        """Persist full prompt payload as markdown under the session directory."""
+        if not session_id:
+            return
+
+        try:
+            session_dir = config.SESSIONS_DIR / session_id
+            session_dir.mkdir(parents=True, exist_ok=True)
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            parts = [f"llm_prompt_{self._sanitize_filename(scene)}"]
+            if batch_index is not None:
+                if total_batches is not None and total_batches > 0:
+                    parts.append(f"batch{batch_index + 1}of{total_batches}")
+                else:
+                    parts.append(f"batch{batch_index + 1}")
+            if slide_key:
+                parts.append(self._sanitize_filename(slide_key))
+            filename = "_".join(parts) + f"_{ts}.md"
+            path = session_dir / filename
+
+            meta_lines = [
+                f"- scene: `{scene}`",
+                f"- template_id: `{template_id}`",
+                f"- session_id: `{session_id}`",
+            ]
+            if slide_key:
+                meta_lines.append(f"- slide_key: `{slide_key}`")
+            if batch_index is not None:
+                if total_batches is not None and total_batches > 0:
+                    meta_lines.append(f"- batch: `{batch_index + 1}/{total_batches}`")
+                else:
+                    meta_lines.append(f"- batch: `{batch_index + 1}`")
+
+            markdown = "\n".join([
+                "# LLM Prompt Dump",
+                "",
+                "## Metadata",
+                *meta_lines,
+                "",
+                "## System Prompt",
+                "```text",
+                system_prompt,
+                "```",
+                "",
+                "## User Prompt",
+                "```text",
+                user_prompt,
+                "```",
+                "",
+            ])
+            path.write_text(markdown, encoding="utf-8")
+            logger.info("Prompt markdown dumped: %s", path)
+        except Exception as e:
+            logger.warning("Failed to dump prompt markdown for session %s: %s", session_id, e)
 
     def _get_nested(self, data: Any, path: str) -> Any:
         """Get nested value from dict or TenantInput using dot notation path."""
@@ -628,6 +701,8 @@ class LLMOrchestratorV2:
         tenant_input: TenantInput,
         template: TemplateDescriptorV2,
         focus_options: Optional[List[str]] = None,
+        rag_context: Optional[str] = None,
+        rag_context_by_slide: Optional[Dict[str, str]] = None,
     ) -> str:
         """Build the user prompt with data and AI instructions."""
         slide_keys = [
@@ -641,6 +716,8 @@ class LLMOrchestratorV2:
             batch_index=0,
             total_batches=1,
             focus_options=focus_options,
+            rag_context=rag_context,
+            rag_context_by_slide=rag_context_by_slide,
         )
 
     def _build_user_prompt_for_slides(
@@ -651,6 +728,8 @@ class LLMOrchestratorV2:
         batch_index: int = 0,
         total_batches: int = 1,
         focus_options: Optional[List[str]] = None,
+        rag_context: Optional[str] = None,
+        rag_context_by_slide: Optional[Dict[str, str]] = None,
     ) -> str:
         """Build user prompt for a subset of slides (for batched generation)."""
         selected_annotations = self._resolve_selected_annotations(focus_options)
@@ -701,6 +780,8 @@ class LLMOrchestratorV2:
         ])
 
         self._append_annotation_section(prompt_parts, selected_annotations)
+        if rag_context and not rag_context_by_slide:
+            self._append_rag_context_section(prompt_parts, rag_context)
 
         ai_placeholders = template.get_ai_placeholders()
         current_slide = None
@@ -714,6 +795,12 @@ class LLMOrchestratorV2:
                     if slide.slide_key == slide_key:
                         prompt_parts.append(f"### 页面：{slide.title} ({slide_key})")
                         break
+                if rag_context_by_slide:
+                    self._append_slide_rag_context_section(
+                        prompt_parts=prompt_parts,
+                        slide_key=slide_key,
+                        rag_context=rag_context_by_slide.get(slide_key),
+                    )
                 current_slide = slide_key
 
             constraints: List[str] = []
@@ -822,20 +909,63 @@ class LLMOrchestratorV2:
         for annotation in selected_annotations:
             prompt_parts.append(f"- {annotation['title']}: {annotation['content']}")
 
+    @staticmethod
+    def _append_rag_context_section(
+        prompt_parts: List[str],
+        rag_context: Optional[str],
+    ) -> None:
+        """Append retrieved knowledge context as auxiliary evidence."""
+        if not rag_context:
+            return
+
+        prompt_parts.extend([
+            "",
+            "## 检索证据（辅助上下文）",
+            "仅作为补充证据使用；若与结构化输入冲突，必须以结构化输入为准。",
+            "```text",
+            rag_context,
+            "```",
+            "",
+        ])
+
+    @staticmethod
+    def _append_slide_rag_context_section(
+        prompt_parts: List[str],
+        slide_key: str,
+        rag_context: Optional[str],
+    ) -> None:
+        if not rag_context:
+            return
+        prompt_parts.extend([
+            "检索证据（仅当前页面）:",
+            f"```text\n[slide={slide_key}]\n{rag_context}\n```",
+            "",
+        ])
+
     def _build_rewrite_base_prompt(
         self,
         context_payload: Dict[str, Any],
         use_full_data: bool = False,
+        rag_context: Optional[str] = None,
     ) -> str:
         """Build additional context block for single-slide rewrite."""
         section_title = "## 全量安全数据（仅上下文）" if use_full_data else "## 当前页面相关数据（仅上下文）"
-        prompt_parts = [
+        prompt_parts: List[str] = [
             section_title,
             "如与当前页面结构化数据冲突，必须以当前页面结构化数据为准。",
             "```json",
             json.dumps(context_payload, ensure_ascii=False, indent=2),
             "```",
         ]
+        if rag_context:
+            prompt_parts.extend([
+                "",
+                "## 检索证据（辅助上下文）",
+                "若检索证据与当前页面结构化数据冲突，必须优先结构化数据。",
+                "```text",
+                rag_context,
+                "```",
+            ])
         return "\n".join(prompt_parts)
 
     def _build_rewrite_prompt_with_user_preference(
@@ -924,6 +1054,8 @@ class LLMOrchestratorV2:
         user_prompt: str,
         current_slide_content: Optional[Dict[str, Any]] = None,
         target_tokens: Optional[List[str]] = None,
+        rag_context: Optional[str] = None,
+        session_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Rewrite AI-generated placeholders for one slide with user preference."""
         template = self.template_repo.get_descriptor_v2(template_id)
@@ -951,6 +1083,7 @@ class LLMOrchestratorV2:
         base_user_prompt = self._build_rewrite_base_prompt(
             context_payload=context_payload,
             use_full_data=use_full_data,
+            rag_context=rag_context,
         )
         historical_ai_content: Dict[str, Any] = {}
         if isinstance(current_slide_content, dict):
@@ -985,7 +1118,17 @@ class LLMOrchestratorV2:
             historical_ai_content=historical_ai_content or None,
         )
 
-        parsed = self._call_and_parse_with_retry(system_prompt, rewrite_user_prompt, template)
+        parsed = self._call_and_parse_with_retry_compat(
+            system_prompt,
+            rewrite_user_prompt,
+            template,
+            prompt_dump={
+                "session_id": session_id,
+                "scene": "rewrite",
+                "template_id": template_id,
+                "slide_key": slide_key,
+            },
+        )
 
         slide_placeholders = parsed.get(slide_key)
         if not isinstance(slide_placeholders, dict):
@@ -1021,6 +1164,121 @@ class LLMOrchestratorV2:
         We use a conservative estimate of 2 characters per token for mixed content.
         """
         return len(text) // 2
+
+    @staticmethod
+    def _truncate_text_for_budget(text: str, max_chars: int) -> str:
+        if max_chars <= 0:
+            return ""
+        if len(text) <= max_chars:
+            return text
+        # Try to keep complete evidence blocks when possible.
+        trimmed = text[:max_chars].rstrip()
+        last_break = trimmed.rfind("\n[")
+        if last_break > max_chars // 3:
+            return trimmed[:last_break].rstrip()
+        return trimmed
+
+    def _build_rag_context_by_slide_for_batch(
+        self,
+        tenant_input: TenantInput,
+        template: TemplateDescriptorV2,
+        slide_keys: List[str],
+        max_tokens_per_batch: int,
+        focus_options: Optional[List[str]],
+        rag_context_by_slide: Optional[Dict[str, str]],
+    ) -> Dict[str, str]:
+        if not rag_context_by_slide:
+            return {}
+
+        batch_context = {
+            key: (rag_context_by_slide.get(key) or "").strip()
+            for key in slide_keys
+            if (rag_context_by_slide.get(key) or "").strip()
+        }
+        if not batch_context:
+            return {}
+
+        base_prompt = self._build_user_prompt_for_slides(
+            tenant_input=tenant_input,
+            template=template,
+            slide_keys=slide_keys,
+            batch_index=0,
+            total_batches=1,
+            focus_options=focus_options,
+            rag_context=None,
+            rag_context_by_slide=None,
+        )
+        base_tokens = self._estimate_prompt_tokens(base_prompt)
+        batch_cap = max(1000, int(max_tokens_per_batch))
+        headroom_tokens = max(0, batch_cap - base_tokens)
+
+        ratio = float(config.settings.rag_prompt_budget_ratio)
+        ratio = min(0.8, max(0.05, ratio))
+        target_tokens = int(batch_cap * ratio)
+        min_tokens = max(100, int(config.settings.rag_prompt_budget_min_tokens))
+        max_tokens = max(min_tokens, int(config.settings.rag_prompt_budget_max_tokens))
+        rag_budget_tokens = min(max(min_tokens, target_tokens), max_tokens, headroom_tokens)
+        if rag_budget_tokens <= 0:
+            logger.info(
+                "Batch %s has no RAG headroom: base_tokens=%s, cap=%s",
+                slide_keys,
+                base_tokens,
+                batch_cap,
+            )
+            return {}
+
+        rag_budget_chars = max(200, rag_budget_tokens * 2)
+        remaining_chars = rag_budget_chars
+        remaining_slides = len(batch_context)
+        allocated: Dict[str, str] = {}
+
+        for slide_key in slide_keys:
+            context = batch_context.get(slide_key)
+            if not context:
+                continue
+            remaining_slides = max(1, remaining_slides)
+            cap = max(120, remaining_chars // remaining_slides)
+            chunk = self._truncate_text_for_budget(context, cap)
+            if chunk:
+                allocated[slide_key] = chunk
+                remaining_chars = max(0, remaining_chars - len(chunk))
+            remaining_slides -= 1
+            if remaining_chars <= 0:
+                break
+
+        logger.info(
+            "Batch rag budget: slides=%s base_tokens=%s cap=%s rag_tokens=%s rag_chars=%s",
+            slide_keys,
+            base_tokens,
+            batch_cap,
+            rag_budget_tokens,
+            sum(len(item) for item in allocated.values()),
+        )
+        return allocated
+
+    def _call_and_parse_with_retry_compat(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        template: TemplateDescriptorV2,
+        prompt_dump: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Dict[str, Any]]:
+        """Compatibility wrapper for tests that monkeypatch old call signature."""
+        try:
+            return self._call_and_parse_with_retry(
+                system_prompt,
+                user_prompt,
+                template,
+                prompt_dump=prompt_dump,
+            )
+        except TypeError as e:
+            if "prompt_dump" not in str(e):
+                raise
+            return self._call_and_parse_with_retry(
+                system_prompt,
+                user_prompt,
+                template,
+            )
 
     def _estimate_batch_prompt_tokens(
         self,
@@ -1418,6 +1676,8 @@ class LLMOrchestratorV2:
         template: TemplateDescriptorV2,
         max_tokens_per_batch: int = 15000,
         focus_options: Optional[List[str]] = None,
+        rag_context: Optional[str] = None,
+        rag_context_by_slide: Optional[Dict[str, str]] = None,
         session_id: str = None,
         ws_manager = None,
         event_loop = None,
@@ -1459,12 +1719,33 @@ class LLMOrchestratorV2:
             logger.info("Single batch - using standard generation")
             send_progress(35, "正在调用 AI 生成内容...")
             system_prompt = self._build_system_prompt(template)
+            batch_rag_context_by_slide = self._build_rag_context_by_slide_for_batch(
+                tenant_input=tenant_input,
+                template=template,
+                slide_keys=batches[0] if batches else [],
+                max_tokens_per_batch=max_tokens_per_batch,
+                focus_options=focus_options,
+                rag_context_by_slide=rag_context_by_slide,
+            )
             user_prompt = self._build_user_prompt(
                 tenant_input,
                 template,
                 focus_options=focus_options,
+                rag_context=rag_context,
+                rag_context_by_slide=batch_rag_context_by_slide,
             )
-            result = self._call_and_parse_with_retry(system_prompt, user_prompt, template)
+            result = self._call_and_parse_with_retry_compat(
+                system_prompt,
+                user_prompt,
+                template,
+                prompt_dump={
+                    "session_id": session_id,
+                    "scene": "generate",
+                    "template_id": template.template_id,
+                    "batch_index": 0,
+                    "total_batches": 1,
+                },
+            )
             send_progress(60, "AI content generation completed")
             return result
 
@@ -1489,12 +1770,32 @@ class LLMOrchestratorV2:
                 batch_index=i,
                 total_batches=total_batches,
                 focus_options=focus_options,
+                rag_context=rag_context,
+                rag_context_by_slide=self._build_rag_context_by_slide_for_batch(
+                    tenant_input=tenant_input,
+                    template=template,
+                    slide_keys=batch_slide_keys,
+                    max_tokens_per_batch=max_tokens_per_batch,
+                    focus_options=focus_options,
+                    rag_context_by_slide=rag_context_by_slide,
+                ),
             )
 
             prompt_tokens = self._estimate_prompt_tokens(user_prompt)
             logger.info(f"   Batch prompt size: ~{prompt_tokens} tokens")
 
-            batch_placeholders = self._call_and_parse_with_retry(system_prompt, user_prompt, template)
+            batch_placeholders = self._call_and_parse_with_retry_compat(
+                system_prompt,
+                user_prompt,
+                template,
+                prompt_dump={
+                    "session_id": session_id,
+                    "scene": "generate",
+                    "template_id": template.template_id,
+                    "batch_index": i,
+                    "total_batches": total_batches,
+                },
+            )
 
             for slide_key, tokens in batch_placeholders.items():
                 if slide_key not in all_ai_placeholders:
@@ -1512,8 +1813,21 @@ class LLMOrchestratorV2:
         user_prompt: str,
         template: TemplateDescriptorV2,
         max_parse_retries: int = 5,
+        prompt_dump: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Dict[str, Any]]:
         """Call LLM and parse response with retry on format errors."""
+        if prompt_dump:
+            self._dump_prompt_markdown(
+                session_id=prompt_dump.get("session_id"),
+                scene=prompt_dump.get("scene") or "generate",
+                template_id=prompt_dump.get("template_id") or template.template_id,
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                slide_key=prompt_dump.get("slide_key"),
+                batch_index=prompt_dump.get("batch_index"),
+                total_batches=prompt_dump.get("total_batches"),
+            )
+
         for attempt in range(max_parse_retries):
             try:
                 logger.info(f"LLM generation attempt {attempt + 1}/{max_parse_retries}")
@@ -1677,6 +1991,8 @@ class LLMOrchestratorV2:
         template_id: str,
         use_mock: bool = False,
         focus_options: Optional[List[str]] = None,
+        rag_context: Optional[str] = None,
+        rag_context_by_slide: Optional[Dict[str, str]] = None,
         session_id: str = None,
         ws_manager = None,
         event_loop = None,
@@ -1743,6 +2059,8 @@ class LLMOrchestratorV2:
                     tenant_input,
                     template,
                     focus_options=focus_options,
+                    rag_context=rag_context,
+                    rag_context_by_slide=rag_context_by_slide,
                     session_id=session_id,
                     ws_manager=ws_manager,
                     event_loop=event_loop,

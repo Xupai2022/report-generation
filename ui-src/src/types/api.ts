@@ -43,6 +43,14 @@ export interface CreateReportReq {
   focus_options: string[];
 }
 
+export interface UploadExcelResp {
+  session_id: string;
+  filename?: string;
+  files?: Record<string, unknown>;
+  preview?: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
 export interface CreateReportResp {
   job_id: string;
   session_id?: string;

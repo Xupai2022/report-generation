@@ -589,17 +589,20 @@
         {
           "token": "asset_value1",
           "ai_generate": true,
-          "ai_instruction": "基于本页资产管理数据（asset_management），输出第一个简短短句（6-8个字）展示本季/年度在资产管理工作中的重点价值。"
+          "ai_instruction": "基于本页资产管理数据（asset_management），输出第一个简短短句（6-8个字）展示本季/年度在资产管理工作中的重点价值。",
+          "max_length": 8
         },
         {
           "token": "asset_value2",
           "ai_generate": true,
-          "ai_instruction": "基于本页资产管理数据（asset_management），输出第二个简短短句（6-8个字）展示本季/年度在资产管理工作中的重点价值。"
+          "ai_instruction": "基于本页资产管理数据（asset_management），输出第二个简短短句（6-8个字）展示本季/年度在资产管理工作中的重点价值。",
+          "max_length": 8
         },
         {
           "token": "asset_value3",
           "ai_generate": true,
-          "ai_instruction": "基于本页资产管理数据（asset_management），输出第三个简短短句（6-8个字）展示本季/年度在资产管理工作中的重点价值。"
+          "ai_instruction": "基于本页资产管理数据（asset_management），输出第三个简短短句（6-8个字）展示本季/年度在资产管理工作中的重点价值。",
+          "max_length": 8
         },
         {
           "token": "internal_network_server_count",
@@ -776,17 +779,17 @@
         {
           "token": "threat_improve1",
           "ai_generate": true,
-          "ai_instruction": "生成威胁运营改进措施1。从threat_improvements[0]获取。"
+          "ai_instruction": "生成威胁运营改进措施1。从threat_effectiveness获取。"
         },
         {
           "token": "threat_improve2",
           "ai_generate": true,
-          "ai_instruction": "生成威胁运营改进措施2。从threat_improvements[1]获取。"
+          "ai_instruction": "生成威胁运营改进措施2。从threat_effectiveness获取。"
         },
         {
           "token": "threat_improve3",
           "ai_generate": true,
-          "ai_instruction": "生成威胁运营改进措施3。从threat_improvements[2]获取。"
+          "ai_instruction": "生成威胁运营改进措施3。从threat_effectiveness获取。"
         },
         {
           "token": "threat_summary",
@@ -958,17 +961,17 @@
         {
           "token": "platform_improve1",
           "ai_generate": true,
-          "ai_instruction": "生成平台运营改进措施1。从platform_improvements[0]获取。"
+          "ai_instruction": "生成平台运营改进措施1。从platform_effectiveness获取。"
         },
         {
           "token": "platform_improve2",
           "ai_generate": true,
-          "ai_instruction": "生成平台运营改进措施2。从platform_improvements[1]获取。"
+          "ai_instruction": "生成平台运营改进措施2。从platform_effectiveness获取。"
         },
         {
           "token": "platform_improve3",
           "ai_generate": true,
-          "ai_instruction": "生成平台运营改进措施3。从platform_improvements[2]获取。"
+          "ai_instruction": "生成平台运营改进措施3。从platform_effectiveness获取。"
         }
       ],
       "context_policy": "local_only"

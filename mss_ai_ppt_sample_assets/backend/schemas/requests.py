@@ -30,6 +30,7 @@ class CreateReportRequest(BaseModel):
     input_id: str = Field(..., description="Input data ID", example="tenant_acme_2025-11")
     template_id: str = Field(..., description="Template ID", example="mss_executive_v2")
     use_mock: bool = Field(False, description="Use mock mode (skip AI generation)")
+    use_rag: bool = Field(True, description="Enable RAG retrieval for this request")
     focus_options: List[str] = Field(
         ...,
         min_items=1,
@@ -53,6 +54,7 @@ class CreateReportRequest(BaseModel):
                 "input_id": "tenant_acme_2025-11",
                 "template_id": "mss_executive_v2",
                 "use_mock": False,
+                "use_rag": True,
                 "focus_options": ["vulnerability", "alert"],
                 "idempotency_key": "user123-request456"
             }
@@ -143,6 +145,7 @@ class AISlideRewriteRequest(BaseModel):
             "If omitted or empty, backend rewrites all ai_generate=true tokens on the slide."
         ),
     )
+    use_rag: bool = Field(True, description="Enable RAG retrieval for AI rewrite")
     client_id: Optional[str] = Field(None, description="Optional WebSocket client ID")
 
     @validator("user_prompt")
@@ -177,9 +180,31 @@ class AISlideRewriteRequest(BaseModel):
             "example": {
                 "slide_key": "summary",
                 "user_prompt": "请聚焦本月高风险告警的业务影响，语气偏管理层，并给出三条可执行建议。",
-                "target_tokens": ["business_continuity_assurance_conclusion", "user_trust_assurance_conclusion"]
+                "target_tokens": ["business_continuity_assurance_conclusion", "user_trust_assurance_conclusion"],
+                "use_rag": True
             }
         }
+
+
+class RAGBuildIndexRequest(BaseModel):
+    """Request model for full RAG index build."""
+    source_dir: Optional[str] = Field(None, description="Source directory containing documents")
+    template_id: Optional[str] = Field(None, description="Optional template identifier")
+    reset_collection: bool = Field(True, description="Recreate collection before indexing")
+
+
+class RAGUpdateIndexRequest(BaseModel):
+    """Request model for incremental RAG index update."""
+    source_dir: Optional[str] = Field(None, description="Source directory containing documents")
+    template_id: Optional[str] = Field(None, description="Optional template identifier")
+
+
+class RAGQueryRequest(BaseModel):
+    """Diagnostic RAG query request."""
+    query_text: str = Field(..., min_length=1, description="Search query text")
+    template_id: Optional[str] = Field(None, description="Optional template identifier for metadata filter")
+    scene: Literal["diagnostic", "generate", "rewrite"] = Field("diagnostic", description="Query scene")
+    top_k: Optional[int] = Field(None, ge=1, le=50, description="Number of retrieval results")
 
 class SubmitRatingRequest(BaseModel):
     """User rating submission request."""

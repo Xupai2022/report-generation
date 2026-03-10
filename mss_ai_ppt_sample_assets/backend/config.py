@@ -23,6 +23,8 @@ PREVIEWS_DIR = OUTPUTS_DIR / "previews"
 SLIDESPECS_DIR = OUTPUTS_DIR / "slidespecs"
 SESSIONS_DIR = OUTPUTS_DIR / "sessions"  # Isolated session directories for concurrent requests
 JOBS_DIR = OUTPUTS_DIR / "jobs"  # Job state storage directory
+RAG_DIR = OUTPUTS_DIR / "rag"
+RAG_META_FILE = RAG_DIR / "index_meta.json"
 
 OUTPUTS_URL_PREFIX = "/" + os.getenv("MSS_OUTPUTS_URL_PREFIX", "/outputs").strip("/")
 
@@ -73,6 +75,26 @@ class Settings:
             "change-me-in-production-use-secrets-token-urlsafe-32"
         )
         self.admin_session_max_age: int = int(os.getenv("ADMIN_SESSION_MAX_AGE", "604800"))  # 7 days
+
+        # RAG configuration
+        self.rag_enabled: bool = os.getenv("RAG_ENABLED", "false").lower() == "true"
+        self.rag_vector_backend: str = os.getenv("RAG_VECTOR_BACKEND", "qdrant")
+        self.rag_qdrant_url: Optional[str] = os.getenv("RAG_QDRANT_URL")
+        self.rag_qdrant_api_key: Optional[str] = os.getenv("RAG_QDRANT_API_KEY")
+        self.rag_qdrant_collection: str = os.getenv("RAG_QDRANT_COLLECTION", "kb_chunks")
+        self.rag_qdrant_path: str = os.getenv("RAG_QDRANT_PATH", str(RAG_DIR / "qdrant"))
+        self.rag_embed_model: str = os.getenv("RAG_EMBED_MODEL", "BAAI/bge-small-zh-v1.5")
+        self.rag_top_k: int = int(os.getenv("RAG_TOP_K", "8"))
+        self.rag_max_context_chars: int = int(os.getenv("RAG_MAX_CONTEXT_CHARS", "4000"))
+        self.rag_max_context_chars_per_slide: int = int(os.getenv("RAG_MAX_CONTEXT_CHARS_PER_SLIDE", "1600"))
+        self.rag_min_score: float = float(os.getenv("RAG_MIN_SCORE", "0.30"))
+        self.rag_prompt_budget_ratio: float = float(os.getenv("RAG_PROMPT_BUDGET_RATIO", "0.20"))
+        self.rag_prompt_budget_min_tokens: int = int(os.getenv("RAG_PROMPT_BUDGET_MIN_TOKENS", "400"))
+        self.rag_prompt_budget_max_tokens: int = int(os.getenv("RAG_PROMPT_BUDGET_MAX_TOKENS", "2500"))
+        self.rag_chunk_size_tokens: int = int(os.getenv("RAG_CHUNK_SIZE_TOKENS", "600"))
+        self.rag_chunk_overlap_tokens: int = int(os.getenv("RAG_CHUNK_OVERLAP_TOKENS", "80"))
+        self.rag_hf_local_files_only: bool = os.getenv("RAG_HF_LOCAL_FILES_ONLY", "false").lower() == "true"
+        self.rag_source_dir: str = os.getenv("RAG_SOURCE_DIR", str(DATA_DIR / "rag_docs"))
 
         # Validate OpenAI configuration when LLM is enabled
         if self.enable_llm and not self.openai_api_key:

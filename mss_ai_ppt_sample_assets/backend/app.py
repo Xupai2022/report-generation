@@ -150,6 +150,7 @@ def api_root():
             "inputs": "/api/v1/inputs",
             "sessions": "/api/v1/sessions",
             "system": "/api/v1/system",
+            "rag": "/api/v1/rag",
             "websocket": "/ws/{client_id}"
         }
     }

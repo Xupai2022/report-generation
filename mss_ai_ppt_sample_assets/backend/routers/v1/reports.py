@@ -117,6 +117,7 @@ def _build_default_idempotency_key(
         f"input:{req.input_id}|"
         f"template:{req.template_id}|"
         f"use_mock:{int(req.use_mock)}|"
+        f"use_rag:{int(req.use_rag)}|"
         f"focus:{focus}"
     )
 
@@ -174,6 +175,8 @@ def _mark_job_completed_for_rewrite(job_id: str, result: Dict[str, Any], message
         metadata = dict(existing.metadata or {})
         metadata["warnings"] = result.get("warnings", [])
         metadata["version"] = result.get("version", metadata.get("version", "v2"))
+        metadata["rag_used"] = bool(result.get("rag_used", False))
+        metadata["retrieval_trace"] = result.get("retrieval_trace", [])
         preview_timings = result.get("preview_timings")
         if isinstance(preview_timings, dict):
             metadata["preview_timings"] = preview_timings
@@ -225,6 +228,7 @@ async def _process_report_async(
     template_id: str,
     use_mock: bool,
     focus_options=None,
+    use_rag: bool = True,
 ):
     """Background task to process report generation.
 
@@ -247,6 +251,7 @@ async def _process_report_async(
                     template_id,
                     use_mock,
                     focus_options=focus_options,
+                    use_rag=use_rag,
                 )
         else:
             await _do_generation(
@@ -255,6 +260,7 @@ async def _process_report_async(
                 template_id,
                 use_mock,
                 focus_options=focus_options,
+                use_rag=use_rag,
             )
 
     except Exception as e:
@@ -278,6 +284,7 @@ async def _process_report_async(
                 template_id,
                 use_mock,
                 focus_options=focus_options,
+                use_rag=use_rag,
             )
 
 
@@ -287,6 +294,7 @@ async def _do_generation(
     template_id: str,
     use_mock: bool,
     focus_options=None,
+    use_rag: bool = True,
 ):
     """Execute the actual generation (called with semaphore acquired)."""
     job_id = job.job_id
@@ -308,6 +316,7 @@ async def _do_generation(
             template_id,
             use_mock=use_mock,
             focus_options=focus_options,
+            use_rag=use_rag,
             session_id=job.session_id,
             ws_manager=ws_manager,
             event_loop=loop  # Pass the main event loop
@@ -429,7 +438,8 @@ async def create_report(request: Request, response: Response, req: CreateReportR
     logger.info(
         f"=== POST /api/v1/reports: browser_id={browser_id}, client_ip={client_ip}, input_id={req.input_id}, "
         f"template_id={req.template_id}, use_mock={req.use_mock}, idempotency_key={effective_idempotency_key}, "
-        f"client_id={req.client_id}, session_id={req.session_id}, focus_options={req.focus_options} ==="
+        f"use_rag={req.use_rag}, client_id={req.client_id}, "
+        f"session_id={req.session_id}, focus_options={req.focus_options} ==="
     )
 
     if not job_manager:
@@ -524,6 +534,7 @@ async def create_report(request: Request, response: Response, req: CreateReportR
                 req.template_id,
                 req.use_mock,
                 focus_options=req.focus_options,
+                use_rag=req.use_rag,
             )
         )
         _session_job_map[job.session_id] = job.job_id
@@ -842,6 +853,7 @@ async def ai_rewrite_slide(report_id: str, req: AISlideRewriteRequest, request: 
                 slide_key=req.slide_key,
                 user_prompt=req.user_prompt,
                 target_tokens=req.target_tokens,
+                use_rag=req.use_rag,
                 ws_manager=ws_manager,
                 event_loop=loop,
                 progress_callback=(lambda progress, message: job_manager.update_progress(report_id, progress, message)) if job_manager else None,

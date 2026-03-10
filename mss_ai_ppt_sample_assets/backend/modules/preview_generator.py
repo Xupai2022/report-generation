@@ -85,6 +85,9 @@ class PPTPreviewGenerator:
             for item in self.base_dir.iterdir():
                 if not item.is_dir():
                     continue
+                # Preserve static template preview assets used by pre-config UI.
+                if item.name.startswith("template_"):
+                    continue
 
                 # Check directory modification time (last access/creation)
                 dir_mtime = item.stat().st_mtime

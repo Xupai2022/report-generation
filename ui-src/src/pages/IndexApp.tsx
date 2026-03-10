@@ -216,6 +216,7 @@ export function IndexApp() {
 
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [selectedInput, setSelectedInput] = useState('');
+  const [uploadingExcel, setUploadingExcel] = useState(false);
   const [useMock, setUseMock] = useState(true);
   const [selectedFocus, setSelectedFocus] = useState<FocusValue[]>(['business_protection']);
 
@@ -259,6 +260,7 @@ export function IndexApp() {
   const editorPaneRef = useRef<HTMLElement | null>(null);
   const exportPopoverRef = useRef<HTMLDivElement | null>(null);
   const aiPopoverRef = useRef<HTMLDivElement | null>(null);
+  const excelUploadInputRef = useRef<HTMLInputElement | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
   const wsRetryRef = useRef<number | null>(null);
@@ -377,28 +379,86 @@ export function IndexApp() {
     return t('toastTitleHint', lang === 'zh-CN' ? '提示' : 'Notice');
   };
 
-  const localizeProgressMessage = (raw?: string): string => {
+  type ProgressStage = 'init' | 'parse' | 'retrieve' | 'ai' | 'renderPpt' | 'renderPreview' | 'complete';
+
+  const localizeProgressMessage = (nextProgress?: number, raw?: string): string => {
     const text = (raw || '').trim();
-    if (!text) return t('progressInit', lang === 'zh-CN' ? '初始化' : 'Initializing');
     const lower = text.toLowerCase();
-    if (lower.includes('already generating') || lower.includes('reusing the running task')) {
-      return t('progressGenerateContent', lang === 'zh-CN' ? 'AI 生成内容' : 'AI generating content');
+    const progressNumber = typeof nextProgress === 'number' ? nextProgress : 0;
+    const has = (keyword: string) => lower.includes(keyword);
+    const action = actionRef.current;
+
+    let stage: ProgressStage = 'init';
+    if (
+      progressNumber >= 100
+      || has('complete')
+      || has('completed')
+      || has('done')
+      || has('finished')
+      || has('finalized')
+    ) {
+      stage = 'complete';
+    } else if (action === 'rewrite') {
+      if (progressNumber >= 78 || ((has('preview') || has('预览')) && (has('render') || has('渲染')))) {
+        stage = 'renderPreview';
+      } else if (progressNumber >= 66 || has('rendering ppt') || has('渲染 ppt') || has('saving slide specification') || has('finalizing report')) {
+        stage = 'renderPpt';
+      } else {
+        stage = 'parse';
+      }
+    } else if (action === 'ai-rewrite') {
+      if (progressNumber >= 78 || ((has('preview') || has('预览')) && (has('render') || has('渲染')))) {
+        stage = 'renderPreview';
+      } else if (progressNumber >= 66 || has('rendering ppt') || has('渲染 ppt') || has('saving slide specification') || has('finalizing report')) {
+        stage = 'renderPpt';
+      } else if (has('rag') || has('retriev') || has('knowledge') || has('知识库') || has('检索') || (progressNumber >= 30 && progressNumber < 48)) {
+        stage = 'retrieve';
+      } else if (has('ai') || has('generat') || has('rewrite') || has('调用') || has('重写') || (progressNumber >= 48 && progressNumber < 66)) {
+        stage = 'ai';
+      } else {
+        stage = 'parse';
+      }
+    } else if (progressNumber >= 78 || ((has('preview') || has('预览')) && (has('render') || has('渲染')))) {
+      stage = 'renderPreview';
+    } else if (progressNumber >= 68 || has('rendering ppt') || has('渲染 ppt') || has('saving slide specification') || has('保存文件') || has('finalizing report')) {
+      stage = 'renderPpt';
+    } else if (
+      has('rag')
+      || has('retriev')
+      || has('knowledge')
+      || has('知识库')
+      || has('检索')
+    ) {
+      stage = 'retrieve';
+    } else if (
+      ((has('ai') || has('模型')) && (has('generat') || has('rewrite') || has('调用') || has('重写')))
+      || has('generate content')
+      || has('ai 生成中')
+      || has('ai generating')
+    ) {
+      stage = 'ai';
+    } else if (
+      progressNumber >= 5
+      || has('parse')
+      || has('excel')
+      || has('input')
+      || has('extract')
+      || has('data')
+      || has('加载模板')
+      || has('提取数据')
+      || has('占位符')
+      || (has('load') && has('template'))
+    ) {
+      stage = 'parse';
     }
-    if (lower.includes('init')) return t('progressInit', lang === 'zh-CN' ? '初始化' : 'Initializing');
-    if (lower.includes('load') && lower.includes('template')) return t('progressLoadTemplate', lang === 'zh-CN' ? '加载模板' : 'Loading template');
-    if ((lower.includes('ai') && lower.includes('generat')) || lower.includes('generate content')) {
-      return t('progressGenerateContent', lang === 'zh-CN' ? 'AI 生成内容' : 'AI generating content');
-    }
-    if (lower.includes('render') && lower.includes('preview')) {
-      return t('progressRenderPreview', lang === 'zh-CN' ? '渲染预览图' : 'Rendering preview images');
-    }
-    if (lower.includes('render') && lower.includes('ppt')) {
-      return t('progressRenderPpt', lang === 'zh-CN' ? '渲染 PPT' : 'Rendering PPT');
-    }
-    if (lower.includes('complete') || lower.includes('done') || lower.includes('finished')) {
-      return t('progressComplete', lang === 'zh-CN' ? '完成' : 'Completed');
-    }
-    return t('statusProcessing', lang === 'zh-CN' ? '生成中' : 'Processing');
+
+    if (stage === 'complete') return t('progressComplete', lang === 'zh-CN' ? '处理完成' : 'Completed');
+    if (stage === 'renderPreview') return t('progressRenderPreview', lang === 'zh-CN' ? '生成预览图片' : 'Generating preview images');
+    if (stage === 'renderPpt') return t('progressRenderPpt', lang === 'zh-CN' ? '排版并生成 PPT' : 'Composing and building PPT');
+    if (stage === 'ai') return t('progressCallAi', lang === 'zh-CN' ? '生成报告内容' : 'Generating report content');
+    if (stage === 'retrieve') return t('progressRetrieveKnowledge', lang === 'zh-CN' ? '匹配相关知识参考' : 'Gathering relevant references');
+    if (stage === 'parse') return t('progressParseData', lang === 'zh-CN' ? '读取并整理数据' : 'Reading and structuring data');
+    return t('progressInit', lang === 'zh-CN' ? '准备生成任务' : 'Preparing task');
   };
 
   const applyIncomingProgress = (nextProgress: number | undefined, message?: string) => {
@@ -406,19 +466,7 @@ export function IndexApp() {
     if (numeric < progressValueRef.current) return;
     progressValueRef.current = numeric;
     setProgress(numeric);
-    if (message) {
-      const localized = localizeProgressMessage(message);
-      const completedLabel = t('progressComplete', lang === 'zh-CN' ? '完成' : 'Completed');
-      if (numeric < 100 && localized === completedLabel) {
-        if (actionRef.current === 'rewrite' || actionRef.current === 'ai-rewrite') {
-          setProgressText(t('progressRenderPreview', lang === 'zh-CN' ? '渲染预览图' : 'Rendering preview images'));
-        } else {
-          setProgressText(t('statusProcessing', lang === 'zh-CN' ? '生成中' : 'Processing'));
-        }
-      } else {
-        setProgressText(localized);
-      }
-    }
+    setProgressText(localizeProgressMessage(numeric, message));
   };
 
   const loadTemplateSlides = async (templateId: string) => {
@@ -554,7 +602,7 @@ export function IndexApp() {
     stopPolling();
     progressValueRef.current = 100;
     setProgress(100);
-    setProgressText(t('progressComplete', lang === 'zh-CN' ? '完成' : 'Completed'));
+    setProgressText(t('progressComplete', lang === 'zh-CN' ? '处理完成' : 'Completed'));
     setJobId(nextJobId);
     const templateId = nextJobId.split(':')[1] || selectedTemplate;
     if (templateId) {
@@ -665,7 +713,7 @@ export function IndexApp() {
     completionHandledJobRef.current = null;
     progressValueRef.current = 0;
     setProgress(0);
-    setProgressText(t('progressInit', lang === 'zh-CN' ? '初始化' : 'Initializing'));
+    setProgressText(t('progressInit', lang === 'zh-CN' ? '准备生成任务' : 'Preparing task'));
     try {
       const firstSlideKey = firstSlide(slidespec);
       if (firstSlideKey) {
@@ -716,6 +764,35 @@ export function IndexApp() {
         },
       };
     });
+  };
+
+  const openExcelFilePicker = () => {
+    if (uploadingExcel || loading || generationInProgress) return;
+    excelUploadInputRef.current?.click();
+  };
+
+  const handleExcelFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.xlsx')) {
+      showToast('warning', lt('msgUploadExcelOnlyXlsx', '仅支持上传 .xlsx 文件', 'Only .xlsx files are supported'));
+      return;
+    }
+    setUploadingExcel(true);
+    try {
+      const result = await MainApi.uploadExcel(file);
+      const sid = String(result.session_id || '').trim();
+      if (!sid) throw new Error(lt('msgUploadMissingSessionId', '上传成功但未返回 session_id', 'Upload succeeded but session_id is missing'));
+      setSessionId(sid);
+      setSelectedInput('custom');
+      showToast('success', lt('msgUploadExcelSuccess', 'Excel 上传成功，已切换为“custom”数据源', 'Excel uploaded. Switched data source to "custom".'));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : lt('msgUploadExcelFailed', 'Excel 上传失败', 'Excel upload failed');
+      showToast('error', message);
+    } finally {
+      setUploadingExcel(false);
+    }
   };
 
   const handleReconfigure = () => {
@@ -907,7 +984,7 @@ export function IndexApp() {
     actionRef.current = 'rewrite';
     progressValueRef.current = 0;
     setProgress(0);
-    setProgressText(t('progressInit', lang === 'zh-CN' ? '初始化' : 'Initializing'));
+    setProgressText(t('progressInit', lang === 'zh-CN' ? '准备生成任务' : 'Preparing task'));
     setLoading(true);
     try {
       const result = await MainApi.rewriteSlides(jobId, payload, clientId);
@@ -916,7 +993,7 @@ export function IndexApp() {
       await syncPreviewUrls(jobId, true);
       progressValueRef.current = 100;
       setProgress(100);
-      setProgressText(t('progressComplete', lang === 'zh-CN' ? '完成' : 'Completed'));
+      setProgressText(t('progressComplete', lang === 'zh-CN' ? '处理完成' : 'Completed'));
       showToast('success', t('msgUpdateSlidesSuccess').replace('{count}', String(result.updated_count || 0)));
     } catch (error) {
       showToast('error', error instanceof Error ? error.message : t('titleUpdateFailed'));
@@ -956,7 +1033,7 @@ export function IndexApp() {
     actionRef.current = 'ai-rewrite';
     progressValueRef.current = 0;
     setProgress(0);
-    setProgressText(t('progressInit', lang === 'zh-CN' ? '初始化' : 'Initializing'));
+    setProgressText(t('progressInit', lang === 'zh-CN' ? '准备生成任务' : 'Preparing task'));
     setLoading(true);
     try {
       const result = await MainApi.aiRewriteSlide(
@@ -979,7 +1056,7 @@ export function IndexApp() {
       setAiPrompt('');
       progressValueRef.current = 100;
       setProgress(100);
-      setProgressText(t('progressComplete', lang === 'zh-CN' ? '完成' : 'Completed'));
+      setProgressText(t('progressComplete', lang === 'zh-CN' ? '处理完成' : 'Completed'));
       if ((result.updated_count || 0) > 0) showToast('success', t('msgAiRewriteSuccess').replace('{slide}', activeSlideKey));
       else showToast('warning', t('msgAiRewriteNoChanges'));
     } catch (error) {
@@ -1424,8 +1501,29 @@ export function IndexApp() {
                   <h3>{t('preConfigDataCardTitle', 'Select Data Source')}</h3>
                   <p>{t('preConfigDataCardDesc', 'Choose your Excel or CSV input data')}</p>
                   <div className="data-source-controls">
+                    <div className="data-source-upload-row">
+                      <button className="btn-secondary data-source-upload-btn" onClick={openExcelFilePicker} disabled={uploadingExcel || loading || generationInProgress}>
+                        <UploadCloud size={14} className={uploadingExcel ? 'spin' : undefined} />
+                        {uploadingExcel
+                          ? lt('btnUploadingExcel', '上传中...', 'Uploading...')
+                          : lt('btnUploadExcelMini', '上传 Excel（测试）', 'Upload Excel (Test)')}
+                      </button>
+                      <small>{lt('msgUploadExcelHint', '不影响默认本地数据源，仅用于测试上传流程', 'Does not affect default local source. For upload flow testing only.')}</small>
+                      <input
+                        ref={excelUploadInputRef}
+                        type="file"
+                        accept=".xlsx"
+                        style={{ display: 'none' }}
+                        onChange={handleExcelFileSelected}
+                      />
+                    </div>
                     <select value={selectedInput} onChange={(e) => setSelectedInput(e.target.value)}>
                       <option value="">{t('msgSelectDataSource', 'Select data source...')}</option>
+                      {selectedInput === 'custom' ? (
+                        <option value="custom">
+                          {lt('labelCustomUploadedInput', 'custom（上传 Excel）', 'custom (uploaded Excel)')}
+                        </option>
+                      ) : null}
                       {inputs.map((input) => (
                         <option key={input.id} value={input.id}>
                           {input.description || input.id}
@@ -2002,7 +2100,7 @@ export function IndexApp() {
           <div className="progress-float-title">
             <RefreshCw size={13} className="spin" /> {lt('msgGenerating', '正在生成报告', 'Generating report')}
           </div>
-          <div className="progress-float-stage">{progressText || t('progressInit', lang === 'zh-CN' ? '初始化' : 'Initializing')}</div>
+          <div className="progress-float-stage">{progressText || t('progressInit', lang === 'zh-CN' ? '准备生成任务' : 'Preparing task')}</div>
           <div className="progress-float-rail">
             <span style={{ width: `${Math.max(0, Math.min(100, progress))}%` }} />
           </div>

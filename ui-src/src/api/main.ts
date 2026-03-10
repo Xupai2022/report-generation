@@ -14,12 +14,44 @@
   RewriteSlidesResp,
   TemplateItem,
   TemplateSlideMeta,
+  UploadExcelResp,
 } from '../types/api';
 import { apiFetch } from './client';
 
 export const MainApi = {
   listTemplates: () => apiFetch<TemplateItem[]>('/api/v1/templates'),
   listInputs: () => apiFetch<InputItem[]>('/api/v1/inputs'),
+  uploadExcel: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch('/api/v1/inputs/excel', {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+
+    const text = await response.text();
+    let payload: any = null;
+    if (text) {
+      try {
+        payload = JSON.parse(text);
+      } catch {
+        payload = text;
+      }
+    }
+
+    if (!response.ok) {
+      const message = payload?.error?.message || payload?.detail || response.statusText || 'Request failed';
+      throw new Error(message);
+    }
+
+    if (payload && typeof payload === 'object' && 'data' in payload) {
+      return payload.data as UploadExcelResp;
+    }
+
+    return payload as UploadExcelResp;
+  },
   getTemplateSlides: (templateId: string) => apiFetch<TemplateSlideMeta[]>(`/api/v1/templates/${encodeURIComponent(templateId)}/slides`),
   createReport: (body: CreateReportReq) => apiFetch<CreateReportResp>('/api/v1/reports', { method: 'POST', body: JSON.stringify(body) }),
   getJobStatus: (jobId: string) => apiFetch<JobStatusResp>(`/api/v1/jobs/${encodeURIComponent(jobId)}/status`),

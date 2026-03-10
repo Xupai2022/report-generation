@@ -163,6 +163,8 @@ class JobManager:
                     "generation_duration_ms": generation_duration_ms,
                     "ai_model": ai_model,
                     "preview_timings": result.get("preview_timings"),
+                    "rag_used": bool(result.get("rag_used", False)),
+                    "retrieval_trace": result.get("retrieval_trace", []),
                 }
             })
             self.logger.info(f"Job completed: {job_id} (duration: {generation_duration_ms}ms)")
