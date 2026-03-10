@@ -3,14 +3,12 @@
 import json
 import logging
 import re
-import time
 from datetime import datetime
 from functools import lru_cache
-from pathlib import Path
 from typing import Any, Dict, FrozenSet, List, Optional, Set, Tuple
 
 import httpx
-from openai import OpenAI, APIError, RateLimitError, APIConnectionError
+from openai import OpenAI
 
 from mss_ai_ppt_sample_assets.backend import config
 from mss_ai_ppt_sample_assets.backend.modules.retry_policy import with_llm_retry
@@ -31,7 +29,19 @@ def _build_openai_client() -> OpenAI:
     client_kwargs = {"api_key": config.settings.openai_api_key}
     if config.settings.openai_base_url:
         client_kwargs["base_url"] = config.settings.openai_base_url
-    client_kwargs["http_client"] = httpx.Client(trust_env=False)
+    # 禁用 SDK 内置自动重试：统一由我们自己的重试策略控制，避免多层重试叠加。
+    client_kwargs["max_retries"] = 0
+    # 显式绑定四类超时，确保“卡住”能在可控时间内被识别并反馈给用户。
+    client_kwargs["http_client"] = httpx.Client(
+        timeout=httpx.Timeout(
+            # connect/read/write/pool 分别对应建连、读响应、写请求、等连接池可用连接。
+            connect=config.settings.llm_connect_timeout_seconds,
+            read=config.settings.llm_read_timeout_seconds,
+            write=config.settings.llm_write_timeout_seconds,
+            pool=config.settings.llm_pool_timeout_seconds,
+        ),
+        trust_env=False,
+    )
     return OpenAI(**client_kwargs)
 
 
@@ -1875,7 +1885,7 @@ class LLMOrchestratorV2:
         content = self._call_openai_api(system_prompt, user_prompt)
         return content
 
-    @with_llm_retry
+    @with_llm_retry(max_attempts=1)
     def _call_openai_api(
         self,
         system_prompt: str,
@@ -2098,82 +2108,5 @@ class LLMOrchestratorV2:
             slide = slidespec.get_slide(slide_key)
             if slide and token not in slide.placeholders:
                 slide.placeholders[token] = f"[{token}: AI generated content]"
-
-
-# ============================================================================
-# Legacy V1 Orchestrator (kept for backward compatibility)
-# ============================================================================
-
-class LLMOrchestrator:
-    """V1 Orchestrator - Legacy implementation for V1 templates."""
-
-    def __init__(self, template_repo: Optional[TemplateRepository] = None):
-        self.template_repo = template_repo or TemplateRepository()
-        self.client: Optional[OpenAI] = None
-
-        if config.settings.enable_llm:
-            try:
-                self.client = _build_openai_client()
-            except Exception as e:
-                raise LLMGenerationError(f"OpenAI client initialization failed: {e}") from e
-
-    def _load_mock_slidespec(self, input_id: str, template_id: str) -> SlideSpec:
-        """Load mock slidespec for fallback."""
-        audience = "management" if "management" in template_id else "technical"
-        mock_file = f"{input_id}_{audience}_mock_slidespec.json"
-        path = config.MOCK_OUTPUTS_DIR / mock_file
-        if not path.exists():
-            raise MockOutputNotFound(f"Mock slidespec {mock_file} not found")
-        with path.open("r", encoding="utf-8") as f:
-            data = json.load(f)
-        return SlideSpec.model_validate(data)
-
-    def generate_slidespec(
-        self,
-        input_id: str,
-        template_id: str,
-        prepared: Any,  # DataPrepResult
-        use_mock: bool = False,
-    ) -> SlideSpec:
-        """Generate slidespec using V1 logic (legacy)."""
-        logger.info(f"Generating V1 slidespec for {input_id}/{template_id}")
-
-        if use_mock:
-            try:
-                return self._load_mock_slidespec(input_id, template_id)
-            except MockOutputNotFound:
-                logger.warning("Mock not found, using deterministic generation")
-
-        # Deterministic fallback
-        slides = []
-        template = self.template_repo.get_descriptor(template_id)
-        for slide in template.slides:
-            data = prepared.slide_inputs.get(slide.slide_key, {})
-            slides.append(SlideSpecItem(
-                slide_no=slide.slide_no,
-                slide_key=slide.slide_key,
-                data=data,
-            ))
-
-        return SlideSpec(template_id=template_id, slides=slides)
-
-    def rewrite_slide(
-        self,
-        slide_spec: SlideSpec,
-        slide_key: str,
-        new_content: Dict[str, Any],
-    ) -> SlideSpec:
-        """Update a slide's data with new content."""
-        updated_slides = []
-        for slide in slide_spec.slides:
-            if slide.slide_key == slide_key:
-                updated_slides.append(SlideSpecItem(
-                    slide_no=slide.slide_no,
-                    slide_key=slide.slide_key,
-                    data={**slide.data, **new_content},
-                ))
-            else:
-                updated_slides.append(slide)
-        return SlideSpec(template_id=slide_spec.template_id, slides=updated_slides)
 
 

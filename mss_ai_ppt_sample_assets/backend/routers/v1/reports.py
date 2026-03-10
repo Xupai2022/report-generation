@@ -7,7 +7,9 @@ import asyncio
 import logging
 import uuid
 from typing import Optional, Any, Dict
+from tenacity import RetryError
 
+from ... import config
 from ...services.report_service import ReportService, SlideSpecNotFoundError as ServiceSlideSpecNotFoundError
 from ...services.job_manager import JobManager
 from ...models.job_state import JobStatus
@@ -20,7 +22,8 @@ from ...exceptions import (
     LLMGenerationError
 )
 from ...modules.llm_orchestrator import LLMGenerationError as OrchestratorLLMGenerationError
-from openai import RateLimitError
+from ...modules.retry_policy import is_retryable_llm_error
+from openai import RateLimitError, APIConnectionError, APITimeoutError
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +41,10 @@ llm_semaphore = None
 MAX_CONCURRENT_LLM_REQUESTS = 3
 job_manager: JobManager = None
 _session_job_map: Dict[str, str] = {}
+LLM_TIMEOUT_EXHAUSTED = "LLM_TIMEOUT_EXHAUSTED"
+LLM_UPSTREAM_CONNECTION_FAILED = "LLM_UPSTREAM_CONNECTION_FAILED"
+LLM_RATE_LIMIT_EXHAUSTED = "LLM_RATE_LIMIT_EXHAUSTED"
+TASK_SUPERSEDED = "TASK_SUPERSEDED"
 
 
 def init_dependencies(websocket_manager, semaphore, max_concurrent, manager):
@@ -133,6 +140,20 @@ def _find_running_job_for_browser(browser_id: str) -> Optional[Any]:
         if metadata.get("browser_id") == browser_id:
             return running_job
     return None
+
+
+def _classify_llm_error(error: Exception) -> str:
+    if isinstance(error, RetryError):
+        last_exc = error.last_attempt.exception() if error.last_attempt else None
+        if isinstance(last_exc, Exception):
+            error = last_exc
+    if isinstance(error, APITimeoutError):
+        return LLM_TIMEOUT_EXHAUSTED
+    if isinstance(error, APIConnectionError):
+        return LLM_UPSTREAM_CONNECTION_FAILED
+    if isinstance(error, RateLimitError):
+        return LLM_RATE_LIMIT_EXHAUSTED
+    return "LLM_GENERATION_FAILED"
 
 
 def _mark_job_running_for_rewrite(job_id: str, browser_id: str, message: str):
@@ -241,10 +262,21 @@ async def _process_report_async(
         return
     _session_job_map[job.session_id] = job_id
 
-    try:
-        # Acquire LLM semaphore if not using mock
-        if not use_mock and llm_semaphore:
-            async with llm_semaphore:
+    max_attempts = max(1, int(config.settings.llm_retry_attempts)) if not use_mock else 1
+    for attempt in range(1, max_attempts + 1):
+        try:
+            # Acquire LLM semaphore if not using mock
+            if not use_mock and llm_semaphore:
+                async with llm_semaphore:
+                    await _do_generation(
+                        job,
+                        input_id,
+                        template_id,
+                        use_mock,
+                        focus_options=focus_options,
+                        use_rag=use_rag,
+                    )
+            else:
                 await _do_generation(
                     job,
                     input_id,
@@ -253,39 +285,50 @@ async def _process_report_async(
                     focus_options=focus_options,
                     use_rag=use_rag,
                 )
-        else:
-            await _do_generation(
-                job,
-                input_id,
-                template_id,
-                use_mock,
-                focus_options=focus_options,
-                use_rag=use_rag,
+            return
+        except Exception as e:
+            if not use_mock and is_retryable_llm_error(e) and attempt < max_attempts:
+                wait_time = max(0.0, float(config.settings.llm_retry_backoff_min_seconds)) * (2 ** (attempt - 1))
+                wait_time = min(wait_time, float(config.settings.llm_retry_backoff_max_seconds))
+                retry_message = f"AI request timeout/connection issue. Retrying ({attempt}/{max_attempts - 1})..."
+                job_manager.update_progress(job_id, 30, retry_message)
+                logger.warning(
+                    "Retrying job due to transient LLM failure: job_id=%s attempt=%s/%s err=%s",
+                    job_id,
+                    attempt,
+                    max_attempts,
+                    e,
+                )
+                if ws_manager:
+                    await ws_manager.send_progress_update(job.session_id, 30, retry_message)
+                await asyncio.sleep(wait_time)
+                continue
+
+            logger.exception(f"Job {job_id} failed: {e}")
+            _session_job_map.pop(job.session_id, None)
+
+            error_code = _classify_llm_error(e) if is_retryable_llm_error(e) else None
+            user_message = (
+                "AI service timeout. Please regenerate a new task."
+                if error_code in {LLM_TIMEOUT_EXHAUSTED, LLM_UPSTREAM_CONNECTION_FAILED}
+                else str(e)
             )
-
-    except Exception as e:
-        logger.exception(f"Job {job_id} failed: {e}")
-        job_manager.fail_job(job_id, str(e))
-        _session_job_map.pop(job.session_id, None)
-
-        # Send WebSocket failure notification
-        if ws_manager:
-            await ws_manager.send_completion(job.session_id, {"error": str(e)}, success=False)
-
-        # Check if should retry
-        if job_manager.should_retry(job_id):
-            retry_count = job.retry_count + 1
-            wait_time = 2 ** retry_count  # Exponential backoff
-            logger.info(f"Retrying job {job_id} in {wait_time}s (attempt {retry_count})")
-            await asyncio.sleep(wait_time)
-            await _process_report_async(
+            job_manager.fail_job(
                 job_id,
-                input_id,
-                template_id,
-                use_mock,
-                focus_options=focus_options,
-                use_rag=use_rag,
+                str(e),
+                error_code=error_code,
+                user_message=user_message,
+                increment_retry=True,
             )
+
+            # Send WebSocket failure notification
+            if ws_manager:
+                await ws_manager.send_completion(
+                    job.session_id,
+                    {"error": user_message, "error_code": error_code},
+                    success=False,
+                )
+            return
 
 
 async def _do_generation(
@@ -369,6 +412,12 @@ async def _do_generation(
             job.session_id, 99, "Finalizing report..."
         )
 
+    latest_job = job_manager.get_job(job_id)
+    if latest_job and latest_job.status == JobStatus.CANCELLED and latest_job.error_code == TASK_SUPERSEDED:
+        logger.info("Skip completion for superseded job: %s", job_id)
+        _session_job_map.pop(job.session_id, None)
+        return
+
     # Mark job as completed
     job_manager.complete_job(job_id, result)
     _session_job_map.pop(job.session_id, None)
@@ -430,16 +479,18 @@ async def create_report(request: Request, response: Response, req: CreateReportR
     browser_id = _get_or_create_browser_id(request)
     _attach_browser_cookie(response, browser_id)
     client_ip = request.client.host if request.client else "unknown"
-    effective_idempotency_key = req.idempotency_key or _build_default_idempotency_key(
-        browser_id=browser_id,
-        req=req,
+    forced_new_task = bool(req.force_new_task)
+    effective_idempotency_key = (
+        f"force:{uuid.uuid4().hex}"
+        if forced_new_task
+        else (req.idempotency_key or _build_default_idempotency_key(browser_id=browser_id, req=req))
     )
 
     logger.info(
         f"=== POST /api/v1/reports: browser_id={browser_id}, client_ip={client_ip}, input_id={req.input_id}, "
         f"template_id={req.template_id}, use_mock={req.use_mock}, idempotency_key={effective_idempotency_key}, "
         f"use_rag={req.use_rag}, client_id={req.client_id}, "
-        f"session_id={req.session_id}, focus_options={req.focus_options} ==="
+        f"session_id={req.session_id}, focus_options={req.focus_options}, force_new_task={forced_new_task} ==="
     )
 
     if not job_manager:
@@ -447,7 +498,7 @@ async def create_report(request: Request, response: Response, req: CreateReportR
 
     try:
         running_job = _find_running_job_for_browser(browser_id)
-        if running_job and BROWSER_ID_RUNNING_TASK_LIMIT >= 1:
+        if running_job and not forced_new_task and BROWSER_ID_RUNNING_TASK_LIMIT >= 1:
             _session_job_map[running_job.session_id] = running_job.job_id
             if ws_manager and req.client_id:
                 ws_manager.register_session(running_job.session_id, req.client_id)
@@ -468,17 +519,46 @@ async def create_report(request: Request, response: Response, req: CreateReportR
                 "check_status_url": f"/api/v1/jobs/{running_job.job_id}/status",
             })
 
+        superseded_job_id = None
+        if forced_new_task and running_job:
+            superseded_job_id = running_job.job_id
+            job_manager.cancel_job(
+                running_job.job_id,
+                message="Task superseded by a newer regenerate request.",
+                error_code=TASK_SUPERSEDED,
+            )
+            _session_job_map.pop(running_job.session_id, None)
+            logger.info(
+                "Superseded running job with forced new task: browser_id=%s old_job_id=%s",
+                browser_id,
+                running_job.job_id,
+            )
+
         # Create or find existing job (idempotency)
         job = job_manager.create_job(
             input_id=req.input_id,
             template_id=req.template_id,
             idempotency_key=effective_idempotency_key,
-            session_id=req.session_id,
+            session_id=None if forced_new_task else req.session_id,
             metadata={
                 "browser_id": browser_id,
                 "client_ip": client_ip,
             },
         )
+
+        if superseded_job_id:
+            try:
+                job_manager.cancel_job(
+                    superseded_job_id,
+                    message="Task superseded by a newer regenerate request.",
+                    error_code=TASK_SUPERSEDED,
+                    metadata_patch={
+                        "superseded_by_job_id": job.job_id,
+                        "superseded_at": datetime.now(timezone.utc).isoformat(),
+                    },
+                )
+            except Exception:
+                logger.warning("Failed to patch superseded metadata for %s", superseded_job_id)
 
         # Register WebSocket if provided
         if ws_manager and req.client_id:
@@ -496,6 +576,8 @@ async def create_report(request: Request, response: Response, req: CreateReportR
                 "report_path": job.report_path,
                 "slidespec_path": job.slidespec_path,
                 "from_cache": True,
+                "is_new_task": forced_new_task,
+                "superseded_job_id": superseded_job_id,
                 "message": "Job already completed (using cached result).",
             })
 
@@ -512,6 +594,8 @@ async def create_report(request: Request, response: Response, req: CreateReportR
                 "job_id": job.job_id,
                 "status": "running",
                 "progress": job.progress,
+                "is_new_task": forced_new_task,
+                "superseded_job_id": superseded_job_id,
                 "message": message,
                 "check_status_url": f"/api/v1/jobs/{job.job_id}/status"
             })
@@ -544,6 +628,8 @@ async def create_report(request: Request, response: Response, req: CreateReportR
             "job_id": job.job_id,
             "session_id": job.session_id,
             "status": "running",
+            "is_new_task": forced_new_task,
+            "superseded_job_id": superseded_job_id,
             "message": "Generating report, please wait...",
             "check_status_url": f"/api/v1/jobs/{job.job_id}/status"
         })

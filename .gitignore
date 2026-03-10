@@ -23,3 +23,6 @@ __pycache__/
 mss_ai_ppt_sample_assets/backend/outputs/**
 !mss_ai_ppt_sample_assets/backend/outputs/.gitkeep
 nul
+!mss_ai_ppt_sample_assets/backend/outputs/previews/
+!mss_ai_ppt_sample_assets/backend/outputs/previews/template_classic_preview/
+!mss_ai_ppt_sample_assets/backend/outputs/previews/template_classic_preview/**

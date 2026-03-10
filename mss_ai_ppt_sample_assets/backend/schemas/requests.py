@@ -47,6 +47,10 @@ class CreateReportRequest(BaseModel):
         None,
         description="Idempotency key to prevent duplicate processing of the same request"
     )
+    force_new_task: bool = Field(
+        False,
+        description="Force create a brand-new task and supersede any currently running browser task"
+    )
 
     class Config:
         json_schema_extra = {

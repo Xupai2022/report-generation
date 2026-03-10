@@ -19,7 +19,6 @@ from mss_ai_ppt_sample_assets.backend.routers import v1_router
 # Import new modules
 from mss_ai_ppt_sample_assets.backend.logging_config import setup_logging
 from mss_ai_ppt_sample_assets.backend.middleware import RequestIdMiddleware, ErrorLoggingMiddleware
-from mss_ai_ppt_sample_assets.backend.health_check import health_checker
 
 # Setup enhanced logging with file persistence and rotation
 setup_logging(

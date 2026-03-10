@@ -47,6 +47,26 @@ class Settings:
         self.openai_api_key: Optional[str] = os.getenv("OPENAI_API_KEY")
         self.openai_base_url: Optional[str] = os.getenv("OPENAI_BASE_URL")
         self.openai_model: str = os.getenv("OPENAI_MODEL", "GLM4.7")
+        # LLM 连接超时（秒）：TCP 建连阶段超时，通常用于快速发现不可达/拒连。
+        self.llm_connect_timeout_seconds: float = float(os.getenv("LLM_CONNECT_TIMEOUT_SECONDS", "5"))
+
+        # LLM 读取超时（秒）：请求已发出但长时间收不到上游响应时触发。
+        self.llm_read_timeout_seconds: float = float(os.getenv("LLM_READ_TIMEOUT_SECONDS", "45"))
+
+        # LLM 写入超时（秒）：向上游发送请求体/流时写入阻塞超时。
+        self.llm_write_timeout_seconds: float = float(os.getenv("LLM_WRITE_TIMEOUT_SECONDS", "15"))
+
+        # LLM 连接池等待超时（秒）：连接池无可用连接时等待上限。
+        self.llm_pool_timeout_seconds: float = float(os.getenv("LLM_POOL_TIMEOUT_SECONDS", "5"))
+
+        # LLM 重试次数（总尝试次数）：用于超时/连接失败/限流的内部重试。
+        self.llm_retry_attempts: int = int(os.getenv("LLM_RETRY_ATTEMPTS", "2"))
+        
+        # LLM 重试退避最小等待（秒）：指数退避下限。
+        self.llm_retry_backoff_min_seconds: float = float(os.getenv("LLM_RETRY_BACKOFF_MIN_SECONDS", "1"))
+
+        # LLM 重试退避最大等待（秒）：指数退避上限。
+        self.llm_retry_backoff_max_seconds: float = float(os.getenv("LLM_RETRY_BACKOFF_MAX_SECONDS", "4"))
 
         # Feature flags
         self.enable_llm: bool = os.getenv("ENABLE_LLM", "false").lower() == "true"

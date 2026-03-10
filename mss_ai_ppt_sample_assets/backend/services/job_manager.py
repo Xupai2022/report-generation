@@ -171,12 +171,22 @@ class JobManager:
         except Exception as e:
             self.logger.error(f"Failed to mark job as completed: {e}")
 
-    def fail_job(self, job_id: str, error: str):
+    def fail_job(
+        self,
+        job_id: str,
+        error_message: str,
+        error_code: Optional[str] = None,
+        user_message: Optional[str] = None,
+        increment_retry: bool = True,
+    ):
         """Mark job as failed with error message.
 
         Args:
             job_id: Job identifier
-            error: Error message
+            error_message: Raw error details for diagnosis
+            error_code: Optional machine-readable error code
+            user_message: Optional user-facing message
+            increment_retry: Whether to increase retry_count
         """
         try:
             job = self.store.get_job(job_id)
@@ -184,26 +194,52 @@ class JobManager:
                 self.logger.error(f"Job not found: {job_id}")
                 return
 
-            self.store.update_job(job_id, {
+            updates = {
                 "status": JobStatus.FAILED,
                 "completed_at": datetime.now(timezone.utc),
-                "last_error": error,
-                "retry_count": job.retry_count + 1
+                "last_error": error_message,
+                "message": user_message or error_message,
+                "error_code": error_code,
+            }
+            if increment_retry:
+                updates["retry_count"] = job.retry_count + 1
+
+            self.store.update_job(job_id, {
+                **updates
             })
-            self.logger.warning(f"Job failed: {job_id} - {error}")
+            self.logger.warning(
+                "Job failed: %s - code=%s error=%s",
+                job_id,
+                error_code or "-",
+                error_message,
+            )
         except Exception as e:
             self.logger.error(f"Failed to mark job as failed: {e}")
 
-    def cancel_job(self, job_id: str):
+    def cancel_job(
+        self,
+        job_id: str,
+        *,
+        message: Optional[str] = None,
+        error_code: Optional[str] = None,
+        metadata_patch: Optional[Dict[str, Any]] = None,
+    ):
         """Mark job as cancelled.
 
         Args:
             job_id: Job identifier
         """
         try:
+            existing = self.store.get_job(job_id)
+            metadata = dict((existing.metadata if existing else {}) or {})
+            if metadata_patch:
+                metadata.update(metadata_patch)
             self.store.update_job(job_id, {
                 "status": JobStatus.CANCELLED,
-                "completed_at": datetime.now(timezone.utc)
+                "completed_at": datetime.now(timezone.utc),
+                "message": message or ("Cancelled" if not existing else existing.message),
+                "error_code": error_code,
+                "metadata": metadata,
             })
             self.logger.info(f"Job cancelled: {job_id}")
         except Exception as e:

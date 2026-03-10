@@ -112,6 +112,8 @@
   "msgReusingRunningTask": "An existing running task was found in this browser. Continuing that task.",
   "msgRestartInterrupted": "The service restarted and this task was interrupted. Please regenerate.",
   "btnRegenerateNow": "Regenerate Now",
+  "msgRequestTimeout": "This generation timed out",
+  "msgTimeoutRegenerateHint": "The AI service took too long and the current task was stopped. You can start a brand-new task and try again.",
   "toastTitleHint": "Notice",
   "msgNoChangesToApply": "No changes to apply",
   "msgStructuredKeysAutoRestored": "Structured JSON keys cannot be edited. The system restored original keys and kept your updated values.",

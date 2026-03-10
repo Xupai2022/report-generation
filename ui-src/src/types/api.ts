@@ -41,6 +41,7 @@ export interface CreateReportReq {
   client_id: string;
   idempotency_key: string;
   focus_options: string[];
+  force_new_task?: boolean;
 }
 
 export interface UploadExcelResp {
@@ -58,6 +59,8 @@ export interface CreateReportResp {
   message?: string;
   progress?: number;
   existing_job?: boolean;
+  is_new_task?: boolean;
+  superseded_job_id?: string;
   from_cache?: boolean;
   slidespec?: SlideSpec;
   preview_urls?: string[];
@@ -173,6 +176,7 @@ export interface I18nMap {
 
 export interface WsProgressMessage {
   type: 'progress';
+  session_id?: string;
   progress: number;
   message?: string;
   details?: Record<string, unknown>;
@@ -180,11 +184,13 @@ export interface WsProgressMessage {
 
 export interface WsCompleteMessage {
   type: 'completed';
+  session_id?: string;
   result: GenerateResult;
 }
 
 export interface WsFailedMessage {
   type: 'failed';
+  session_id?: string;
   result: {
     error?: string;
     error_code?: string;

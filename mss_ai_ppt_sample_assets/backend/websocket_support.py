@@ -12,11 +12,9 @@ Usage in app.py:
 
 from __future__ import annotations
 
-import asyncio
-import json
 import inspect
-from typing import Dict, Optional, Set, Callable, Awaitable, Any
-from fastapi import WebSocket, WebSocketDisconnect
+from typing import Dict, Optional, Callable, Awaitable, Any
+from fastapi import WebSocket
 import logging
 
 logger = logging.getLogger(__name__)

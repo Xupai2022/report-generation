@@ -112,6 +112,8 @@
   "msgReusingRunningTask": "检测到你已有正在生成的任务，已继续该任务进度。",
   "msgRestartInterrupted": "服务已重启，当前任务已中断，请重新生成。",
   "btnRegenerateNow": "立即重新生成",
+  "msgRequestTimeout": "本次生成超时",
+  "msgTimeoutRegenerateHint": "AI 服务长时间未返回结果，已停止当前任务。你可以重新生成一个新任务再试一次。",
   "toastTitleHint": "提示",
   "msgNoChangesToApply": "没有修改需要应用",
   "msgStructuredKeysAutoRestored": "结构化 JSON 的键名不可修改，系统已自动还原为原始键名并保留你修改的值。",

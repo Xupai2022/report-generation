@@ -53,6 +53,8 @@ const FOCUS_VALUE_TO_PREFERENCE_TEXT: Record<FocusValue, string> = {
   alert: '告警优先',
   business_protection: '业务保护',
 };
+const TIMEOUT_ERROR_CODES = new Set(['LLM_TIMEOUT_EXHAUSTED', 'LLM_UPSTREAM_CONNECTION_FAILED']);
+const TASK_SUPERSEDED_ERROR_CODE = 'TASK_SUPERSEDED';
 type ToastType = 'success' | 'error' | 'warning' | 'info';
 
 interface ToastState {
@@ -79,6 +81,13 @@ interface StringFieldMap {
 
 interface ModifiedSlideFields {
   [slideKey: string]: StringFieldMap;
+}
+
+interface ModifiedSlideSummary {
+  slideKey: string;
+  slideNumber: number;
+  title: string;
+  fieldCount: number;
 }
 
 function toTemplateName(tpl: TemplateItem): string {
@@ -230,6 +239,12 @@ export function IndexApp() {
   const [jobId, setJobId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string>('');
   const [clientId, setClientId] = useState<string>('');
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [activeSessionId, setActiveSessionId] = useState<string>('');
+  const [activeOperationToken, setActiveOperationToken] = useState<string>('');
+  const [timeoutDialogOpen, setTimeoutDialogOpen] = useState(false);
+  const [timeoutDialogErrorCode, setTimeoutDialogErrorCode] = useState<string>('');
+  const [timeoutDialogMessage, setTimeoutDialogMessage] = useState<string>('');
 
   const [slidespec, setSlidespec] = useState<SlideSpec | null>(null);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -268,6 +283,8 @@ export function IndexApp() {
   const progressValueRef = useRef<number>(0);
   const actionRef = useRef<'generate' | 'rewrite' | 'ai-rewrite' | null>(null);
   const completionHandledJobRef = useRef<string | null>(null);
+  const statusPollTokenRef = useRef<string>('');
+  const activeSessionIdRef = useRef<string>('');
   const previewWheelAtRef = useRef<number>(0);
   const previewWheelAccumRef = useRef<number>(0);
   const previewScrollRafRef = useRef<number | null>(null);
@@ -316,8 +333,8 @@ export function IndexApp() {
 
   const aiRewriteTargetCount = useMemo(() => {
     if (selectedAiMode === 'selected') return selectedAiTokens.length;
-    return activeAiTokens.length > 0 ? activeAiTokens.length : activeFieldKeys.length;
-  }, [selectedAiMode, selectedAiTokens, activeAiTokens, activeFieldKeys]);
+    return activeAiTokens.length;
+  }, [selectedAiMode, selectedAiTokens, activeAiTokens]);
 
   const recentAiPrompts = useMemo(() => {
     if (!activeSlideKey) return [] as string[];
@@ -377,6 +394,18 @@ export function IndexApp() {
     if (type === 'error') return t('titleUpdateFailed', lang === 'zh-CN' ? '错误' : 'Error');
     if (type === 'warning') return t('toastTitleHint', lang === 'zh-CN' ? '提示' : 'Notice');
     return t('toastTitleHint', lang === 'zh-CN' ? '提示' : 'Notice');
+  };
+
+  const shouldOpenTimeoutDialog = (errorCode?: string | null, message?: string) => {
+    if (errorCode && TIMEOUT_ERROR_CODES.has(String(errorCode))) return true;
+    const lower = (message || '').toLowerCase();
+    if (!lower) return false;
+    return (
+      lower.includes('apitimeouterror')
+      || lower.includes('retryerror')
+      || lower.includes('timeout')
+      || lower.includes('timed out')
+    );
   };
 
   type ProgressStage = 'init' | 'parse' | 'retrieve' | 'ai' | 'renderPpt' | 'renderPreview' | 'complete';
@@ -502,6 +531,10 @@ export function IndexApp() {
       } catch {
         return;
       }
+      const incomingSession = typeof payload.session_id === 'string' ? payload.session_id : '';
+      if (activeSessionIdRef.current && incomingSession && incomingSession !== activeSessionIdRef.current) {
+        return;
+      }
       if (payload.type === 'progress') {
         applyIncomingProgress(payload.progress, payload.message);
         return;
@@ -511,7 +544,7 @@ export function IndexApp() {
         return;
       }
       if (payload.type === 'failed') {
-        handleGenerationFailed(payload.result?.error || t('errorGenerationFailed'));
+        handleGenerationFailed(payload.result?.error || t('errorGenerationFailed'), payload.result?.error_code);
       }
     };
   };
@@ -533,6 +566,10 @@ export function IndexApp() {
   };
 
   useEffect(() => {
+    activeSessionIdRef.current = activeSessionId;
+  }, [activeSessionId]);
+
+  useEffect(() => {
     if (isReloadNavigation()) {
       // Browser refresh should always return user to the configuration screen.
       setInWorkspace(false);
@@ -541,12 +578,16 @@ export function IndexApp() {
       setProgress(0);
       setProgressText('');
       setJobId(null);
+      setActiveJobId(null);
+      setActiveSessionId('');
+      setActiveOperationToken('');
       setSlidespec(null);
       setPreviews([]);
       setActiveSlideKey(null);
       setModifiedSlides({});
       setExportOpen(false);
       setAiModalOpen(false);
+      setTimeoutDialogOpen(false);
     }
     const cid = toClientId();
     setClientId(cid);
@@ -595,6 +636,7 @@ export function IndexApp() {
   const handleGenerationComplete = async (result: GenerateResult) => {
     const nextJobId = result.job_id || jobId;
     if (!nextJobId) return;
+    if (activeJobId && nextJobId !== activeJobId) return;
     if (completionHandledJobRef.current === nextJobId) return;
     completionHandledJobRef.current = nextJobId;
     const shouldToastSuccess = actionRef.current === 'generate';
@@ -632,30 +674,53 @@ export function IndexApp() {
     if (shouldToastSuccess) {
       showToast('success', lt('msgSuccess', '报告生成成功！', 'Report generated successfully!'));
     }
+    setTimeoutDialogOpen(false);
+    setTimeoutDialogErrorCode('');
+    setTimeoutDialogMessage('');
     actionRef.current = null;
   };
 
-  const handleGenerationFailed = (message: string) => {
+  const handleGenerationFailed = (message: string, errorCode?: string) => {
+    if (errorCode === TASK_SUPERSEDED_ERROR_CODE) {
+      return;
+    }
     setGenerationInProgress(false);
     stopPolling();
     progressValueRef.current = 0;
     setProgress(0);
     setProgressText('');
     actionRef.current = null;
-    showToast('error', message || lt('errorGenerationFailed', '报告生成失败', 'Report generation failed'));
+    const timeoutDetected = shouldOpenTimeoutDialog(errorCode, message);
+    const finalMessage = timeoutDetected
+      ? t(
+        'msgTimeoutRegenerateHint',
+        lang === 'zh-CN'
+          ? 'AI 服务长时间未返回结果，已停止当前任务。你可以重新生成一个新任务再试一次。'
+          : 'The AI service took too long and the current task was stopped. You can start a brand-new task and try again.',
+      )
+      : (message || lt('errorGenerationFailed', '报告生成失败', 'Report generation failed'));
+    showToast('error', finalMessage);
+    if (timeoutDetected) {
+      setTimeoutDialogErrorCode(errorCode || '');
+      setTimeoutDialogMessage(finalMessage);
+      setTimeoutDialogOpen(true);
+    }
   };
 
-  const checkCurrentJobStatus = async () => {
+  const checkCurrentJobStatus = async (pollToken?: string) => {
     if (!jobId || !generationInProgress) return;
     if (actionRef.current && actionRef.current !== 'generate') return;
+    if (pollToken && statusPollTokenRef.current && pollToken !== statusPollTokenRef.current) return;
     try {
       const statusData = (await MainApi.getJobStatus(jobId)) as JobStatusResp & { slidespec_path?: string };
+      if (pollToken && statusPollTokenRef.current && pollToken !== statusPollTokenRef.current) return;
+      if (activeJobId && statusData.job_id && statusData.job_id !== activeJobId) return;
       if (statusData.status === 'running' || statusData.status === 'pending') {
         applyIncomingProgress(statusData.progress, statusData.message);
         return;
       }
       if (statusData.status === 'failed' || statusData.status === 'cancelled') {
-        handleGenerationFailed(statusData.last_error || t('msgRegenerateAfterError'));
+        handleGenerationFailed(statusData.message || statusData.last_error || t('msgRegenerateAfterError'), statusData.error_code);
         return;
       }
       if (statusData.status === 'completed') {
@@ -677,13 +742,15 @@ export function IndexApp() {
       return;
     }
     stopPolling();
+    const pollToken = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    statusPollTokenRef.current = pollToken;
     pollRef.current = window.setInterval(() => {
-      void checkCurrentJobStatus();
+      void checkCurrentJobStatus(pollToken);
     }, 2000);
     return () => {
       stopPolling();
     };
-  }, [generationInProgress, jobId]);
+  }, [generationInProgress, jobId, activeJobId]);
 
   const normalizeFocus = (values: FocusValue[]) => {
     const set = new Set<FocusValue>();
@@ -697,7 +764,8 @@ export function IndexApp() {
     return values.map((value) => FOCUS_VALUE_TO_PREFERENCE_TEXT[value]);
   };
 
-  const beginGenerate = async () => {
+  const beginGenerate = async (options?: { forceNewTask?: boolean }) => {
+    const forceNewTask = !!options?.forceNewTask;
     if (!selectedInput) return showToast('warning', lt('msgSelectInput', '请选择输入数据', 'Please select input data'));
     if (!selectedTemplate) return showToast('warning', lt('msgSelectTemplate', '请选择报告模板', 'Please select report template'));
     const focus = normalizeFocus(selectedFocus);
@@ -705,8 +773,16 @@ export function IndexApp() {
     const focusTitles = toPreferenceTitles(focus);
     if (generationInProgress) return showToast('info', lt('msgGeneratingPleaseWait', '正在生成报告，请稍候...', 'Generating report, please wait...'));
     if (!inWorkspace) setInWorkspace(true);
-    const sid = sessionId || toSessionId();
+    const sid = forceNewTask ? toSessionId() : (sessionId || toSessionId());
+    const idempotencyKey = forceNewTask ? toSessionId() : sid;
+    const operationToken = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     setSessionId(sid);
+    setActiveSessionId(sid);
+    setActiveOperationToken(operationToken);
+    statusPollTokenRef.current = operationToken;
+    setTimeoutDialogOpen(false);
+    setTimeoutDialogErrorCode('');
+    setTimeoutDialogMessage('');
     setLoading(true);
     setGenerationInProgress(true);
     actionRef.current = 'generate';
@@ -725,11 +801,17 @@ export function IndexApp() {
         use_mock: useMock,
         session_id: sid,
         client_id: clientId,
-        idempotency_key: sid,
+        idempotency_key: idempotencyKey,
         focus_options: focusTitles,
+        force_new_task: forceNewTask,
       };
       const result = await MainApi.createReport(payload);
       setJobId(result.job_id || null);
+      setActiveJobId(result.job_id || null);
+      if (result.session_id) {
+        setSessionId(result.session_id);
+        setActiveSessionId(result.session_id);
+      }
       if (result.status === 'completed' && result.from_cache) {
         await handleGenerationComplete(result as CreateReportResp & GenerateResult);
         return;
@@ -743,7 +825,7 @@ export function IndexApp() {
       } else {
         showToast('info', lt('msgGeneratingPleaseWait', '正在生成报告，请稍候...', 'Generating report, please wait...'));
       }
-      if (!wsReady) void checkCurrentJobStatus();
+      if (!wsReady) void checkCurrentJobStatus(operationToken);
     } catch (error) {
       const message = error instanceof HttpError ? error.message : (error as Error).message;
       handleGenerationFailed(message || t('errorGenerationFailed'));
@@ -754,16 +836,32 @@ export function IndexApp() {
 
   const updateActiveField = (field: string, value: string) => {
     if (!activeSlideKey) return;
+    const originalSlide = slidespec?.slides.find((slide) => slide.slide_key === activeSlideKey);
+    if (!originalSlide) return;
+    const originalValue = stringifyValue(originalSlide.placeholders?.[field]);
     setModifiedSlides((prev) => {
       const prevSlide = prev[activeSlideKey] || {};
+      const nextSlide: StringFieldMap = { ...prevSlide };
+      if (value === originalValue) {
+        delete nextSlide[field];
+      } else {
+        nextSlide[field] = value;
+      }
+      const next = { ...prev };
+      if (Object.keys(nextSlide).length === 0) {
+        delete next[activeSlideKey];
+      } else {
+        next[activeSlideKey] = nextSlide;
+      }
       return {
-        ...prev,
-        [activeSlideKey]: {
-          ...prevSlide,
-          [field]: value,
-        },
+        ...next,
       };
     });
+  };
+
+  const regenerateAsNewTask = async () => {
+    setTimeoutDialogOpen(false);
+    await beginGenerate({ forceNewTask: true });
   };
 
   const openExcelFilePicker = () => {
@@ -799,7 +897,11 @@ export function IndexApp() {
     setInWorkspace(false);
     // Clear identifiers so next generate always creates a new job.
     setSessionId('');
+    setActiveSessionId('');
+    setActiveJobId(null);
+    setActiveOperationToken('');
     setJobId(null);
+    setTimeoutDialogOpen(false);
     completionHandledJobRef.current = null;
   };
 
@@ -1017,16 +1119,18 @@ export function IndexApp() {
     if (!jobId || !activeSlideKey) return;
     const normalizedPrompt = aiPrompt.trim();
     if (!normalizedPrompt) return showToast('warning', t('msgEnterAiRewritePrompt'));
+    if (selectedAiMode === 'all' && activeAiTokens.length === 0) {
+      return showToast(
+        'warning',
+        lt(
+          'msgNoAiGeneratedPlaceholdersToRewrite',
+          '当前页没有可用于 AI 重写的占位字段。',
+          'This slide has no AI-generated placeholders to rewrite.',
+        ),
+      );
+    }
     if (selectedAiMode === 'selected' && selectedAiTokens.length === 0) {
       return showToast('warning', t('msgSelectAtLeastOneAiToken'));
-    }
-    const firstSlideKey = firstSlide(slidespec);
-    if (firstSlideKey) {
-      setActiveSlideKey(firstSlideKey);
-      window.requestAnimationFrame(() => {
-        const firstView = document.getElementById(`view-${firstSlideKey}`);
-        if (firstView) firstView.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      });
     }
     setAiModalOpen(false);
     setGenerationInProgress(true);
@@ -1327,6 +1431,29 @@ export function IndexApp() {
   const activeSlideTitle = activeSlide ? (activeSlide.title || activeSlide.slide_key) : '';
   const totalSlideCount = slidespec?.slides.length || 0;
   const currentSlideNumber = activeSlideIndex >= 0 ? activeSlideIndex + 1 : 0;
+  const modifiedSlideSummaries = useMemo<ModifiedSlideSummary[]>(() => {
+    if (!slidespec) return [];
+    return slidespec.slides
+      .map((slide, idx) => {
+        const edited = modifiedSlides[slide.slide_key];
+        const fieldCount = edited ? Object.keys(edited).length : 0;
+        if (fieldCount === 0) return null;
+        return {
+          slideKey: slide.slide_key,
+          slideNumber: idx + 1,
+          title: slide.title || slide.slide_key,
+          fieldCount,
+        };
+      })
+      .filter((item): item is ModifiedSlideSummary => item !== null);
+  }, [slidespec, modifiedSlides]);
+  const modifiedSlideCount = modifiedSlideSummaries.length;
+  const applyButtonLabel = modifiedSlideCount > 0
+    ? t(
+      'btnApplyRegenerateWithCount',
+      lang === 'zh-CN' ? '应用并重新生成（已修改 {count} 页）' : 'Apply & Regenerate ({count} modified pages)',
+    ).replace('{count}', String(modifiedSlideCount))
+    : t('btnApplyRegenerate');
   const exportSlideCountText = t('exportSlideCount', lang === 'zh-CN' ? '{count} 页' : '{count} slides').replace('{count}', String(totalSlideCount || 0));
   const exportPrimaryLabel = t('btnExportPptx', lang === 'zh-CN' ? '导出PPTX' : 'Export PPTX');
   const exportConfirmLabel =
@@ -1973,6 +2100,42 @@ export function IndexApp() {
                   <Edit3 size={15} /> {t('editorTitle')}
                 </h3>
               </div>
+              <div className="editor-modified-summary">
+                <div className="editor-modified-head">
+                  <strong>{t('editorModifiedSummaryTitle', lang === 'zh-CN' ? '本次编辑改动' : 'Current edits')}</strong>
+                  <span>
+                    {t(
+                      'editorModifiedSummaryCount',
+                      lang === 'zh-CN' ? '已修改 {count} 页' : '{count} pages modified',
+                    ).replace('{count}', String(modifiedSlideCount))}
+                  </span>
+                </div>
+                {modifiedSlideCount > 0 ? (
+                  <div className="editor-modified-list">
+                    {modifiedSlideSummaries.map((item) => (
+                      <button
+                        type="button"
+                        key={item.slideKey}
+                        className={`editor-modified-chip ${item.slideKey === activeSlideKey ? 'active' : ''}`}
+                        onClick={() => focusSlidePreview(item.slideKey, 'smooth')}
+                      >
+                        <span className="editor-modified-chip-page">P{item.slideNumber}</span>
+                        <span className="editor-modified-chip-title">{item.title}</span>
+                        <span className="editor-modified-chip-count">
+                          {t(
+                            'editorModifiedFieldCount',
+                            lang === 'zh-CN' ? '{count} 项' : '{count} fields',
+                          ).replace('{count}', String(item.fieldCount))}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="editor-modified-empty">
+                    {t('editorModifiedSummaryEmpty', lang === 'zh-CN' ? '当前还没有页面被修改' : 'No edited pages yet')}
+                  </div>
+                )}
+              </div>
               <div className="editor-fields">
                 {activeSlide ? (
                   activeFieldKeys.map((field) => {
@@ -1997,12 +2160,40 @@ export function IndexApp() {
               <div className="editor-footer">
                 <button className="btn-primary btn-b-accent" onClick={() => void saveManualChanges()} disabled={!jobId || loading}>
                   {loading ? <RefreshCw className="spin" size={14} /> : <RefreshCw size={14} />}
-                  {t('btnApplyRegenerate')}
+                  {applyButtonLabel}
                 </button>
               </div>
             </aside>
           </div>
         </section>
+      )}
+
+      {timeoutDialogOpen && (
+        <div className="timeout-modal-overlay">
+          <div className="timeout-modal" role="dialog" aria-modal="true" aria-label={t('msgRegenerateAfterError')}>
+            <div className="timeout-modal-head">
+              <h4>{t('msgRequestTimeout', lang === 'zh-CN' ? '本次生成超时' : 'This generation timed out')}</h4>
+              <p>
+                {timeoutDialogMessage
+                  || t(
+                    'msgTimeoutRegenerateHint',
+                    lang === 'zh-CN'
+                      ? 'AI 服务长时间未返回结果，已停止当前任务。你可以重新生成一个新任务再试一次。'
+                      : 'The AI service took too long and the current task was stopped. You can start a brand-new task and try again.',
+                  )}
+              </p>
+              {timeoutDialogErrorCode ? <small>{timeoutDialogErrorCode}</small> : null}
+            </div>
+            <div className="timeout-modal-actions">
+              <button className="btn-secondary" onClick={() => setTimeoutDialogOpen(false)}>
+                {t('btnCancel')}
+              </button>
+              <button className="btn-primary" onClick={() => void regenerateAsNewTask()}>
+                {t('btnRegenerateNow', lang === 'zh-CN' ? '立即重新生成' : 'Regenerate now')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {ratingOpen && (
