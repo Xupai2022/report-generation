@@ -220,7 +220,6 @@ export function IndexApp() {
   const [templates, setTemplates] = useState<TemplateItem[]>([]);
   const [inputs, setInputs] = useState<InputItem[]>([]);
   const [templateSlidesById, setTemplateSlidesById] = useState<Record<string, TemplateSlideMeta[]>>({});
-  const [templateFrameIndexById, setTemplateFrameIndexById] = useState<Record<string, number>>({});
   const [templatePreviewStamp, setTemplatePreviewStamp] = useState<number>(() => Date.now());
 
   const [selectedTemplate, setSelectedTemplate] = useState('');
@@ -248,6 +247,7 @@ export function IndexApp() {
 
   const [slidespec, setSlidespec] = useState<SlideSpec | null>(null);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [previewStamp, setPreviewStamp] = useState<number>(() => Date.now());
   const [activeSlideKey, setActiveSlideKey] = useState<string | null>(null);
   const [previewLayout, setPreviewLayout] = useState<'list' | 'two-up'>('list');
   const [modifiedSlides, setModifiedSlides] = useState<ModifiedSlideFields>({});
@@ -582,7 +582,7 @@ export function IndexApp() {
       setActiveSessionId('');
       setActiveOperationToken('');
       setSlidespec(null);
-      setPreviews([]);
+      clearPreviews();
       setActiveSlideKey(null);
       setModifiedSlides({});
       setExportOpen(false);
@@ -616,10 +616,20 @@ export function IndexApp() {
     }
   };
 
+  const replacePreviews = (nextPreviews: string[]) => {
+    setPreviews([...nextPreviews]);
+    setPreviewStamp(Date.now());
+  };
+
+  const clearPreviews = () => {
+    setPreviews([]);
+    setPreviewStamp(Date.now());
+  };
+
   const syncPreviewUrls = async (currentJobId: string, forceRegenerate = false) => {
     const previewData = await MainApi.getPreview(currentJobId, forceRegenerate);
     const next = ensureArray(previewData.preview_urls).length > 0 ? ensureArray(previewData.preview_urls) : ensureArray(previewData.images);
-    setPreviews(next);
+    replacePreviews(next);
   };
 
   const tryLoadSlidespecFromPath = async (slidespecPath?: string) => {
@@ -663,7 +673,7 @@ export function IndexApp() {
     const resultPreviews = ensureArray(result.preview_urls);
     const expectedPreviewCount = nextSlidespec?.slides?.length || 0;
     if (resultPreviews.length > 0 && (expectedPreviewCount === 0 || resultPreviews.length >= expectedPreviewCount)) {
-      setPreviews(resultPreviews);
+      replacePreviews(resultPreviews);
     } else {
       try {
         await syncPreviewUrls(nextJobId);
@@ -817,7 +827,7 @@ export function IndexApp() {
         return;
       }
       applyIncomingProgress(result.progress, result.message);
-      setPreviews([]);
+      clearPreviews();
       setSlidespec(null);
       setActiveSlideKey(null);
       if (result.existing_job) {
@@ -1092,7 +1102,9 @@ export function IndexApp() {
       const result = await MainApi.rewriteSlides(jobId, payload, clientId);
       if (result.slidespec) setSlidespec(result.slidespec);
       setModifiedSlides({});
-      await syncPreviewUrls(jobId, true);
+      const returnedPreviews = ensureArray(result.preview_urls);
+      if (returnedPreviews.length > 0) replacePreviews(returnedPreviews);
+      else await syncPreviewUrls(jobId, false);
       progressValueRef.current = 100;
       setProgress(100);
       setProgressText(t('progressComplete', lang === 'zh-CN' ? '处理完成' : 'Completed'));
@@ -1148,7 +1160,9 @@ export function IndexApp() {
         clientId,
       );
       if (result.slidespec) setSlidespec(result.slidespec);
-      await syncPreviewUrls(jobId, true);
+      const returnedPreviews = ensureArray(result.preview_urls);
+      if (returnedPreviews.length > 0) replacePreviews(returnedPreviews);
+      else await syncPreviewUrls(jobId, false);
       setRecentAiPromptsBySlide((prev) => {
         const current = ensureArray(prev[activeSlideKey]);
         const merged = [normalizedPrompt, ...current.filter((item) => item !== normalizedPrompt)].slice(0, 3);
@@ -1297,20 +1311,6 @@ export function IndexApp() {
     if (frame?.title && String(frame.title).trim()) return String(frame.title);
     if (frame?.slide_key && String(frame.slide_key).trim()) return String(frame.slide_key);
     return t('preConfigTemplatePageFallback', `Page ${index + 1}`).replace('{index}', String(index + 1));
-  };
-
-  const scrubTemplateFrame = (templateId: string, clientX: number, target: EventTarget | null) => {
-    if (!target || !(target instanceof HTMLElement)) return;
-    const frames = templateSlidesById[templateId] || [];
-    const total = Math.max(frames.length, 1);
-    const rect = target.getBoundingClientRect();
-    if (!rect.width) return;
-    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
-    const index = Math.min(total - 1, Math.floor(ratio * total));
-    setTemplateFrameIndexById((prev) => {
-      if (prev[templateId] === index) return prev;
-      return { ...prev, [templateId]: index };
-    });
   };
 
   const onChangeAiMode = (mode: 'all' | 'selected') => {
@@ -1616,8 +1616,7 @@ export function IndexApp() {
           </header>
 
           <div className="preconfig-grid">
-            <div className="preconfig-left-col">
-              <section className="preconfig-section">
+            <section className="preconfig-section preconfig-data-section">
                 <h2>
                   <FileSpreadsheet size={16} className="section-icon" /> 1. {t('preConfigSectionData', 'Data Source')}
                 </h2>
@@ -1663,26 +1662,7 @@ export function IndexApp() {
                     </label>
                   </div>
                 </div>
-              </section>
-
-              <section className="preconfig-section">
-                <h2>
-                  <Settings2 size={16} className="section-icon" /> 2. {t('preConfigFocusTitle', 'Report Focus')}
-                </h2>
-                <div className="focus-grid">
-                  {FOCUS_OPTIONS.map((item) => {
-                    const selected = selectedFocus.includes(item.value);
-                    return (
-                      <button key={item.value} className={`focus-card ${selected ? 'selected' : ''}`} onClick={() => toggleFocus(item.value)}>
-                        <span className="focus-title">{t(item.labelKey)}</span>
-                        <span className="focus-desc">{t(item.descKey)}</span>
-                        <span className="focus-check">{selected ? <CheckCircle2 size={12} /> : null}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            </div>
+            </section>
 
             <div className="preconfig-right-col">
               <section className="preconfig-section preconfig-template-section">
@@ -1694,8 +1674,8 @@ export function IndexApp() {
                     const selected = selectedTemplate === tpl.template_id;
                     const frames = templateSlidesById[tpl.template_id] || [];
                     const total = Math.max(frames.length, 1);
-                    const frameIndex = Math.min(templateFrameIndexById[tpl.template_id] || 0, total - 1);
-                    const imageUrl = getTemplatePreviewImageUrl(tpl.template_id, frameIndex);
+                    const frameIndex = 0;
+                    const imageUrl = getTemplatePreviewImageUrl(tpl.template_id, 0);
                     const fixedTemplateName = t('preConfigTemplateFixedName', lang === 'zh-CN' ? '经典模板' : 'Classic Template');
                     const slidesCountText = t('preConfigSlidesCount', '{count} slides').replace('{count}', String(total));
                     return (
@@ -1707,11 +1687,10 @@ export function IndexApp() {
                         <div
                           className="template-preview"
                           onPointerEnter={() => void loadTemplateSlides(tpl.template_id)}
-                          onPointerMove={(event) => scrubTemplateFrame(tpl.template_id, event.clientX, event.currentTarget)}
                         >
                           {imageUrl ? (
                             <img
-                              src={`${imageUrl}?v=${templatePreviewStamp}&p=${frameIndex + 1}`}
+                              src={`${imageUrl}?v=${templatePreviewStamp}&p=1`}
                               alt={t('preConfigTemplateImageAlt', 'Template page {page} thumbnail').replace('{page}', String(frameIndex + 1))}
                             />
                           ) : (
@@ -1735,6 +1714,42 @@ export function IndexApp() {
                 </div>
               </section>
             </div>
+
+            <section className="preconfig-section preconfig-focus-section">
+              <h2>
+                <Settings2 size={16} className="section-icon" /> 2. {t('preConfigFocusTitle', 'Report Focus')}
+                <button
+                  type="button"
+                  className="section-help tooltip-card-btn"
+                  data-tooltip={t(
+                    'preConfigFocusHelpText',
+                    lang === 'zh-CN'
+                      ? '请至少选择 1 项关注焦点（支持多选），AI 将围绕你选择的重点生成更高质量内容。'
+                      : 'Select at least one focus area (multiple selections supported). AI will prioritize your choices to generate higher-quality content.',
+                  )}
+                  aria-label={t(
+                    'preConfigFocusHelpText',
+                    lang === 'zh-CN'
+                      ? '请至少选择 1 项关注焦点（支持多选），AI 将围绕你选择的重点生成更高质量内容。'
+                      : 'Select at least one focus area (multiple selections supported). AI will prioritize your choices to generate higher-quality content.',
+                  )}
+                >
+                  ?
+                </button>
+              </h2>
+              <div className="focus-grid">
+                {FOCUS_OPTIONS.map((item) => {
+                  const selected = selectedFocus.includes(item.value);
+                  return (
+                    <button key={item.value} className={`focus-card ${selected ? 'selected' : ''}`} onClick={() => toggleFocus(item.value)}>
+                      <span className="focus-title">{t(item.labelKey)}</span>
+                      <span className="focus-desc">{t(item.descKey)}</span>
+                      <span className="focus-check">{selected ? <CheckCircle2 size={12} /> : null}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
           </div>
 
           <footer className="preconfig-footer">
@@ -2007,7 +2022,7 @@ export function IndexApp() {
                       <div className="thumb-index">{idx + 1}</div>
                       {previews[idx] && !hasPreviewImgError('thumb', idx, previews[idx]) ? (
                         <img
-                          src={`${previews[idx]}?v=${Date.now()}`}
+                          src={`${previews[idx]}?v=${previewStamp}`}
                           alt={slide.title || slide.slide_key}
                           onError={() => markPreviewImgError('thumb', idx, previews[idx])}
                         />
@@ -2052,7 +2067,7 @@ export function IndexApp() {
                     >
                       {previews[idx] && !hasPreviewImgError('main', idx, previews[idx]) ? (
                         <img
-                          src={`${previews[idx]}?v=${Date.now()}`}
+                          src={`${previews[idx]}?v=${previewStamp}`}
                           alt={slide.title || slide.slide_key}
                           onError={() => markPreviewImgError('main', idx, previews[idx])}
                         />
@@ -2263,7 +2278,7 @@ export function IndexApp() {
           </button>
           <div className="present-body" onClick={(e) => e.stopPropagation()}>
             {currentPresentUrl && !hasPreviewImgError('present', presentIndex, currentPresentUrl) ? (
-              <img src={`${currentPresentUrl}?v=${Date.now()}`} alt="slide" onError={() => markPreviewImgError('present', presentIndex, currentPresentUrl)} />
+              <img src={`${currentPresentUrl}?v=${previewStamp}`} alt="slide" onError={() => markPreviewImgError('present', presentIndex, currentPresentUrl)} />
             ) : (
               <div className="present-empty">{t('msgNoPreview')}</div>
             )}

@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import time
 import logging
+import uuid
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -28,13 +29,28 @@ def sanitize_job_id(job_id: str) -> str:
     return sanitized
 
 
+def _sort_slide_paths(paths: List[Path]) -> List[Path]:
+    def _slide_no(path: Path) -> int:
+        try:
+            return int(path.stem.replace("slide", ""))
+        except Exception:
+            return 10**9
+
+    return sorted(paths, key=_slide_no)
+
+
 class PPTPreviewGenerator:
     """Convert PPTX to slide images using LibreOffice and PyMuPDF.
 
     Pipeline: PPTX → LibreOffice → PDF → PyMuPDF → PNG images
     """
 
-    def __init__(self, base_dir: Path = config.PREVIEWS_DIR, cleanup_days: int = 7):
+    def __init__(
+        self,
+        base_dir: Path = config.PREVIEWS_DIR,
+        cleanup_days: int = 7,
+        cleanup_interval_seconds: int = 600,
+    ):
         """
         Initialize the preview generator.
 
@@ -45,10 +61,16 @@ class PPTPreviewGenerator:
         """
         self.base_dir = base_dir
         self.cleanup_days = cleanup_days
+        self.cleanup_interval_seconds = max(0, int(cleanup_interval_seconds))
+        self._last_cleanup_at: float = 0.0
+        self._soffice_path: str | None = None
         self.base_dir.mkdir(parents=True, exist_ok=True)
 
     def _find_soffice(self) -> str:
         """Locate the soffice executable."""
+        if self._soffice_path:
+            return self._soffice_path
+
         soffice_candidates = []
         env_path = os.getenv("LIBREOFFICE_PATH")
         if env_path:
@@ -65,9 +87,26 @@ class PPTPreviewGenerator:
 
         for cand in soffice_candidates:
             if cand.is_file():
-                return str(cand)
+                self._soffice_path = str(cand)
+                return self._soffice_path
 
-        return shutil.which("soffice") or "soffice"
+        self._soffice_path = shutil.which("soffice") or "soffice"
+        return self._soffice_path
+
+    def _maybe_cleanup_old_previews(self) -> None:
+        """Run cleanup at a bounded cadence to avoid per-request full scans."""
+        if self.cleanup_days <= 0:
+            return
+        if self.cleanup_interval_seconds <= 0:
+            self._cleanup_old_previews()
+            return
+
+        now = time.monotonic()
+        if self._last_cleanup_at and (now - self._last_cleanup_at) < self.cleanup_interval_seconds:
+            return
+
+        self._cleanup_old_previews()
+        self._last_cleanup_at = now
 
     def _cleanup_old_previews(self) -> None:
         """
@@ -128,7 +167,7 @@ class PPTPreviewGenerator:
                     str(ppt_path),
                 ],
                 check=True,
-                stdout=subprocess.PIPE,
+                stdout=subprocess.DEVNULL,
                 stderr=subprocess.PIPE,
             )
         except Exception as exc:
@@ -187,7 +226,7 @@ class PPTPreviewGenerator:
 
             # Sort by numeric slide number to ensure correct order
             # (slide1.png, slide2.png, ..., slide10.png instead of dictionary order)
-            return sorted(result, key=lambda p: int(p.stem.replace('slide', '')))
+            return _sort_slide_paths(result)
 
         except Exception as exc:
             raise PreviewGenerationError(
@@ -203,6 +242,69 @@ class PPTPreviewGenerator:
         logger.info(f"PDF->images in {duration_ms:.0f}ms ({len(images)} pages)")
         return images, {"pdf_to_images_ms": duration_ms}
 
+    def _make_staging_dir(self, job_dir: str) -> Path:
+        staging_root = self.base_dir / ".staging"
+        staging_root.mkdir(parents=True, exist_ok=True)
+        return staging_root / f"{job_dir}_{uuid.uuid4().hex}"
+
+    def _copy_tree_contents(self, src_dir: Path, dst_dir: Path) -> List[Path]:
+        dst_dir.mkdir(parents=True, exist_ok=True)
+        incoming_files = {
+            path.relative_to(src_dir)
+            for path in src_dir.rglob("*")
+            if path.is_file()
+        }
+
+        for path in src_dir.rglob("*"):
+            rel = path.relative_to(src_dir)
+            target = dst_dir / rel
+            if path.is_dir():
+                target.mkdir(parents=True, exist_ok=True)
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(path, target)
+
+        for path in sorted(dst_dir.rglob("*"), key=lambda item: len(item.parts), reverse=True):
+            if path.is_file() and path.relative_to(dst_dir) not in incoming_files:
+                try:
+                    path.unlink()
+                except Exception:
+                    pass
+            elif path.is_dir():
+                try:
+                    path.rmdir()
+                except Exception:
+                    pass
+
+        return _sort_slide_paths(list(dst_dir.glob("slide*.png")))
+
+    def _publish_staged_previews(self, staging_dir: Path, output_dir: Path) -> List[Path]:
+        backup_dir: Path | None = None
+        try:
+            if output_dir.exists():
+                backup_dir = output_dir.with_name(f"{output_dir.name}.bak_{uuid.uuid4().hex}")
+                output_dir.replace(backup_dir)
+            staging_dir.replace(output_dir)
+            if backup_dir:
+                shutil.rmtree(backup_dir, ignore_errors=True)
+            return _sort_slide_paths(list(output_dir.glob("slide*.png")))
+        except Exception as exc:
+            logger.warning(
+                "Atomic preview publish failed for %s, falling back to in-place copy: %s",
+                output_dir.name,
+                exc,
+            )
+            if backup_dir and not output_dir.exists() and backup_dir.exists():
+                try:
+                    backup_dir.replace(output_dir)
+                except Exception:
+                    pass
+            published = self._copy_tree_contents(staging_dir, output_dir)
+            shutil.rmtree(staging_dir, ignore_errors=True)
+            if backup_dir and backup_dir.exists():
+                shutil.rmtree(backup_dir, ignore_errors=True)
+            return published
+
     def to_images(self, ppt_path: Path, job_id: str) -> List[Path]:
         """
         Convert PPTX to PNG images.
@@ -212,24 +314,25 @@ class PPTPreviewGenerator:
         This method also triggers automatic cleanup of old previews
         if cleanup_days > 0.
         """
-        # Cleanup old previews before generating new ones
-        self._cleanup_old_previews()
+        # Cleanup old previews at bounded cadence.
+        self._maybe_cleanup_old_previews()
 
         if not ppt_path.exists():
             raise PreviewGenerationError(f"PPT file not found: {ppt_path}")
 
         job_dir = sanitize_job_id(job_id)
         output_dir = self.base_dir / job_dir
-        if output_dir.exists():
-            shutil.rmtree(output_dir)
+        staging_dir = self._make_staging_dir(job_dir)
+        if staging_dir.exists():
+            shutil.rmtree(staging_dir, ignore_errors=True)
 
         # Step 1: PPTX → PDF (LibreOffice)
-        pdf_path = self._pptx_to_pdf(ppt_path, output_dir)
+        pdf_path = self._pptx_to_pdf(ppt_path, staging_dir)
 
         # Step 2: PDF → PNG (PyMuPDF)
-        images = self._pdf_to_images(pdf_path, output_dir)
+        self._pdf_to_images(pdf_path, staging_dir)
 
-        return images
+        return self._publish_staged_previews(staging_dir, output_dir)
 
     def to_images_with_timings(
         self, ppt_path: Path, job_id: str
@@ -239,20 +342,22 @@ class PPTPreviewGenerator:
         Returns:
             (images, timings_ms)
         """
-        # Cleanup old previews before generating new ones
-        self._cleanup_old_previews()
+        # Cleanup old previews at bounded cadence.
+        self._maybe_cleanup_old_previews()
 
         if not ppt_path.exists():
             raise PreviewGenerationError(f"PPT file not found: {ppt_path}")
 
         job_dir = sanitize_job_id(job_id)
         output_dir = self.base_dir / job_dir
-        if output_dir.exists():
-            shutil.rmtree(output_dir)
+        staging_dir = self._make_staging_dir(job_dir)
+        if staging_dir.exists():
+            shutil.rmtree(staging_dir, ignore_errors=True)
 
         total_start = time.perf_counter()
-        pdf_path, t1 = self._pptx_to_pdf_with_timings(ppt_path, output_dir)
-        images, t2 = self._pdf_to_images_with_timings(pdf_path, output_dir)
+        pdf_path, t1 = self._pptx_to_pdf_with_timings(ppt_path, staging_dir)
+        _images, t2 = self._pdf_to_images_with_timings(pdf_path, staging_dir)
+        images = self._publish_staged_previews(staging_dir, output_dir)
         total_ms = (time.perf_counter() - total_start) * 1000
 
         timings: Dict[str, float] = {}

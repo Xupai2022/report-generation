@@ -954,19 +954,21 @@ class LLMOrchestratorV2:
 
     def _build_rewrite_base_prompt(
         self,
-        context_payload: Dict[str, Any],
+        context_payload: Optional[Dict[str, Any]] = None,
         use_full_data: bool = False,
         rag_context: Optional[str] = None,
     ) -> str:
-        """Build additional context block for single-slide rewrite."""
-        section_title = "## 全量安全数据（仅上下文）" if use_full_data else "## 当前页面相关数据（仅上下文）"
-        prompt_parts: List[str] = [
-            section_title,
-            "如与当前页面结构化数据冲突，必须以当前页面结构化数据为准。",
-            "```json",
-            json.dumps(context_payload, ensure_ascii=False, indent=2),
-            "```",
-        ]
+        """Build optional auxiliary context block for single-slide rewrite."""
+        prompt_parts: List[str] = []
+        if context_payload:
+            section_title = "## 全量安全数据（仅上下文）" if use_full_data else "## 当前页面相关数据（仅上下文）"
+            prompt_parts.extend([
+                section_title,
+                "如与当前页面结构化数据冲突，必须以当前页面结构化数据为准。",
+                "```json",
+                json.dumps(context_payload, ensure_ascii=False, indent=2),
+                "```",
+            ])
         if rag_context:
             prompt_parts.extend([
                 "",
@@ -1088,10 +1090,9 @@ class LLMOrchestratorV2:
             ai_tokens = target_tokens
 
         system_prompt = self._build_system_prompt(template)
-        context_payload = self._build_context_payload_for_slides(tenant_input, template, [slide_key])
         use_full_data = self._batch_requires_full_data(template, [slide_key])
         base_user_prompt = self._build_rewrite_base_prompt(
-            context_payload=context_payload,
+            context_payload=None,
             use_full_data=use_full_data,
             rag_context=rag_context,
         )

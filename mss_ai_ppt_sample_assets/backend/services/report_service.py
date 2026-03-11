@@ -441,7 +441,10 @@ class ReportService:
         retrieval_trace: List[Dict[str, Any]] = []
         retrieval_stats: Dict[str, Any] = {}
         rag_used = False
-        if use_rag:
+        rag_active = bool(use_rag and self.rag_service.enabled)
+        if use_rag and not self.rag_service.enabled:
+            logger.info("RAG requested but globally disabled (RAG_ENABLED=false), skip retrieval.")
+        if rag_active:
             send_progress(26, "检索知识库...")
             try:
                 rag_result = self.rag_service.retrieve_for_generation(
@@ -622,7 +625,7 @@ class ReportService:
 
         # Ensure latest template descriptor is used for prompt construction.
         self.template_repo.clear_cache()
-        template_descriptor = self.template_repo.get_descriptor_v2(template_id)
+        self.template_repo.get_descriptor_v2(template_id)
 
         slidespec = self._load_slidespec(session_id, template_id)
         target_slide = slidespec.get_slide(slide_key)
@@ -649,41 +652,9 @@ class ReportService:
         retrieval_stats: Dict[str, Any] = {}
         rag_used = False
         if use_rag:
-            send_progress(36, "检索知识库...")
-            try:
-                descriptor_slide = next(
-                    (slide for slide in template_descriptor.slides if slide.slide_key == slide_key),
-                    None,
-                )
-                non_ai_tokens = {
-                    placeholder.token
-                    for placeholder in (descriptor_slide.placeholders if descriptor_slide else [])
-                    if not placeholder.ai_generate
-                }
-                structured_slide_data = {
-                    token: value
-                    for token, value in dict(target_slide.placeholders or {}).items()
-                    if token in non_ai_tokens
-                }
-                rag_result = self.rag_service.retrieve_for_rewrite(
-                    tenant_input=tenant_input,
-                    input_id=input_id,
-                    template_id=template_id,
-                    slide_key=slide_key,
-                    user_prompt=user_prompt,
-                    current_slide_content=dict(target_slide.placeholders or {}),
-                    use_rag=use_rag,
-                    template_descriptor=template_descriptor,
-                    target_tokens=target_tokens,
-                    structured_slide_data=structured_slide_data,
-                    session_id=session_id,
-                )
-                rag_context = rag_result.context
-                retrieval_trace = rag_result.retrieval_trace
-                retrieval_stats = dict(rag_result.retrieval_stats or {})
-                rag_used = rag_result.rag_used
-            except Exception as e:
-                logger.warning("RAG retrieval failed in rewrite flow: %s", e)
+            logger.info(
+                "AI rewrite explicitly bypasses RAG retrieval to strictly follow user prompt."
+            )
 
         send_progress(48, "AI generating content...")
         ai_result = self.llm_orchestrator_v2.rewrite_single_slide_v2(

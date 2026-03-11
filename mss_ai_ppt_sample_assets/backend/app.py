@@ -161,6 +161,27 @@ def api_root():
 async def startup_cleanup():
     """Clean up old sessions, stale locks, and old jobs when server starts."""
     try:
+        if config.settings.rag_preload_on_startup:
+            rag_warmup = service.rag_service.warm_up()
+            if rag_warmup.get("ok"):
+                logger.info(
+                    "RAG preload completed in %.2f ms | deps=%.2f ms | collection=%.2f ms | reranker=%.2f ms | reranker_status=%s",
+                    float(rag_warmup.get("total_ms", 0)),
+                    float(rag_warmup.get("load_dependencies_ms", 0)),
+                    float(rag_warmup.get("ensure_collection_ms", 0)),
+                    float(rag_warmup.get("load_reranker_ms", 0)),
+                    rag_warmup.get("reranker_status"),
+                )
+            else:
+                logger.warning(
+                    "RAG preload failed in %.2f ms | reason=%s | error=%s",
+                    float(rag_warmup.get("total_ms", 0)),
+                    rag_warmup.get("reason"),
+                    rag_warmup.get("error"),
+                )
+        else:
+            logger.info("RAG preload skipped on startup (RAG_PRELOAD_ON_STARTUP=false)")
+
         # Clean up old sessions (older than configured retention period)
         cleaned_count = service.cleanup_old_sessions(
             max_age_hours=config.settings.session_retention_days * 24

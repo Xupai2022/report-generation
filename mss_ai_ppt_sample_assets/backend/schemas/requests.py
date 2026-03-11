@@ -149,7 +149,10 @@ class AISlideRewriteRequest(BaseModel):
             "If omitted or empty, backend rewrites all ai_generate=true tokens on the slide."
         ),
     )
-    use_rag: bool = Field(True, description="Enable RAG retrieval for AI rewrite")
+    use_rag: bool = Field(
+        True,
+        description="Deprecated for AI rewrite. Kept for compatibility and ignored by backend."
+    )
     client_id: Optional[str] = Field(None, description="Optional WebSocket client ID")
 
     @validator("user_prompt")

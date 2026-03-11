@@ -33,6 +33,11 @@ def main() -> int:
         help="Embedding model for RAG",
     )
     parser.add_argument(
+        "--rerank-model",
+        default="BAAI/bge-reranker-base",
+        help="Reranker model for RAG",
+    )
+    parser.add_argument(
         "--include-docker-image",
         action="store_true",
         help="Export qdrant docker image tar",
@@ -47,9 +52,11 @@ def main() -> int:
     out_dir = Path(args.output_dir).resolve()
     wheelhouse_dir = out_dir / "wheelhouse"
     model_dir = out_dir / "models"
-    model_cache_dir = model_dir / args.embed_model.replace("/", "__")
+    embed_model_cache_dir = model_dir / args.embed_model.replace("/", "__")
+    rerank_model_cache_dir = model_dir / args.rerank_model.replace("/", "__")
     wheelhouse_dir.mkdir(parents=True, exist_ok=True)
-    model_cache_dir.mkdir(parents=True, exist_ok=True)
+    embed_model_cache_dir.mkdir(parents=True, exist_ok=True)
+    rerank_model_cache_dir.mkdir(parents=True, exist_ok=True)
 
     requirements = Path(args.requirements).resolve()
     if not requirements.exists():
@@ -78,7 +85,14 @@ def main() -> int:
     print(f"[info] downloading model snapshot: {args.embed_model}")
     snapshot_download(
         repo_id=args.embed_model,
-        local_dir=str(model_cache_dir),
+        local_dir=str(embed_model_cache_dir),
+        local_dir_use_symlinks=False,
+    )
+
+    print(f"[info] downloading reranker snapshot: {args.rerank_model}")
+    snapshot_download(
+        repo_id=args.rerank_model,
+        local_dir=str(rerank_model_cache_dir),
         local_dir_use_symlinks=False,
     )
 
@@ -96,6 +110,8 @@ def main() -> int:
                 "RAG_QDRANT_URL=http://127.0.0.1:6333",
                 "RAG_QDRANT_COLLECTION=kb_chunks",
                 f"RAG_EMBED_MODEL={args.embed_model}",
+                "RAG_ENABLE_RERANK=true",
+                f"RAG_RERANK_MODEL={args.rerank_model}",
                 f"RAG_TOP_K=8",
                 f"RAG_MAX_CONTEXT_CHARS=4000",
                 "RAG_HF_LOCAL_FILES_ONLY=true",

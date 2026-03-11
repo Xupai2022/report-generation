@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 # Load .env file from project root
 REPO_ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 env_path = Path(os.getenv("MSS_ENV_PATH", str(REPO_ROOT_DIR / ".env")))
-load_dotenv(dotenv_path=env_path)
+load_dotenv(dotenv_path=env_path, override=True)
 
 ROOT_DIR = Path(__file__).resolve().parent
 FRONTEND_DIR = ROOT_DIR / "frontend"
@@ -104,17 +104,33 @@ class Settings:
         self.rag_qdrant_collection: str = os.getenv("RAG_QDRANT_COLLECTION", "kb_chunks")
         self.rag_qdrant_path: str = os.getenv("RAG_QDRANT_PATH", str(RAG_DIR / "qdrant"))
         self.rag_embed_model: str = os.getenv("RAG_EMBED_MODEL", "BAAI/bge-small-zh-v1.5")
-        self.rag_top_k: int = int(os.getenv("RAG_TOP_K", "8"))
+        self.rag_top_k: int = int(os.getenv("RAG_TOP_K", "3"))
+        self.rag_candidate_top_k: int = int(os.getenv("RAG_CANDIDATE_TOP_K", "16"))
         self.rag_max_context_chars: int = int(os.getenv("RAG_MAX_CONTEXT_CHARS", "4000"))
         self.rag_max_context_chars_per_slide: int = int(os.getenv("RAG_MAX_CONTEXT_CHARS_PER_SLIDE", "1600"))
         self.rag_min_score: float = float(os.getenv("RAG_MIN_SCORE", "0.30"))
         self.rag_prompt_budget_ratio: float = float(os.getenv("RAG_PROMPT_BUDGET_RATIO", "0.20"))
         self.rag_prompt_budget_min_tokens: int = int(os.getenv("RAG_PROMPT_BUDGET_MIN_TOKENS", "400"))
         self.rag_prompt_budget_max_tokens: int = int(os.getenv("RAG_PROMPT_BUDGET_MAX_TOKENS", "2500"))
-        self.rag_chunk_size_tokens: int = int(os.getenv("RAG_CHUNK_SIZE_TOKENS", "600"))
-        self.rag_chunk_overlap_tokens: int = int(os.getenv("RAG_CHUNK_OVERLAP_TOKENS", "80"))
+        self.rag_chunk_size_tokens: int = int(os.getenv("RAG_CHUNK_SIZE_TOKENS", "220"))
+        self.rag_chunk_overlap_tokens: int = int(os.getenv("RAG_CHUNK_OVERLAP_TOKENS", "40"))
         self.rag_hf_local_files_only: bool = os.getenv("RAG_HF_LOCAL_FILES_ONLY", "false").lower() == "true"
         self.rag_source_dir: str = os.getenv("RAG_SOURCE_DIR", str(DATA_DIR / "rag_docs"))
+        self.rag_enable_rerank: bool = os.getenv("RAG_ENABLE_RERANK", "true").lower() == "true"
+        self.rag_rerank_model: str = os.getenv(
+            "RAG_RERANK_MODEL",
+            "mss_ai_ppt_sample_assets/backend/models/bge-reranker-base",
+        )
+        rerank_scenes_raw = os.getenv("RAG_RERANK_SCENES", "diagnostic,generate,rewrite")
+        self.rag_rerank_scenes = {
+            item.strip().lower()
+            for item in rerank_scenes_raw.split(",")
+            if item.strip()
+        } or {"diagnostic", "generate", "rewrite"}
+        self.rag_final_top_k_per_slide: int = int(os.getenv("RAG_FINAL_TOP_K_PER_SLIDE", "3"))
+        self.rag_common_fallback_top_k: int = int(os.getenv("RAG_COMMON_FALLBACK_TOP_K", "2"))
+        self.rag_section_min_chars: int = int(os.getenv("RAG_SECTION_MIN_CHARS", "80"))
+        self.rag_preload_on_startup: bool = os.getenv("RAG_PRELOAD_ON_STARTUP", "false").lower() == "true"
 
         # Validate OpenAI configuration when LLM is enabled
         if self.enable_llm and not self.openai_api_key:
