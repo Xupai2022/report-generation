@@ -35,7 +35,7 @@
                    {
                        "slide_no":  3,
                        "slide_key":  "chapter0",
-                       "title":  "项目背景回顾-封面",
+                       "title":  "背景回顾-封面",
                        "placeholders":  [
 
                                         ]
@@ -193,7 +193,7 @@
                    {
                        "slide_no":  8,
                        "slide_key":  "coverage_summary",
-                       "title":  "服务覆盖总览",
+                       "title":  "安全运营总览",
                        "placeholders":  [
                                             {
                                                 "token":  "AF_protection_path_coverage_rate",
@@ -410,7 +410,7 @@
                    {
                        "slide_no":  9,
                        "slide_key":  "protection_overview",
-                       "title":  "保护总览",
+                       "title":  "业务保护成效总览",
                        "placeholders":  [
                                             {
                                                 "token":  "high_risk_exploitable_vulnerability_protection_rate",

@@ -198,6 +198,18 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  cursor: pointer;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+}
+.lang-btn:hover {
+  transform: translateY(-1px);
+  border-color: #cfd8e3;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, .08);
+}
+.lang-btn:focus-visible {
+  outline: none;
+  border-color: #94a3b8;
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, .24);
 }
 
 .preconfig-grid {
@@ -684,6 +696,30 @@ button:disabled {
   background: rgba(17, 24, 39, .94);
   z-index: 1299;
   animation: tooltipFloatIn .16s ease-out;
+}
+
+.tooltip-card-btn.tooltip-left-align[data-tooltip]:hover::after,
+.tooltip-card-btn.tooltip-left-align[data-tooltip]:focus-visible::after {
+  left: 0;
+  transform: none;
+  animation: tooltipFloatInLeft .16s ease-out;
+}
+
+.tooltip-card-btn.tooltip-left-align[data-tooltip]:hover::before,
+.tooltip-card-btn.tooltip-left-align[data-tooltip]:focus-visible::before {
+  left: 12px;
+  transform: rotate(45deg);
+  animation: tooltipFloatInLeftArrow .16s ease-out;
+}
+
+@keyframes tooltipFloatInLeft {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes tooltipFloatInLeftArrow {
+  from { opacity: 0; transform: rotate(45deg) translateY(4px); }
+  to { opacity: 1; transform: rotate(45deg) translateY(0); }
 }
 @keyframes tooltipFloatIn {
   from { opacity: 0; transform: translateX(-50%) translateY(4px); }

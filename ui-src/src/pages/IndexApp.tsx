@@ -235,7 +235,7 @@ export function IndexApp() {
   const [wsReady, setWsReady] = useState(false);
   const [generationInProgress, setGenerationInProgress] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [progressText, setProgressText] = useState('');
+  const [progressMessage, setProgressMessage] = useState('');
 
   const [jobId, setJobId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string>('');
@@ -273,7 +273,6 @@ export function IndexApp() {
 
   const [presentOpen, setPresentOpen] = useState(false);
   const [presentIndex, setPresentIndex] = useState(0);
-  const presenterRef = useRef<HTMLDivElement | null>(null);
   const editorPaneRef = useRef<HTMLElement | null>(null);
   const exportPopoverRef = useRef<HTMLDivElement | null>(null);
   const aiPopoverRef = useRef<HTMLDivElement | null>(null);
@@ -510,7 +509,7 @@ export function IndexApp() {
     if (numeric < progressValueRef.current) return;
     progressValueRef.current = numeric;
     setProgress(numeric);
-    setProgressText(localizeProgressMessage(numeric, message));
+    setProgressMessage(typeof message === 'string' ? message : '');
   };
 
   const loadTemplateSlides = async (templateId: string) => {
@@ -591,7 +590,7 @@ export function IndexApp() {
       setLoading(false);
       setGenerationInProgress(false);
       setProgress(0);
-      setProgressText('');
+      setProgressMessage('');
       setJobId(null);
       setActiveJobId(null);
       setActiveSessionId('');
@@ -669,7 +668,7 @@ export function IndexApp() {
     stopPolling();
     progressValueRef.current = 100;
     setProgress(100);
-    setProgressText(t('progressComplete', lang === 'zh-CN' ? '处理完成' : 'Completed'));
+    setProgressMessage('completed');
     setJobId(nextJobId);
     const templateId = nextJobId.split(':')[1] || selectedTemplate;
     if (templateId) {
@@ -713,7 +712,7 @@ export function IndexApp() {
     stopPolling();
     progressValueRef.current = 0;
     setProgress(0);
-    setProgressText('');
+    setProgressMessage('');
     actionRef.current = null;
     const timeoutDetected = shouldOpenTimeoutDialog(errorCode, message);
     const finalMessage = timeoutDetected
@@ -814,7 +813,7 @@ export function IndexApp() {
     completionHandledJobRef.current = null;
     progressValueRef.current = 0;
     setProgress(0);
-    setProgressText(t('progressInit', lang === 'zh-CN' ? '准备生成任务' : 'Preparing task'));
+    setProgressMessage('');
     try {
       const firstSlideKey = firstSlide(slidespec);
       if (firstSlideKey) {
@@ -1149,7 +1148,7 @@ export function IndexApp() {
     actionRef.current = 'rewrite';
     progressValueRef.current = 0;
     setProgress(0);
-    setProgressText(t('progressInit', lang === 'zh-CN' ? '准备生成任务' : 'Preparing task'));
+    setProgressMessage('');
     setLoading(true);
     try {
       const result = await MainApi.rewriteSlides(jobId, payload, clientId);
@@ -1160,13 +1159,13 @@ export function IndexApp() {
       else await syncPreviewUrls(jobId, false);
       progressValueRef.current = 100;
       setProgress(100);
-      setProgressText(t('progressComplete', lang === 'zh-CN' ? '处理完成' : 'Completed'));
+      setProgressMessage('completed');
       showToast('success', t('msgUpdateSlidesSuccess').replace('{count}', String(result.updated_count || 0)));
     } catch (error) {
       showToast('error', error instanceof Error ? error.message : t('titleUpdateFailed'));
       progressValueRef.current = 0;
       setProgress(0);
-      setProgressText('');
+      setProgressMessage('');
     } finally {
       setGenerationInProgress(false);
       setLoading(false);
@@ -1176,6 +1175,16 @@ export function IndexApp() {
 
   const openAiRewrite = () => {
     if (!activeSlideKey) return showToast('warning', t('msgSelectSlideForAiRewrite'));
+    if (activeAiTokens.length === 0) {
+      return showToast(
+        'warning',
+        lt(
+          'msgNoAiGeneratedPlaceholdersToRewrite',
+          '当前页没有可用于 AI 重写的占位字段。',
+          'This slide has no AI-generated placeholders to rewrite.',
+        ),
+      );
+    }
     setExportOpen(false);
     setAiModalOpen(true);
   };
@@ -1202,7 +1211,7 @@ export function IndexApp() {
     actionRef.current = 'ai-rewrite';
     progressValueRef.current = 0;
     setProgress(0);
-    setProgressText(t('progressInit', lang === 'zh-CN' ? '准备生成任务' : 'Preparing task'));
+    setProgressMessage('');
     setLoading(true);
     try {
       const result = await MainApi.aiRewriteSlide(
@@ -1227,14 +1236,14 @@ export function IndexApp() {
       setAiPrompt('');
       progressValueRef.current = 100;
       setProgress(100);
-      setProgressText(t('progressComplete', lang === 'zh-CN' ? '处理完成' : 'Completed'));
+      setProgressMessage('completed');
       if ((result.updated_count || 0) > 0) showToast('success', t('msgAiRewriteSuccess').replace('{slide}', activeSlideKey));
       else showToast('warning', t('msgAiRewriteNoChanges'));
     } catch (error) {
       showToast('error', error instanceof Error ? error.message : t('titleUpdateFailed'));
       progressValueRef.current = 0;
       setProgress(0);
-      setProgressText('');
+      setProgressMessage('');
     } finally {
       setGenerationInProgress(false);
       setLoading(false);
@@ -1441,19 +1450,33 @@ export function IndexApp() {
     }
   };
 
-  const openPresentation = () => {
+  const requestFullscreenBeforePresenting = async () => {
+    if (document.fullscreenElement) return true;
+    try {
+      const host = document.documentElement as HTMLElement | null;
+      await host?.requestFullscreen?.();
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const openPresentationAtIndex = async (index: number) => {
     if (generationInProgress || loading) return showToast('info', lt('msgGeneratingPleaseWait', '正在生成报告，请稍候...', 'Generating report, please wait...'));
     if (!slidespec || slidespec.slides.length === 0) return showToast('warning', t('msgNoSlidesForPresentation'));
-    setPresentIndex(activeSlideIndex >= 0 ? activeSlideIndex : 0);
+    const targetIndex = Math.max(0, Math.min(slidespec.slides.length - 1, index));
+    setPresentIndex(targetIndex);
+    await requestFullscreenBeforePresenting();
     setPresentOpen(true);
   };
 
+  const openPresentation = () => {
+    void openPresentationAtIndex(activeSlideIndex >= 0 ? activeSlideIndex : 0);
+  };
+
   const openPresentationAtSlide = (slideKey: string) => {
-    if (generationInProgress || loading) return showToast('info', lt('msgGeneratingPleaseWait', '正在生成报告，请稍候...', 'Generating report, please wait...'));
-    if (!slidespec || slidespec.slides.length === 0) return showToast('warning', t('msgNoSlidesForPresentation'));
-    const targetIndex = slidespec.slides.findIndex((slide) => slide.slide_key === slideKey);
-    setPresentIndex(targetIndex >= 0 ? targetIndex : 0);
-    setPresentOpen(true);
+    const targetIndex = slidespec?.slides.findIndex((slide) => slide.slide_key === slideKey) ?? 0;
+    void openPresentationAtIndex(targetIndex >= 0 ? targetIndex : 0);
   };
 
   const closePresentation = () => {
@@ -1475,9 +1498,6 @@ export function IndexApp() {
 
   useEffect(() => {
     if (!presentOpen) return;
-    if (presenterRef.current && !document.fullscreenElement) {
-      void presenterRef.current.requestFullscreen?.().catch(() => {});
-    }
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') closePresentation();
       else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextPresentation(-1);
@@ -1538,6 +1558,12 @@ export function IndexApp() {
     return new Set(lines);
   }, [aiPrompt]);
   const aiSlideLabel = activeSlide ? `${currentSlideNumber}/${totalSlideCount} · ${activeSlide.title || activeSlide.slide_key}` : '-';
+  const reconfigureTooltip = generationInProgress
+    ? lt('tooltipReconfigureAfterPreview', '预览生成中，完成后可重新配置', 'Preview is generating. Reconfigure after it completes.')
+    : t('btnReconfigure');
+  const aiRewriteTooltip = activeAiTokens.length === 0
+    ? lt('tooltipAiRewriteUnavailableNoToken', 'AI重写不可用：当前页无AI生成内容', 'AI rewrite unavailable: no AI-generated content on this slide')
+    : t('btnAiRewriteCurrentSlide', 'AI 重写当前页');
   const loadingPlaceholderCount = Math.max(previewLayout === 'two-up' ? 8 : 4, (templateSlidesById[selectedTemplate] || []).length || 0);
   const previewToggleTo = previewLayout === 'list' ? 'two-up' : 'list';
   const previewToggleTooltip = previewLayout === 'list' ? t('labelPreviewTwoUp') : t('labelPreviewList');
@@ -1677,7 +1703,12 @@ export function IndexApp() {
               <h1>{heroTitle}</h1>
               <p>{heroSubtitle}</p>
             </div>
-            <button className="lang-btn" onClick={toggleLang} title={lang === 'zh-CN' ? 'Switch to English' : '切换到中文'}>
+            <button
+              className="lang-btn tooltip-card-btn"
+              onClick={toggleLang}
+              data-tooltip={lang === 'zh-CN' ? t('tooltipSwitchToEnglish', '切换到英文') : t('tooltipSwitchToChinese', '切换到中文')}
+              aria-label={lang === 'zh-CN' ? t('tooltipSwitchToEnglish', '切换到英文') : t('tooltipSwitchToChinese', '切换到中文')}
+            >
               <Globe size={16} /> {lang === 'zh-CN' ? 'EN' : '中文'}
             </button>
           </header>
@@ -1853,11 +1884,11 @@ export function IndexApp() {
           <header className="workspace-header">
             <div className="header-left">
               <button
-                className="workspace-icon-btn tooltip-card-btn"
+                className="workspace-icon-btn tooltip-card-btn tooltip-left-align"
                 onClick={handleReconfigure}
                 disabled={loading || generationInProgress}
-                data-tooltip={t('btnReconfigure')}
-                aria-label={t('btnReconfigure')}
+                data-tooltip={reconfigureTooltip}
+                aria-label={reconfigureTooltip}
               >
                 <ChevronLeft size={16} />
               </button>
@@ -1903,9 +1934,9 @@ export function IndexApp() {
                     if (aiModalOpen) setAiModalOpen(false);
                     else openAiRewrite();
                   }}
-                  disabled={!jobId || !activeSlideKey || loading}
-                  data-tooltip={t('btnAiRewriteCurrentSlide', 'AI 重写当前页')}
-                  aria-label={t('btnAiRewriteCurrentSlide', 'AI 重写当前页')}
+                  disabled={!jobId || !activeSlideKey || loading || activeAiTokens.length === 0}
+                  data-tooltip={aiRewriteTooltip}
+                  aria-label={aiRewriteTooltip}
                 >
                   <Sparkles size={14} />
                 </button>
@@ -1956,7 +1987,7 @@ export function IndexApp() {
                               className={`token-chip ${selectedAiTokens.includes(token) ? 'active' : ''}`}
                               onClick={() => toggleAiToken(token)}
                             >
-                              <code>{token}</code>
+                              <code>{formatEditorFieldLabel(token)}</code>
                             </button>
                           ))}
                         </div>
@@ -2148,16 +2179,17 @@ export function IndexApp() {
                       ) : (
                         <div className="preview-placeholder">{t('msgGeneratingPreview')}</div>
                       )}
-                    <button
-                      className="float-ai"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveSlideKey(slide.slide_key);
-                        openAiRewrite();
-                      }}
-                    >
-                      <Sparkles size={12} /> {t('btnAiRewriteShort', lang === 'zh-CN' ? 'AI重写' : 'AI Rewrite')}
-                    </button>
+                    {slide.slide_key === activeSlideKey && activeAiTokens.length > 0 && (
+                      <button
+                        className="float-ai"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openAiRewrite();
+                        }}
+                      >
+                        <Sparkles size={12} /> {t('btnAiRewriteShort', lang === 'zh-CN' ? 'AI重写' : 'AI Rewrite')}
+                      </button>
+                    )}
                     </article>
                   ))
                 ) : generationInProgress ? (
@@ -2340,7 +2372,7 @@ export function IndexApp() {
       )}
 
       {presentOpen && (
-        <div className="presenter" onClick={closePresentation} ref={presenterRef} onWheel={onPresenterWheel}>
+        <div className="presenter" onClick={closePresentation} onWheel={onPresenterWheel}>
           <button
             className="present-btn left"
             onClick={(e) => {
@@ -2380,7 +2412,7 @@ export function IndexApp() {
           <div className="progress-float-title">
             <RefreshCw size={13} className="spin" /> {lt('msgGenerating', '正在生成报告', 'Generating report')}
           </div>
-          <div className="progress-float-stage">{progressText || t('progressInit', lang === 'zh-CN' ? '准备生成任务' : 'Preparing task')}</div>
+          <div className="progress-float-stage">{localizeProgressMessage(progress, progressMessage)}</div>
           <div className="progress-float-rail">
             <span style={{ width: `${Math.max(0, Math.min(100, progress))}%` }} />
           </div>
