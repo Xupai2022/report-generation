@@ -14,6 +14,7 @@ import json
 class PlaceholderDefinition(BaseModel):
     """Definition for a placeholder in V2 templates."""
     token: str  # Placeholder token name, e.g., "HEADLINE"
+    cn_name: Optional[str] = None  # Chinese display label for UI/editor rendering
     type: Literal[
         "text",
         "native_table",

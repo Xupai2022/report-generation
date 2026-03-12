@@ -433,7 +433,7 @@ class ExcelDataExtractor:
             "national_day_network_security_work_report": "G13",
             "spring_network_security_work_report": "G14",
             "may_day_network_security_work_report": "G15",
-            "security_trends_semi_annual_report": "G17",
+            "security_trends_semi_monthly_report": "G17",
             "phishing_scenario_security_poster": "G18",
         }
         for token, addr in deliverables_map.items():
@@ -485,6 +485,7 @@ class ExcelDataExtractor:
         protection_overview: Dict[str, Any] = {}
         protection_map = {
             "AF_protection_path_coverage_rate": "D35",
+            "AF_external_attack_blocks": "D35",
             "EDR_endpoint_risk_count": "D36",
             "policy_check_and_optimization_count": "D37",
             "high_risk_exploitable_vulnerability_protection_rate": "C34",
@@ -529,7 +530,6 @@ class ExcelDataExtractor:
         response_timeliness = ExcelDataExtractor._read_labeled_pairs(ws, 53, 57, 6, 7)
         if response_timeliness["labels"]:
             incident_effectiveness["response_timeliness"] = response_timeliness
-            incident_effectiveness["P11_bar"] = response_timeliness
 
         trend_cols = ExcelDataExtractor._read_month_columns(ws, 60, 3, 12)
         if trend_cols:
@@ -542,7 +542,6 @@ class ExcelDataExtractor:
                 "avg_response_minutes": response_trend_values,
             }
             incident_effectiveness["response_trend"] = response_trend
-            incident_effectiveness["P11_line"] = response_trend
 
         incident_distribution = ExcelDataExtractor._read_labeled_pairs(ws, 53, 57, 3, 4)
         if incident_distribution["labels"]:
@@ -551,7 +550,6 @@ class ExcelDataExtractor:
                 "values": incident_distribution["values"],
             }
             incident_effectiveness["incident_distribution"] = incident_dist_obj
-            incident_effectiveness["P11_pie"] = incident_dist_obj
 
         ExcelDataExtractor._add_section(output, "incident_effectiveness", incident_effectiveness)
 
@@ -582,7 +580,6 @@ class ExcelDataExtractor:
                 "values": asset_dist["values"],
             }
             asset_management["asset_distribution"] = asset_dist_obj
-            asset_management["P13_pie"] = asset_dist_obj
 
         ExcelDataExtractor._add_section(output, "asset_management", asset_management)
 
@@ -601,7 +598,6 @@ class ExcelDataExtractor:
         if vuln_dist["labels"]:
             vuln_dist_obj = {"categories": vuln_dist["labels"], "values": vuln_dist["values"]}
             vulnerability_effectiveness["vulnerability_distribution"] = vuln_dist_obj
-            vulnerability_effectiveness["P14_pie"] = vuln_dist_obj
 
         # Preserve additional P14 columns regardless of current downstream usage.
         vuln_closed_loop_counts = ExcelDataExtractor._read_labeled_pairs(ws, 80, 82, 3, 5)
@@ -659,7 +655,6 @@ class ExcelDataExtractor:
             threat_trend["malicious_outbound"] = malicious_outbound
 
         threat_effectiveness["threat_trend"] = threat_trend
-        threat_effectiveness["P15_line"] = threat_trend
 
         threat_map = {
             "external_attack_log_count_XDR": "D84",
@@ -704,7 +699,6 @@ class ExcelDataExtractor:
                 "defense_rates": [ExcelDataExtractor._to_number(r[2], 0) for r in posture_rows],
             }
             critical_assurance["posture_comparison"] = posture_comparison
-            critical_assurance["P16_combo"] = posture_comparison
 
         ExcelDataExtractor._add_section(output, "critical_assurance", critical_assurance)
 

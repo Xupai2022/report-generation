@@ -220,11 +220,13 @@ export function IndexApp() {
   const [templates, setTemplates] = useState<TemplateItem[]>([]);
   const [inputs, setInputs] = useState<InputItem[]>([]);
   const [templateSlidesById, setTemplateSlidesById] = useState<Record<string, TemplateSlideMeta[]>>({});
+  const [templateFrameIndexById, setTemplateFrameIndexById] = useState<Record<string, number>>({});
   const [templatePreviewStamp, setTemplatePreviewStamp] = useState<number>(() => Date.now());
 
   const [selectedTemplate, setSelectedTemplate] = useState('');
   const [selectedInput, setSelectedInput] = useState('');
   const [uploadingExcel, setUploadingExcel] = useState(false);
+  const [excelDragActive, setExcelDragActive] = useState(false);
   const [useMock, setUseMock] = useState(true);
   const [selectedFocus, setSelectedFocus] = useState<FocusValue[]>(['business_protection']);
 
@@ -276,6 +278,7 @@ export function IndexApp() {
   const exportPopoverRef = useRef<HTMLDivElement | null>(null);
   const aiPopoverRef = useRef<HTMLDivElement | null>(null);
   const excelUploadInputRef = useRef<HTMLInputElement | null>(null);
+  const excelDragDepthRef = useRef(0);
 
   const wsRef = useRef<WebSocket | null>(null);
   const wsRetryRef = useRef<number | null>(null);
@@ -320,6 +323,18 @@ export function IndexApp() {
     const meta = slides.find((s) => s.slide_key === activeSlideKey);
     return ensureArray(meta?.ai_rewrite_tokens);
   }, [selectedTemplate, activeSlideKey, templateSlidesById]);
+
+  const activeSlideMeta = useMemo(() => {
+    if (!selectedTemplate || !activeSlideKey) return null;
+    const slides = templateSlidesById[selectedTemplate] || [];
+    return slides.find((s) => s.slide_key === activeSlideKey) || null;
+  }, [selectedTemplate, activeSlideKey, templateSlidesById]);
+
+  const formatEditorFieldLabel = (token: string) => {
+    if (lang !== 'zh-CN') return token;
+    const label = activeSlideMeta?.placeholder_cn_names?.[token];
+    return typeof label === 'string' && label.trim() ? label : token;
+  };
 
   const selectedAiMode = useMemo(() => {
     if (!activeSlideKey) return 'all' as const;
@@ -879,14 +894,13 @@ export function IndexApp() {
     excelUploadInputRef.current?.click();
   };
 
-  const handleExcelFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
+  const uploadExcelFile = async (file: File | null | undefined) => {
     if (!file) return;
     if (!file.name.toLowerCase().endsWith('.xlsx')) {
       showToast('warning', lt('msgUploadExcelOnlyXlsx', '仅支持上传 .xlsx 文件', 'Only .xlsx files are supported'));
       return;
     }
+    if (uploadingExcel || loading || generationInProgress) return;
     setUploadingExcel(true);
     try {
       const result = await MainApi.uploadExcel(file);
@@ -901,6 +915,45 @@ export function IndexApp() {
     } finally {
       setUploadingExcel(false);
     }
+  };
+
+  const handleExcelFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    await uploadExcelFile(file);
+  };
+
+  const handleExcelDragEnter = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (uploadingExcel || loading || generationInProgress) return;
+    excelDragDepthRef.current += 1;
+    setExcelDragActive(true);
+  };
+
+  const handleExcelDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (uploadingExcel || loading || generationInProgress) return;
+    if (!excelDragActive) setExcelDragActive(true);
+  };
+
+  const handleExcelDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    excelDragDepthRef.current = Math.max(0, excelDragDepthRef.current - 1);
+    if (excelDragDepthRef.current === 0) {
+      setExcelDragActive(false);
+    }
+  };
+
+  const handleExcelDrop = async (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    excelDragDepthRef.current = 0;
+    setExcelDragActive(false);
+    const file = event.dataTransfer.files?.[0];
+    await uploadExcelFile(file);
   };
 
   const handleReconfigure = () => {
@@ -1313,6 +1366,20 @@ export function IndexApp() {
     return t('preConfigTemplatePageFallback', `Page ${index + 1}`).replace('{index}', String(index + 1));
   };
 
+  const scrubTemplateFrame = (templateId: string, clientX: number, target: EventTarget | null) => {
+    if (!target || !(target instanceof HTMLElement)) return;
+    const frames = templateSlidesById[templateId] || [];
+    const total = Math.max(frames.length, 1);
+    const rect = target.getBoundingClientRect();
+    if (!rect.width) return;
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    const index = Math.min(total - 1, Math.floor(ratio * total));
+    setTemplateFrameIndexById((prev) => {
+      if (prev[templateId] === index) return prev;
+      return { ...prev, [templateId]: index };
+    });
+  };
+
   const onChangeAiMode = (mode: 'all' | 'selected') => {
     if (!activeSlideKey) return;
     setAiModeBySlide((prev) => ({ ...prev, [activeSlideKey]: mode }));
@@ -1620,7 +1687,13 @@ export function IndexApp() {
                 <h2>
                   <FileSpreadsheet size={16} className="section-icon" /> 1. {t('preConfigSectionData', 'Data Source')}
                 </h2>
-                <div className="data-source-card">
+                <div
+                  className={`data-source-card ${excelDragActive ? 'drag-active' : ''}`}
+                  onDragEnter={handleExcelDragEnter}
+                  onDragOver={handleExcelDragOver}
+                  onDragLeave={handleExcelDragLeave}
+                  onDrop={handleExcelDrop}
+                >
                   <div className="data-source-icon">
                     <UploadCloud size={30} />
                   </div>
@@ -1674,8 +1747,8 @@ export function IndexApp() {
                     const selected = selectedTemplate === tpl.template_id;
                     const frames = templateSlidesById[tpl.template_id] || [];
                     const total = Math.max(frames.length, 1);
-                    const frameIndex = 0;
-                    const imageUrl = getTemplatePreviewImageUrl(tpl.template_id, 0);
+                    const frameIndex = Math.min(templateFrameIndexById[tpl.template_id] || 0, total - 1);
+                    const imageUrl = getTemplatePreviewImageUrl(tpl.template_id, frameIndex);
                     const fixedTemplateName = t('preConfigTemplateFixedName', lang === 'zh-CN' ? '经典模板' : 'Classic Template');
                     const slidesCountText = t('preConfigSlidesCount', '{count} slides').replace('{count}', String(total));
                     return (
@@ -1687,10 +1760,11 @@ export function IndexApp() {
                         <div
                           className="template-preview"
                           onPointerEnter={() => void loadTemplateSlides(tpl.template_id)}
+                          onPointerMove={(event) => scrubTemplateFrame(tpl.template_id, event.clientX, event.currentTarget)}
                         >
                           {imageUrl ? (
                             <img
-                              src={`${imageUrl}?v=${templatePreviewStamp}&p=1`}
+                              src={`${imageUrl}?v=${templatePreviewStamp}&p=${frameIndex + 1}`}
                               alt={t('preConfigTemplateImageAlt', 'Template page {page} thumbnail').replace('{page}', String(frameIndex + 1))}
                             />
                           ) : (
@@ -2159,7 +2233,7 @@ export function IndexApp() {
                     const restoreKey = `${activeSlide.slide_key}:${field}`;
                     return (
                       <label className={`field-card ${restoredFieldMarks[restoreKey] ? 'restored' : ''}`} key={field}>
-                        <span>{field}</span>
+                        <span>{formatEditorFieldLabel(field)}</span>
                         {useTextArea ? (
                           <textarea value={value} onChange={(e) => updateActiveField(field, e.target.value)} rows={6} />
                         ) : (

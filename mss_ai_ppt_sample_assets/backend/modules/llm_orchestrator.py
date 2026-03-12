@@ -82,6 +82,16 @@ class LLMOrchestratorV2:
             ),
         },
     ]
+    _DUTY_SUMMARY_TOKEN = "duty_summary"
+    _DUTY_SUMMARY_FESTIVAL_TOKENS: List[str] = [
+        "mid_autumn_festival",
+        "national_day",
+        "new_years_day",
+        "spring_festival",
+        "qingming_festival",
+        "labor_day",
+        "dragon_boat_festival",
+    ]
 
     def __init__(self, template_repo: Optional[TemplateRepository] = None):
         self.template_repo = template_repo or TemplateRepository()
@@ -1148,10 +1158,21 @@ class LLMOrchestratorV2:
             )
 
         ai_token_set = set(ai_tokens)
+        if self._DUTY_SUMMARY_TOKEN in ai_token_set:
+            ai_token_set.update(self._DUTY_SUMMARY_FESTIVAL_TOKENS)
         filtered_placeholders = {
             token: value for token, value in slide_placeholders.items() if token in ai_token_set
         }
-        missing_tokens = [token for token in ai_tokens if token not in filtered_placeholders]
+        missing_tokens = [
+            token
+            for token in ai_tokens
+            if token not in filtered_placeholders and token != self._DUTY_SUMMARY_TOKEN
+        ]
+        if (
+            self._DUTY_SUMMARY_TOKEN in ai_tokens
+            and not any(token in filtered_placeholders for token in self._DUTY_SUMMARY_FESTIVAL_TOKENS)
+        ):
+            missing_tokens.append(self._DUTY_SUMMARY_TOKEN)
 
         warnings: List[str] = []
         if missing_tokens:
@@ -1610,6 +1631,7 @@ class LLMOrchestratorV2:
         max_tokens_per_batch: int = 15000,
         focus_options: Optional[List[str]] = None,
         preferred_max_local_batches: Optional[int] = 2,
+        disable_local_only_split: bool = False,
     ) -> List[List[str]]:
         """Smart batching with context policy and stability-first optimization."""
         ai_slides = [
@@ -1634,36 +1656,45 @@ class LLMOrchestratorV2:
         local_slide_keys = self._sort_batch_by_slide_no(local_slide_keys, slide_no_map)
         full_data_slide_keys = self._sort_batch_by_slide_no(full_data_slide_keys, slide_no_map)
 
-        if len(local_slide_keys) <= 14:
-            local_batches = self._optimize_local_batches_exact(
-                tenant_input=tenant_input,
-                template=template,
-                local_slide_keys=local_slide_keys,
-                slide_no_map=slide_no_map,
-                hard_cap=hard_cap,
-                focus_options=focus_options,
-                max_batches=preferred_max_local_batches,
+        if disable_local_only_split:
+            # Keep legacy optimized path available, but allow forcing all local_only slides
+            # into a single batch (e.g. slides 11-17) for comparative runs.
+            local_batches = [local_slide_keys] if local_slide_keys else []
+            logger.info(
+                "Local-only split disabled: forcing single local batch slides=%s",
+                local_slide_keys,
             )
         else:
-            local_batches = self._optimize_local_batches_heuristic(
+            if len(local_slide_keys) <= 14:
+                local_batches = self._optimize_local_batches_exact(
+                    tenant_input=tenant_input,
+                    template=template,
+                    local_slide_keys=local_slide_keys,
+                    slide_no_map=slide_no_map,
+                    hard_cap=hard_cap,
+                    focus_options=focus_options,
+                    max_batches=preferred_max_local_batches,
+                )
+            else:
+                local_batches = self._optimize_local_batches_heuristic(
+                    tenant_input=tenant_input,
+                    template=template,
+                    local_slide_keys=local_slide_keys,
+                    slide_no_map=slide_no_map,
+                    hard_cap=hard_cap,
+                    focus_options=focus_options,
+                    max_batches=preferred_max_local_batches,
+                )
+
+            local_batches = self._force_merge_to_max_batches(
                 tenant_input=tenant_input,
                 template=template,
-                local_slide_keys=local_slide_keys,
+                batches=local_batches,
                 slide_no_map=slide_no_map,
                 hard_cap=hard_cap,
                 focus_options=focus_options,
                 max_batches=preferred_max_local_batches,
             )
-
-        local_batches = self._force_merge_to_max_batches(
-            tenant_input=tenant_input,
-            template=template,
-            batches=local_batches,
-            slide_no_map=slide_no_map,
-            hard_cap=hard_cap,
-            focus_options=focus_options,
-            max_batches=preferred_max_local_batches,
-        )
 
         full_data_batches = [[slide_key] for slide_key in full_data_slide_keys]
         batches = local_batches + full_data_batches
@@ -1711,6 +1742,7 @@ class LLMOrchestratorV2:
             template=template,
             max_tokens_per_batch=max_tokens_per_batch,
             focus_options=focus_options,
+            disable_local_only_split=config.settings.llm_disable_local_only_batch_split,
         )
         total_batches = len(batches)
 
@@ -1728,7 +1760,7 @@ class LLMOrchestratorV2:
 
         if total_batches <= 1:
             logger.info("Single batch - using standard generation")
-            send_progress(35, "正在调用 AI 生成内容...")
+            send_progress(35, "AI generating content...")
             system_prompt = self._build_system_prompt(template)
             batch_rag_context_by_slide = self._build_rag_context_by_slide_for_batch(
                 tenant_input=tenant_input,
@@ -1772,7 +1804,7 @@ class LLMOrchestratorV2:
             logger.info(f"Processing batch {i + 1}/{total_batches}: slides {batch_slide_keys}")
 
             current_progress = 30 + int(i * progress_per_batch)
-            send_progress(current_progress, f"AI 生成中（第 {i + 1}/{total_batches} 批）...")
+            send_progress(current_progress, f"AI generating content (batch {i + 1}/{total_batches})...")
 
             user_prompt = self._build_user_prompt_for_slides(
                 tenant_input,
@@ -1846,6 +1878,7 @@ class LLMOrchestratorV2:
                 response = self._call_openai_with_retry(system_prompt, user_prompt)
 
                 parsed = self._parse_llm_response(response, template)
+                parsed = self._post_process_ai_placeholders(parsed)
 
                 logger.info(f"Successfully parsed LLM response on attempt {attempt + 1}")
                 return parsed
@@ -1996,6 +2029,66 @@ class LLMOrchestratorV2:
 
         return result
 
+    def _parse_embedded_json_object(self, raw: Any) -> Optional[Dict[str, Any]]:
+        """Parse dict or JSON-string content into a JSON object."""
+        if isinstance(raw, dict):
+            return raw
+        if not isinstance(raw, str):
+            return None
+
+        text = raw.strip()
+        if not text:
+            return None
+
+        candidates = [text]
+        sanitized = self._sanitize_llm_json(text)
+        if sanitized and sanitized != text:
+            candidates.append(sanitized)
+
+        for candidate in candidates:
+            try:
+                parsed = json.loads(candidate)
+                if isinstance(parsed, dict):
+                    return parsed
+            except Exception:
+                continue
+        return None
+
+    def _expand_duty_summary_placeholders(self, placeholders: Dict[str, Any]) -> None:
+        """Expand duty_summary JSON object into per-festival placeholders."""
+        if not isinstance(placeholders, dict):
+            return
+        if self._DUTY_SUMMARY_TOKEN not in placeholders:
+            return
+
+        duty_summary_raw = placeholders.get(self._DUTY_SUMMARY_TOKEN)
+        parsed = self._parse_embedded_json_object(duty_summary_raw)
+        if not parsed:
+            placeholders.pop(self._DUTY_SUMMARY_TOKEN, None)
+            return
+
+        for token in self._DUTY_SUMMARY_FESTIVAL_TOKENS:
+            value = parsed.get(token)
+            if value is None:
+                continue
+            if isinstance(value, (dict, list)):
+                value = json.dumps(value, ensure_ascii=False)
+            text = str(value).strip()
+            if text:
+                placeholders[token] = text
+
+        placeholders.pop(self._DUTY_SUMMARY_TOKEN, None)
+
+    def _post_process_ai_placeholders(
+        self,
+        parsed: Dict[str, Dict[str, Any]],
+    ) -> Dict[str, Dict[str, Any]]:
+        """Apply token-level post-processing for AI output."""
+        for slide_placeholders in parsed.values():
+            if isinstance(slide_placeholders, dict):
+                self._expand_duty_summary_placeholders(slide_placeholders)
+        return parsed
+
     def generate_slidespec_v2(
         self,
         tenant_input: TenantInput,
@@ -2062,7 +2155,8 @@ class LLMOrchestratorV2:
         # Step 2: Generate AI placeholders (25% - 65%)
         if config.settings.enable_llm and not use_mock:
             logger.info("Generating AI content...")
-            send_progress(28, "调用 AI 生成内容...")
+            # Keep ASCII keywords for frontend stage classifier robustness.
+            send_progress(28, "AI generating content...")
             try:
                 # Use smart batched generation to avoid timeout issues
                 # Batching is based on estimated token count, not hardcoded limits
@@ -2108,6 +2202,13 @@ class LLMOrchestratorV2:
         for slide_key, token, placeholder in template.get_ai_placeholders():
             slide = slidespec.get_slide(slide_key)
             if slide and token not in slide.placeholders:
-                slide.placeholders[token] = f"[{token}: AI generated content]"
+                if token == self._DUTY_SUMMARY_TOKEN:
+                    slide.placeholders[token] = {
+                        festival_token: f"[{festival_token}: AI generated content]"
+                        for festival_token in self._DUTY_SUMMARY_FESTIVAL_TOKENS
+                    }
+                    self._expand_duty_summary_placeholders(slide.placeholders)
+                else:
+                    slide.placeholders[token] = f"[{token}: AI generated content]"
 
 

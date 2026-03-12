@@ -31,6 +31,7 @@ export interface TemplateSlideMeta {
   slide_key: string;
   title?: string;
   ai_rewrite_tokens?: string[];
+  placeholder_cn_names?: Record<string, string>;
 }
 
 export interface CreateReportReq {

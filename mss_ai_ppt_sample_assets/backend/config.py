@@ -70,6 +70,11 @@ class Settings:
 
         # Feature flags
         self.enable_llm: bool = os.getenv("ENABLE_LLM", "false").lower() == "true"
+        # When enabled, local_only slides are forced into a single batch
+        # (legacy local_only split/optimization remains available when disabled).
+        self.llm_disable_local_only_batch_split: bool = (
+            os.getenv("LLM_DISABLE_LOCAL_ONLY_BATCH_SPLIT", "false").lower() == "true"
+        )
         self.default_locale: str = os.getenv("DEFAULT_LOCALE", "zh-CN")
 
         # Preview cleanup configuration

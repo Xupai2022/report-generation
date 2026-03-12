@@ -445,7 +445,8 @@ class ReportService:
         if use_rag and not self.rag_service.enabled:
             logger.info("RAG requested but globally disabled (RAG_ENABLED=false), skip retrieval.")
         if rag_active:
-            send_progress(26, "检索知识库...")
+            # Keep ASCII keywords for frontend stage classifier robustness.
+            send_progress(26, "RAG retrieving knowledge...")
             try:
                 rag_result = self.rag_service.retrieve_for_generation(
                     tenant_input=tenant_input,
