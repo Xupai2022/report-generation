@@ -1,8 +1,9 @@
-﻿import { defineConfig } from 'vite';
+import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const rootDir = __dirname;
+const rootDir = fileURLToPath(new URL('.', import.meta.url));
 const outDir = path.resolve(rootDir, '../mss_ai_ppt_sample_assets/backend/frontend');
 
 export default defineConfig({

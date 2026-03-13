@@ -323,15 +323,24 @@ export function IndexApp() {
     return ensureArray(meta?.ai_rewrite_tokens);
   }, [selectedTemplate, activeSlideKey, templateSlidesById]);
 
-  const activeSlideMeta = useMemo(() => {
-    if (!selectedTemplate || !activeSlideKey) return null;
-    const slides = templateSlidesById[selectedTemplate] || [];
-    return slides.find((s) => s.slide_key === activeSlideKey) || null;
-  }, [selectedTemplate, activeSlideKey, templateSlidesById]);
+  const getTemplateSlideMeta = (slideKey?: string | null) => {
+    if (!selectedTemplate || !slideKey) return null;
+    return (templateSlidesById[selectedTemplate] || []).find((slide) => slide.slide_key === slideKey) || null;
+  };
 
-  const formatEditorFieldLabel = (token: string) => {
+  const formatSlideLabel = (slideKey?: string | null, fallbackTitle?: string | null) => {
+    const normalizedKey = typeof slideKey === 'string' ? slideKey.trim() : '';
+    const normalizedFallback = typeof fallbackTitle === 'string' ? fallbackTitle.trim() : '';
+    if (lang !== 'zh-CN') return normalizedKey || normalizedFallback || '';
+    const title = getTemplateSlideMeta(normalizedKey)?.title;
+    return (typeof title === 'string' && title.trim()) || normalizedFallback || normalizedKey || '';
+  };
+
+  const formatPlaceholderLabel = (token: string, slideKey?: string | null) => {
     if (lang !== 'zh-CN') return token;
-    const label = activeSlideMeta?.placeholder_cn_names?.[token];
+    const targetSlideKey = slideKey || activeSlideKey;
+    const slideMeta = getTemplateSlideMeta(targetSlideKey);
+    const label = slideMeta?.placeholder_cn_names[token];
     return typeof label === 'string' && label.trim() ? label : token;
   };
 
@@ -549,16 +558,20 @@ export function IndexApp() {
       if (activeSessionIdRef.current && incomingSession && incomingSession !== activeSessionIdRef.current) {
         return;
       }
-      if (payload.type === 'progress') {
-        applyIncomingProgress(payload.progress, payload.message);
+      if (payload.type === 'progress' && typeof payload.progress === 'number') {
+        applyIncomingProgress(payload.progress, typeof payload.message === 'string' ? payload.message : undefined);
         return;
       }
-      if (payload.type === 'completed') {
-        void handleGenerationComplete(payload.result);
+      if (payload.type === 'completed' && payload.result && typeof payload.result === 'object') {
+        void handleGenerationComplete(payload.result as GenerateResult);
         return;
       }
       if (payload.type === 'failed') {
-        handleGenerationFailed(payload.result?.error || t('errorGenerationFailed'), payload.result?.error_code);
+        const failedResult = isPlainObject(payload.result) ? payload.result : {};
+        handleGenerationFailed(
+          typeof failedResult.error === 'string' ? failedResult.error : t('errorGenerationFailed'),
+          typeof failedResult.error_code === 'string' ? failedResult.error_code : undefined,
+        );
       }
     };
   };
@@ -1515,7 +1528,7 @@ export function IndexApp() {
   }, [presentOpen]);
 
   const currentPresentUrl = presentIndex >= 0 ? previews[presentIndex] : undefined;
-  const activeSlideTitle = activeSlide ? (activeSlide.title || activeSlide.slide_key) : '';
+  const activeSlideTitle = activeSlide ? formatSlideLabel(activeSlide.slide_key, activeSlide.title) : '';
   const totalSlideCount = slidespec?.slides.length || 0;
   const currentSlideNumber = activeSlideIndex >= 0 ? activeSlideIndex + 1 : 0;
   const modifiedSlideSummaries = useMemo<ModifiedSlideSummary[]>(() => {
@@ -1528,12 +1541,12 @@ export function IndexApp() {
         return {
           slideKey: slide.slide_key,
           slideNumber: idx + 1,
-          title: slide.title || slide.slide_key,
+          title: formatSlideLabel(slide.slide_key, slide.title),
           fieldCount,
         };
       })
       .filter((item): item is ModifiedSlideSummary => item !== null);
-  }, [slidespec, modifiedSlides]);
+  }, [slidespec, modifiedSlides, lang, selectedTemplate, templateSlidesById]);
   const modifiedSlideCount = modifiedSlideSummaries.length;
   const applyButtonLabel = modifiedSlideCount > 0
     ? t(
@@ -1557,7 +1570,7 @@ export function IndexApp() {
       .filter(Boolean);
     return new Set(lines);
   }, [aiPrompt]);
-  const aiSlideLabel = activeSlide ? `${currentSlideNumber}/${totalSlideCount} · ${activeSlide.title || activeSlide.slide_key}` : '-';
+  const aiSlideLabel = activeSlide ? `${currentSlideNumber}/${totalSlideCount} · ${formatSlideLabel(activeSlide.slide_key, activeSlide.title)}` : '-';
   const reconfigureTooltip = generationInProgress
     ? lt('tooltipReconfigureAfterPreview', '预览生成中，完成后可重新配置', 'Preview is generating. Reconfigure after it completes.')
     : t('btnReconfigure');
@@ -1987,7 +2000,7 @@ export function IndexApp() {
                               className={`token-chip ${selectedAiTokens.includes(token) ? 'active' : ''}`}
                               onClick={() => toggleAiToken(token)}
                             >
-                              <code>{formatEditorFieldLabel(token)}</code>
+                              <code>{formatPlaceholderLabel(token, activeSlideKey)}</code>
                             </button>
                           ))}
                         </div>
@@ -2102,7 +2115,7 @@ export function IndexApp() {
                       <button className="btn-secondary" onClick={() => setExportOpen(false)}>
                         {t('btnCancel')}
                       </button>
-                      <button className="btn-primary" onClick={performExport}>
+                      <button className="btn-primary" onClick={() => void performExport()}>
                         {exportConfirmLabel}
                       </button>
                     </div>
@@ -2139,7 +2152,7 @@ export function IndexApp() {
                       ) : (
                         <div className="thumb-placeholder" />
                       )}
-                      <div className="thumb-title">{slide.title || slide.slide_key}</div>
+                      <div className="thumb-title">{formatSlideLabel(slide.slide_key, slide.title)}</div>
                     </button>
                   ))
                 ) : generationInProgress ? (
@@ -2265,7 +2278,7 @@ export function IndexApp() {
                     const restoreKey = `${activeSlide.slide_key}:${field}`;
                     return (
                       <label className={`field-card ${restoredFieldMarks[restoreKey] ? 'restored' : ''}`} key={field}>
-                        <span>{formatEditorFieldLabel(field)}</span>
+                        <span>{formatPlaceholderLabel(field, activeSlide?.slide_key)}</span>
                         {useTextArea ? (
                           <textarea value={value} onChange={(e) => updateActiveField(field, e.target.value)} rows={6} />
                         ) : (
