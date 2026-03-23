@@ -430,9 +430,7 @@ class ExcelDataExtractor:
             "security_operations_report_weekly": "G9",
             "comprehensive_analysis_report_monthly": "G10",
             "security_operations_report_quarterly": "G11",
-            "national_day_network_security_work_report": "G13",
-            "spring_network_security_work_report": "G14",
-            "may_day_network_security_work_report": "G15",
+            "important_holiday_network_security_work_report": "G14",
             "security_trends_semi_monthly_report": "G17",
             "phishing_scenario_security_poster": "G18",
         }
@@ -484,7 +482,6 @@ class ExcelDataExtractor:
 
         protection_overview: Dict[str, Any] = {}
         protection_map = {
-            "AF_protection_path_coverage_rate": "D35",
             "AF_external_attack_blocks": "D35",
             "EDR_endpoint_risk_count": "D36",
             "policy_check_and_optimization_count": "D37",

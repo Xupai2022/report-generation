@@ -714,7 +714,9 @@ class LLMOrchestratorV2:
 2. 禁止输出无依据的判断或结论。
 3. 在合适场景下优先给出可执行、可落地的建议。
 4. 语言清晰、专业，满足业务汇报语境。
-5. 仅返回合法 JSON（不要使用 markdown 包裹）。
+5. 所有报告总结、结论、建议、短句中的时间范围，必须严格限定为当前报告期，即输入中的 period_start 至 period_end。
+6. 如需描述时间范围，只能使用“period_start 至 period_end 报告期内”或等价的显式日期表达，不得擅自改写为“本季度”“本月”“本周”“全年”“年度”“本季/年度”等相对时间词。
+7. 仅返回合法 JSON（不要使用 markdown 包裹）。
 """
     def _build_user_prompt(
         self,
@@ -755,6 +757,7 @@ class LLMOrchestratorV2:
         selected_annotations = self._resolve_selected_annotations(focus_options)
         preference_titles_text = self._build_preference_titles_text(selected_annotations)
         context_payload = self._build_context_payload_for_slides(tenant_input, template, slide_keys)
+        period_text = self._extract_report_period_text(context_payload)
 
         prompt_parts: List[str] = [
             "## 任务",
@@ -765,6 +768,9 @@ class LLMOrchestratorV2:
             "1) 严禁空话和套话（如“持续提升”“稳步推进”）单独成句。",
             "2) 每条结论至少包含“数据依据 + 判断”，优先补充“业务影响或行动建议”。",
             "3) 不得编造数据，不得输出与输入数据冲突的结论。",
+            "4) 所有总结、结论、建议、短句中的时间范围，必须严格以当前报告期为准。",
+            f"5) 当前报告期：{period_text}。",
+            f"6) 如需描述时间范围，只能使用“{period_text}报告期内”或等价显式日期表达，不得改写为“本季度”“本月”“本周”“全年”“年度”“本季/年度”等词语。",
             "",
         ]
 
@@ -849,6 +855,32 @@ class LLMOrchestratorV2:
         ])
 
         return "\n".join(prompt_parts)
+
+    @staticmethod
+    def _extract_report_period_text(context_payload: Dict[str, Any]) -> str:
+        """Extract a compact report period string from the prompt context."""
+        cover = context_payload.get("cover") if isinstance(context_payload, dict) else None
+        period = context_payload.get("period") if isinstance(context_payload, dict) else None
+
+        start = ""
+        end = ""
+
+        if isinstance(cover, dict):
+            start = str(cover.get("period_start") or "").strip()
+            end = str(cover.get("period_end") or "").strip()
+
+        if not start and isinstance(period, dict):
+            start = str(period.get("start") or "").strip()
+        if not end and isinstance(period, dict):
+            end = str(period.get("end") or "").strip()
+
+        if start and end:
+            return f"{start} 至 {end}"
+        if start:
+            return f"{start}起"
+        if end:
+            return f"截至 {end}"
+        return "输入数据中的 period_start 至 period_end"
 
     def _build_annotation_indexes(self) -> tuple[Dict[str, Dict[str, str]], Dict[str, List[Dict[str, str]]]]:
         """Build lookup indexes for annotation id and title."""

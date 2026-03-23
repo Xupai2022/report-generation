@@ -159,22 +159,10 @@
                                                 "cn_name":  "安全运营季报"
                                             },
                                             {
-                                                "token":  "national_day_network_security_work_report",
-                                                "source":  "deliverables.national_day_network_security_work_report",
+                                                "token":  "important_holiday_network_security_work_report",
+                                                "source":  "deliverables.important_holiday_network_security_work_report",
                                                 "default":  "失败",
-                                                "cn_name":  "国庆工作简报"
-                                            },
-                                            {
-                                                "token":  "spring_network_security_work_report",
-                                                "source":  "deliverables.spring_network_security_work_report",
-                                                "default":  "失败",
-                                                "cn_name":  "春节工作简报"
-                                            },
-                                            {
-                                                "token":  "may_day_network_security_work_report",
-                                                "source":  "deliverables.may_day_network_security_work_report",
-                                                "default":  "失败",
-                                                "cn_name":  "五一工作简报"
+                                                "cn_name":  "《重要节假日网络安全保障工作简报》"
                                             },
                                             {
                                                 "token":  "security_trends_semi_monthly_report",
@@ -674,45 +662,45 @@
                                             {
                                                 "token":  "asset_improve1",
                                                 "ai_generate":  true,
-                                                "ai_instruction":  "基于本页资产管理数据（asset_management）和图表显示信息生成第1条改进措施，梳理在本季/年度工作中，因资产管理工作执行差距产生的安全隐患，并给出可落地建议。",
+                                                "ai_instruction":  "基于本页资产管理数据（asset_management）和图表显示信息生成第1条改进措施，梳理在当前报告期内因资产管理工作执行差距产生的安全隐患，并给出可落地建议。",
                                                 "cn_name":  "资产安全管理待提升项1"
                                             },
                                             {
                                                 "token":  "asset_improve2",
                                                 "ai_generate":  true,
-                                                "ai_instruction":  "基于本页资产管理数据（asset_management）和图表显示信息生成第2条改进措施，梳理在本季/年度工作中，因资产管理工作执行差距产生的安全隐患，并给出可落地建议。",
+                                                "ai_instruction":  "基于本页资产管理数据（asset_management）和图表显示信息生成第2条改进措施，梳理在当前报告期内因资产管理工作执行差距产生的安全隐患，并给出可落地建议。",
                                                 "cn_name":  "资产安全管理待提升项2"
                                             },
                                             {
                                                 "token":  "asset_improve3",
                                                 "ai_generate":  true,
-                                                "ai_instruction":  "基于本页资产管理数据（asset_management）和图表显示信息生成第3条改进措施，梳理在本季/年度工作中，因资产管理工作执行差距产生的安全隐患，并给出可落地建议。",
+                                                "ai_instruction":  "基于本页资产管理数据（asset_management）和图表显示信息生成第3条改进措施，梳理在当前报告期内因资产管理工作执行差距产生的安全隐患，并给出可落地建议。",
                                                 "cn_name":  "资产安全管理待提升项3"
                                             },
                                             {
                                                 "token":  "asset_summary",
                                                 "ai_generate":  true,
-                                                "ai_instruction":  "基于本页资产管理数据（asset_management）和图表显示信息，围绕资产产生的事件、风险、存在的暴露端口及其他相关信息，给出本季/年度在资产安全管理工作中的重点结论，突出资产管理举措的有效性和安全价值",
+                                                "ai_instruction":  "基于本页资产管理数据（asset_management）和图表显示信息，围绕资产产生的事件、风险、存在的暴露端口及其他相关信息，给出当前报告期内资产安全管理工作的重点结论，突出资产管理举措的有效性和安全价值",
                                                 "cn_name":  "资产安全管理总结"
                                             },
                                             {
                                                 "token":  "asset_value1",
                                                 "ai_generate":  true,
-                                                "ai_instruction":  "基于本页资产管理数据（asset_management）和图表显示信息，输出第一个简短短句（6-8个字）展示本季/年度在资产管理工作中的重点价值。",
+                                                "ai_instruction":  "基于本页资产管理数据（asset_management）和图表显示信息，输出第一个简短短句（6-8个字）展示当前报告期内资产管理工作的重点价值。",
                                                 "max_length":  8,
                                                 "cn_name":  "资产安全管理价值1"
                                             },
                                             {
                                                 "token":  "asset_value2",
                                                 "ai_generate":  true,
-                                                "ai_instruction":  "基于本页资产管理数据（asset_management）和图表显示信息，输出第二个简短短句（6-8个字）展示本季/年度在资产管理工作中的重点价值。",
+                                                "ai_instruction":  "基于本页资产管理数据（asset_management）和图表显示信息，输出第二个简短短句（6-8个字）展示当前报告期内资产管理工作的重点价值。",
                                                 "max_length":  8,
                                                 "cn_name":  "资产安全管理价值2"
                                             },
                                             {
                                                 "token":  "asset_value3",
                                                 "ai_generate":  true,
-                                                "ai_instruction":  "基于本页资产管理数据（asset_management）和图表显示信息，输出第三个简短短句（6-8个字）展示本季/年度在资产管理工作中的重点价值。",
+                                                "ai_instruction":  "基于本页资产管理数据（asset_management）和图表显示信息，输出第三个简短短句（6-8个字）展示当前报告期内资产管理工作的重点价值。",
                                                 "max_length":  8,
                                                 "cn_name":  "资产安全管理价值3"
                                             },

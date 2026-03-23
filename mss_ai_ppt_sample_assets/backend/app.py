@@ -5,6 +5,8 @@ from pathlib import Path
 import logging
 import asyncio
 import mimetypes
+import shutil
+import time
 
 from mss_ai_ppt_sample_assets.backend.services.report_service import ReportService
 from mss_ai_ppt_sample_assets.backend.services.job_manager import (
@@ -12,6 +14,7 @@ from mss_ai_ppt_sample_assets.backend.services.job_manager import (
     RESTART_INTERRUPTED_ERROR_MESSAGE,
 )
 from mss_ai_ppt_sample_assets.backend.modules.job_store import JobStore
+from mss_ai_ppt_sample_assets.backend.modules.preview_generator import sanitize_job_id
 from mss_ai_ppt_sample_assets.backend import config
 from mss_ai_ppt_sample_assets.backend.websocket_support import WebSocketManager
 from mss_ai_ppt_sample_assets.backend.routers import v1_router
@@ -157,11 +160,94 @@ def api_root():
 
 # ==================== Startup Event ====================
 
+def _cleanup_preview_tmp() -> int:
+    """Remove transient preview workspace left behind by previous runs."""
+    tmp_dir = config.PREVIEWS_DIR / "tmp"
+    if not tmp_dir.exists():
+        return 0
+
+    removed_count = 0
+    for item in tmp_dir.iterdir():
+        try:
+            if item.is_dir():
+                shutil.rmtree(item, ignore_errors=True)
+            else:
+                item.unlink(missing_ok=True)
+            removed_count += 1
+        except Exception as exc:
+            logger.warning("Preview tmp cleanup failed for %s: %s", item, exc)
+
+    try:
+        if tmp_dir.exists() and not any(tmp_dir.iterdir()):
+            tmp_dir.rmdir()
+    except Exception:
+        pass
+
+    return removed_count
+
+
+def _cleanup_preview_artifacts() -> int:
+    """Remove old or orphaned preview directories and stale preview PDFs."""
+    previews_dir = config.PREVIEWS_DIR
+    if not previews_dir.exists():
+        return 0
+
+    index = job_store._load_index()
+    known_preview_dirs = {sanitize_job_id(job_id) for job_id in index.keys()}
+    known_sessions = {
+        path.name
+        for path in config.SESSIONS_DIR.iterdir()
+        if path.is_dir()
+    } if config.SESSIONS_DIR.exists() else set()
+    cutoff_time = time.time() - (config.settings.preview_cleanup_days * 24 * 60 * 60)
+    removed_count = 0
+
+    for item in previews_dir.iterdir():
+        name = item.name
+
+        if name == "tmp":
+            continue
+        if name.startswith("template_"):
+            continue
+
+        try:
+            if item.is_dir() and (name == ".staging" or ".bak_" in name):
+                shutil.rmtree(item, ignore_errors=True)
+                removed_count += 1
+                continue
+
+            if not item.is_dir():
+                continue
+
+            session_prefix = name.split("_", 1)[0]
+            is_known_job_preview = name in known_preview_dirs
+            session_exists = session_prefix in known_sessions
+            is_old_preview = (
+                config.settings.preview_cleanup_days > 0
+                and item.stat().st_mtime < cutoff_time
+            )
+
+            if (not is_known_job_preview and not session_exists) or is_old_preview:
+                shutil.rmtree(item, ignore_errors=True)
+                removed_count += 1
+                continue
+
+            for pdf_file in item.glob("*.pdf"):
+                try:
+                    pdf_file.unlink(missing_ok=True)
+                    removed_count += 1
+                except Exception as exc:
+                    logger.warning("Preview PDF cleanup failed for %s: %s", pdf_file, exc)
+        except Exception as exc:
+            logger.warning("Preview cleanup failed for %s: %s", item, exc)
+
+    return removed_count
+
 @app.on_event("startup")
 async def startup_cleanup():
-    """Clean up old sessions, stale locks, and old jobs when server starts."""
-    try:
-        if config.settings.rag_preload_on_startup:
+    """Clean up old sessions, stale locks, previews, and old jobs when server starts."""
+    if config.settings.rag_preload_on_startup:
+        try:
             rag_warmup = service.rag_service.warm_up()
             if rag_warmup.get("ok"):
                 logger.info(
@@ -179,38 +265,59 @@ async def startup_cleanup():
                     rag_warmup.get("reason"),
                     rag_warmup.get("error"),
                 )
-        else:
-            logger.info("RAG preload skipped on startup (RAG_PRELOAD_ON_STARTUP=false)")
+        except Exception as exc:
+            logger.warning("RAG preload failed during startup: %s", exc)
+    else:
+        logger.info("RAG preload skipped on startup (RAG_PRELOAD_ON_STARTUP=false)")
 
-        # Clean up old sessions (older than configured retention period)
+    try:
         cleaned_count = service.cleanup_old_sessions(
             max_age_hours=config.settings.session_retention_days * 24
         )
         if cleaned_count > 0:
-            logger.info(f"Startup cleanup: removed {cleaned_count} old sessions")
+            logger.info("Startup cleanup: removed %s old sessions", cleaned_count)
+    except Exception as exc:
+        logger.warning("Startup session cleanup failed: %s", exc)
 
-        # Clean up stale lock files (older than 5 minutes)
-        # These locks may be left behind by crashed processes
+    try:
+        tmp_cleaned_count = _cleanup_preview_tmp()
+        if tmp_cleaned_count > 0:
+            logger.info("Startup cleanup: removed %s preview tmp artifacts", tmp_cleaned_count)
+    except Exception as exc:
+        logger.warning("Startup preview tmp cleanup failed: %s", exc)
+
+    try:
+        preview_cleaned_count = _cleanup_preview_artifacts()
+        if preview_cleaned_count > 0:
+            logger.info("Startup cleanup: removed %s preview artifacts", preview_cleaned_count)
+    except Exception as exc:
+        logger.warning("Startup preview cleanup failed: %s", exc)
+
+    try:
         from mss_ai_ppt_sample_assets.backend.modules.file_lock import cleanup_stale_locks
         cleanup_stale_locks(config.OUTPUTS_DIR, max_age_seconds=300)  # 5 minutes
         logger.info("Startup cleanup: stale locks cleaned")
+    except Exception as exc:
+        logger.warning("Startup stale lock cleanup failed: %s", exc)
 
-        # Mark interrupted running jobs as failed after restart.
+    try:
         interrupted_count = job_store.mark_running_jobs_failed(
             RESTART_INTERRUPTED_ERROR_MESSAGE
         )
         if interrupted_count > 0:
             logger.info(
-                f"Startup recovery: marked {interrupted_count} interrupted running jobs as failed"
+                "Startup recovery: marked %s interrupted running jobs as failed",
+                interrupted_count,
             )
+    except Exception as exc:
+        logger.warning("Startup job recovery failed: %s", exc)
 
-        # Clean up old jobs (older than configured retention period)
+    try:
         job_cleaned_count = job_store.cleanup_old_jobs(days=config.settings.job_retention_days)
         if job_cleaned_count > 0:
-            logger.info(f"Startup cleanup: removed {job_cleaned_count} old jobs")
-
-    except Exception as e:
-        logger.warning(f"Startup cleanup failed: {e}")
+            logger.info("Startup cleanup: removed %s old jobs", job_cleaned_count)
+    except Exception as exc:
+        logger.warning("Startup job cleanup failed: %s", exc)
 
 
 if __name__ == "__main__":
