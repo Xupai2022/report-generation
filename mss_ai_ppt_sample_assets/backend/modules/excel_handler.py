@@ -217,6 +217,7 @@ class ExcelDataExtractor:
             "internal_lateral_attack_counts",
             "attack_counts",
             "defense_rates",
+            "values",
         }
 
         if isinstance(value, list):
@@ -419,6 +420,10 @@ class ExcelDataExtractor:
 
         deliverables: Dict[str, Any] = {}
         deliverables_map = {
+            "first_quarter_date_range": "D8",
+            "second_quarter_date_range": "F8",
+            "third_quarter_date_range": "H8",
+            "fourth_quarter_date_range": "J8",
             "project_launch_ppt": "D9",
             "initial_analysis_and_disposal_report": "D10",
             "vulnerability_management_evidence_report": "D11",
@@ -430,7 +435,7 @@ class ExcelDataExtractor:
             "security_operations_report_weekly": "G9",
             "comprehensive_analysis_report_monthly": "G10",
             "security_operations_report_quarterly": "G11",
-            "important_holiday_network_security_work_report": "G14",
+            "important_holiday_network_security_work_report": "G13",
             "security_trends_semi_monthly_report": "G17",
             "phishing_scenario_security_poster": "G18",
         }
@@ -552,6 +557,8 @@ class ExcelDataExtractor:
 
         asset_management: Dict[str, Any] = {}
         asset_map = {
+            "internal_network_business_area": "B70",
+            "external_network_business_area": "E70",
             "internal_network_server_count": "D70",
             "internal_network_network_device_count": "D72",
             "internal_network_IoT_device_count": "D73",
@@ -565,7 +572,7 @@ class ExcelDataExtractor:
             "PC_assets_count": "D65",
             "internet_IP_domain_count": "D66",
             "internet_exposed_ports_count": "D67",
-            "asset_identification_count": "D68",
+            "asset_identification_runs": "D68",
         }
         for token, addr in asset_map.items():
             ExcelDataExtractor._put_text(asset_management, token, ws[addr])
@@ -665,6 +672,31 @@ class ExcelDataExtractor:
         }
         for token, addr in threat_map.items():
             ExcelDataExtractor._put_text(threat_effectiveness, token, ws[addr])
+
+        # Page 15 charts:
+        # - F/G: 攻击来源地域分布TOP5
+        # - I/J: 攻击类型TOP5
+        # - L/M: 遭受外部攻击的主机TOP5
+        attack_source_region_top5 = ExcelDataExtractor._read_labeled_pairs(ws, 85, 89, 6, 7)
+        if attack_source_region_top5["labels"]:
+            threat_effectiveness["attack_source_region_top5"] = {
+                "categories": attack_source_region_top5["labels"],
+                "values": attack_source_region_top5["values"],
+            }
+
+        attack_type_top5 = ExcelDataExtractor._read_labeled_pairs(ws, 85, 89, 9, 10)
+        if attack_type_top5["labels"]:
+            threat_effectiveness["attack_type_top5"] = {
+                "categories": attack_type_top5["labels"],
+                "values": attack_type_top5["values"],
+            }
+
+        externally_attacked_hosts_top5 = ExcelDataExtractor._read_labeled_pairs(ws, 85, 89, 12, 13)
+        if externally_attacked_hosts_top5["labels"]:
+            threat_effectiveness["externally_attacked_hosts_top5"] = {
+                "categories": externally_attacked_hosts_top5["labels"],
+                "values": externally_attacked_hosts_top5["values"],
+            }
         ExcelDataExtractor._add_section(output, "threat_effectiveness", threat_effectiveness)
 
         critical_assurance: Dict[str, Any] = {}

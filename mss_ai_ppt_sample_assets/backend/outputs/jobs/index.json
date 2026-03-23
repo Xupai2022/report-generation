@@ -1038,5 +1038,65 @@
     "template_id": "mss_classic_ops",
     "input_id": "custom",
     "rating": null
+  },
+  "569dfec9_20260323143655473000:mss_classic_ops": {
+    "status": "failed",
+    "created_at": "2026-03-23T06:36:55.507777+00:00",
+    "updated_at": "2026-03-23T06:36:59.925165+00:00",
+    "completed_at": "2026-03-23T06:36:59.921856+00:00",
+    "session_id": "569dfec9_20260323143655473000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "489c398e_20260323145228289000:mss_classic_ops": {
+    "status": "failed",
+    "created_at": "2026-03-23T06:52:28.616851+00:00",
+    "updated_at": "2026-03-23T06:52:33.234254+00:00",
+    "completed_at": "2026-03-23T06:52:33.232341+00:00",
+    "session_id": "489c398e_20260323145228289000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "fae4b962_20260323151424704000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-03-23T07:14:24.725182+00:00",
+    "updated_at": "2026-03-23T07:15:01.553894+00:00",
+    "completed_at": "2026-03-23T07:15:01.550265+00:00",
+    "session_id": "fae4b962_20260323151424704000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "95338833_20260323152054008000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-03-23T07:20:54.018974+00:00",
+    "updated_at": "2026-03-23T07:21:21.229403+00:00",
+    "completed_at": "2026-03-23T07:21:21.226902+00:00",
+    "session_id": "95338833_20260323152054008000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "520d3143_20260323152718105000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-03-23T07:27:18.117087+00:00",
+    "updated_at": "2026-03-23T07:29:54.805126+00:00",
+    "completed_at": "2026-03-23T07:29:54.801625+00:00",
+    "session_id": "520d3143_20260323152718105000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
+  },
+  "cb65f33d_20260323160902156000:mss_classic_ops": {
+    "status": "completed",
+    "created_at": "2026-03-23T08:09:02.200484+00:00",
+    "updated_at": "2026-03-23T08:11:09.563222+00:00",
+    "completed_at": "2026-03-23T08:11:09.558974+00:00",
+    "session_id": "cb65f33d_20260323160902156000",
+    "template_id": "mss_classic_ops",
+    "input_id": "classic_ops_dataxlsx",
+    "rating": null
   }
 }

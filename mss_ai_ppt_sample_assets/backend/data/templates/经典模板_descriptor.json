@@ -141,6 +141,30 @@
                                                 "cn_name":  "暴露面梳理报告"
                                             },
                                             {
+                                                "token":  "first_quarter_date_range",
+                                                "source":  "deliverables.first_quarter_date_range",
+                                                "default":  "失败",
+                                                "cn_name":  "第一季度起止时间"
+                                            },
+                                            {
+                                                "token":  "second_quarter_date_range",
+                                                "source":  "deliverables.second_quarter_date_range",
+                                                "default":  "失败",
+                                                "cn_name":  "第二季度起止时间"
+                                            },
+                                            {
+                                                "token":  "third_quarter_date_range",
+                                                "source":  "deliverables.third_quarter_date_range",
+                                                "default":  "失败",
+                                                "cn_name":  "第三季度起止时间"
+                                            },
+                                            {
+                                                "token":  "fourth_quarter_date_range",
+                                                "source":  "deliverables.fourth_quarter_date_range",
+                                                "default":  "失败",
+                                                "cn_name":  "第四季度起止时间"
+                                            },
+                                            {
                                                 "token":  "security_operations_report_weekly",
                                                 "source":  "deliverables.security_operations_report_weekly",
                                                 "default":  "失败",
@@ -705,6 +729,18 @@
                                                 "cn_name":  "资产安全管理价值3"
                                             },
                                             {
+                                                "token":  "internal_network_business_area",
+                                                "default":  "失败",
+                                                "source":  "asset_management.internal_network_business_area",
+                                                "cn_name":  "内网业务区域"
+                                            },
+                                            {
+                                                "token":  "external_network_business_area",
+                                                "default":  "失败",
+                                                "source":  "asset_management.external_network_business_area",
+                                                "cn_name":  "外网业务区域"
+                                            },
+                                            {
                                                 "token":  "internal_network_server_count",
                                                 "default":  "失败",
                                                 "source":  "asset_management.internal_network_server_count",
@@ -783,9 +819,9 @@
                                                 "cn_name":  "互联网暴露端口数量"
                                             },
                                             {
-                                                "token":  "asset_identification_count",
+                                                "token":  "asset_identification_runs",
                                                 "default":  "失败",
-                                                "source":  "asset_management.asset_identification_count",
+                                                "source":  "asset_management.asset_identification_runs",
                                                 "cn_name":  "资产识别次数"
                                             },
                                             {
@@ -931,6 +967,34 @@
                                                 "cn_name":  "威胁运营总结"
                                             },
                                             {
+                                                "token":  "P15_pie_1",
+                                                "type":  "P15_pie_1",
+                                                "chart_config":  {
+                                                                     "data_source":  "threat_effectiveness.attack_source_region_top5"
+                                                                 },
+                                                "source":  "threat_effectiveness.attack_source_region_top5",
+                                                "cn_name":  "P15 饼图1数据"
+                                            },
+                                            {
+                                                "token":  "P15_pie_2",
+                                                "type":  "P15_pie_2",
+                                                "chart_config":  {
+                                                                     "data_source":  "threat_effectiveness.attack_type_top5"
+                                                                 },
+                                                "source":  "threat_effectiveness.attack_type_top5",
+                                                "cn_name":  "P15 饼图2数据"
+                                            },
+                                            {
+                                                "token":  "P15_bar",
+                                                "type":  "P15_bar",
+                                                "chart_config":  {
+                                                                     "data_source":  "threat_effectiveness.externally_attacked_hosts_top5",
+                                                                     "series_name":  "攻击次数"
+                                                                 },
+                                                "source":  "threat_effectiveness.externally_attacked_hosts_top5",
+                                                "cn_name":  "P15 柱状图数据"
+                                            },
+                                            {
                                                 "token":  "P15_line",
                                                 "type":  "P15_line",
                                                 "chart_config":  {
@@ -950,7 +1014,7 @@
                                             {
                                                 "token":  "duty_summary",
                                                 "ai_generate":  true,
-                                                "ai_instruction":  "基于period_comparison生成7个节日值守保障文案，必须按如下 JSON 对象结构输出：{\"mid_autumn_festival\":\"...\",\"national_day\":\"...\",\"new_years_day\":\"...\",\"spring_festival\":\"...\",\"qingming_festival\":\"...\",\"labor_day\":\"...\",\"dragon_boat_festival\":\"...\"}。每个字段内容均为完整一句话，风格参考“xxxx年x月xx日-x月xx日 7*24小时全程值守,保障网络安全0事故。”；若某节日有峰值信息可写“实时攻击达到峰值x”。禁止输出多余键、禁止输出说明文字",
+                                                "ai_instruction":  "基于 posture_comparison 生成节日值守保障文案。必须输出固定 7 个 key 的 JSON 对象：{\"mid_autumn_festival\":\"\",\"national_day\":\"\",\"new_years_day\":\"\",\"spring_festival\":\"\",\"qingming_festival\":\"\",\"labor_day\":\"\",\"dragon_boat_festival\":\"\"}。对于 posture_comparison 中存在的节日，填写完整一句话；对于未出现的节日，必须返回空字符串 \"\"，不得编造内容、不得补充不存在的节日信息、不得输出多余键、不得输出说明文字。每个非空字段风格参考：\"xxxx年x月xx日-x月xx日 7*24小时全程值守,保障网络安全0事故。\"；若该节日有峰值信息，可写\"实时攻击达到峰值x\"。",
                                                 "cn_name":  "重要时期值守详情"
                                             },
                                             {

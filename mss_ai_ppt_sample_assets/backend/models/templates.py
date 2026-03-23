@@ -24,7 +24,10 @@ class PlaceholderDefinition(BaseModel):
         "P11_pie",  # Threat type distribution donut chart (威胁类型分布饼图)
         "P13_pie",  # Asset distribution donut chart (资产类型分布饼图)
         "P14_pie",  # Severity distribution donut chart (告警严重程度分布饼图)
+        "P15_pie_1",  # Attack source region TOP5 pie chart
+        "P15_pie_2",  # Attack type TOP5 pie chart
         "P15_line",  # Monthly threats trend line chart (月度威胁趋势折线图)
+        "P15_bar",  # Externally attacked hosts TOP5 bar chart
         "P16_combo",  # Combo chart with bar (daily attacks) and line (defense rate)
     ] = "text"
     ai_generate: bool = False  # Whether content should be AI-generated

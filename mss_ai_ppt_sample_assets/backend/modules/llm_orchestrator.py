@@ -344,9 +344,10 @@ class LLMOrchestratorV2:
 
         result = {}
 
-        if chart_type == 'P11_bar':
+        if chart_type in ('P11_bar', 'P15_bar'):
             # Expect source_data to have 'labels' and 'values' or similar structure
-            x_field = chart_config.get('x_field', 'labels')
+            default_x_field = 'categories' if chart_type == 'P15_bar' else 'labels'
+            x_field = chart_config.get('x_field', default_x_field)
             y_field = chart_config.get('y_field', 'values')
 
             if isinstance(source_data, dict):
@@ -378,7 +379,7 @@ class LLMOrchestratorV2:
                 logger.warning(f"Bar chart data source {data_source} is neither dict nor list")
                 return {}
 
-        elif chart_type in ('P11_pie', 'P13_pie', 'P14_pie'):
+        elif chart_type in ('P11_pie', 'P13_pie', 'P14_pie', 'P15_pie_1', 'P15_pie_2'):
             # Expect source_data to be a dict like {'high': 52, 'medium': 473, 'low': 816}
             # or a dict with 'categories' and 'values' arrays for P11_pie/P13_pie/P14_pie
             if isinstance(source_data, dict):
@@ -584,7 +585,7 @@ class LLMOrchestratorV2:
                 result[slide_key] = {}
 
             # Handle chart placeholders
-            if placeholder.type in ('P11_bar', 'P11_line', 'P11_pie', 'P13_pie', 'P14_pie', 'P15_line', 'P16_combo') and placeholder.chart_config:
+            if placeholder.type in ('P11_bar', 'P11_line', 'P11_pie', 'P13_pie', 'P14_pie', 'P15_pie_1', 'P15_pie_2', 'P15_line', 'P15_bar', 'P16_combo') and placeholder.chart_config:
                 chart_data = self._extract_chart_data(
                     tenant_input,
                     placeholder.chart_config,
@@ -2106,8 +2107,7 @@ class LLMOrchestratorV2:
             if isinstance(value, (dict, list)):
                 value = json.dumps(value, ensure_ascii=False)
             text = str(value).strip()
-            if text:
-                placeholders[token] = text
+            placeholders[token] = text
 
         placeholders.pop(self._DUTY_SUMMARY_TOKEN, None)
 

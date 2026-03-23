@@ -66,6 +66,16 @@ class PPTGeneratorV2:
     no need to traverse render_map paths.
     """
 
+    _CRITICAL_ASSURANCE_FESTIVAL_PARAGRAPHS: List[Tuple[str, str]] = [
+        ("mid_autumn_festival", "中秋节值守保障"),
+        ("national_day", "国庆值守保障"),
+        ("new_years_day", "元旦节值守保障"),
+        ("spring_festival", "春节值守保障"),
+        ("qingming_festival", "清明节值守保障"),
+        ("labor_day", "五一值守保障"),
+        ("dragon_boat_festival", "端午节值守保障"),
+    ]
+
     def __init__(self, template_repo: TemplateRepository):
         self.template_repo = template_repo
         try:
@@ -99,7 +109,10 @@ class PPTGeneratorV2:
             'P11_pie': self._render_p11_pie,
             'P13_pie': self._render_p13_pie,
             'P14_pie': self._render_p14_pie,
+            'P15_pie_1': self._render_p15_pie_1,
+            'P15_pie_2': self._render_p15_pie_2,
             'P15_line': self._render_p15_line,
+            'P15_bar': self._render_p15_bar,
             'P16_combo': self._render_p16_combo,
             # Add more specific chart types here
         }
@@ -231,6 +244,126 @@ class PPTGeneratorV2:
                 paragraph.space_after = self._Pt(6)
                 if shape.text_frame.word_wrap is None:
                     shape.text_frame.word_wrap = True
+
+    @staticmethod
+    def _normalize_placeholder_text(text: str) -> str:
+        """Normalize placeholder text like {{TOKEN}} or {{{TOKEN}}} to TOKEN."""
+        normalized = (text or "").strip()
+        normalized = normalized.strip("{}").strip()
+        return normalized
+
+    def _iter_slide_shapes(self, shapes, parent_left=0, parent_top=0):
+        """Yield shapes recursively with absolute position for group contents."""
+        for shape in shapes:
+            abs_left = parent_left + getattr(shape, "left", 0)
+            abs_top = parent_top + getattr(shape, "top", 0)
+            yield shape, abs_left, abs_top
+            if shape.shape_type == 6:  # GROUP
+                try:
+                    yield from self._iter_slide_shapes(shape.shapes, abs_left, abs_top)
+                except Exception as exc:
+                    logger.debug(f"Skipping group traversal due to error: {exc}")
+
+    def _find_placeholder_shape(self, slide, token: str):
+        """Find the specific placeholder shape for a chart token on a slide."""
+        normalized_token = self._normalize_placeholder_text(token)
+        for shape, abs_left, abs_top in self._iter_slide_shapes(slide.shapes):
+            try:
+                if not getattr(shape, "has_text_frame", False):
+                    continue
+                full_text = "".join(
+                    run.text
+                    for paragraph in shape.text_frame.paragraphs
+                    for run in paragraph.runs
+                ).strip()
+                if self._normalize_placeholder_text(full_text) == normalized_token:
+                    return shape, (abs_left, abs_top)
+            except Exception:
+                continue
+        return None, None
+
+    def _find_nearest_chart(self, slide, placeholder_position, allowed_chart_types):
+        """Find the nearest chart matching one of the allowed chart types."""
+        chart = None
+        chart_shape = None
+        min_distance = float("inf")
+
+        for shape, abs_left, abs_top in self._iter_slide_shapes(slide.shapes):
+            try:
+                if not shape.has_chart:
+                    continue
+                temp_chart = shape.chart
+                if temp_chart.chart_type not in allowed_chart_types:
+                    continue
+
+                if placeholder_position:
+                    distance = (
+                        (abs_left - placeholder_position[0]) ** 2
+                        + (abs_top - placeholder_position[1]) ** 2
+                    ) ** 0.5
+                    if distance < min_distance:
+                        min_distance = distance
+                        chart = temp_chart
+                        chart_shape = shape
+                elif chart is None:
+                    chart = temp_chart
+                    chart_shape = shape
+            except Exception as exc:
+                logger.debug(f"Skipping chart lookup due to error: {exc}")
+                continue
+
+        return chart_shape, chart
+
+    def _cleanup_critical_assurance_festival_paragraphs(self, slide, mapping: Dict[str, str]) -> None:
+        """Remove title/value paragraph pairs for empty festival duty copy on P16."""
+        empty_tokens = {
+            token
+            for token, _ in self._CRITICAL_ASSURANCE_FESTIVAL_PARAGRAPHS
+            if (mapping.get(token) or "").strip() == ""
+        }
+        if not empty_tokens:
+            return
+
+        for shape, _, _ in self._iter_slide_shapes(slide.shapes):
+            if not getattr(shape, "has_text_frame", False):
+                continue
+
+            paragraphs = list(shape.text_frame.paragraphs)
+            if not paragraphs:
+                continue
+
+            paragraph_texts = [(paragraph.text or "").strip() for paragraph in paragraphs]
+            if not any(
+                title in paragraph_texts
+                for _, title in self._CRITICAL_ASSURANCE_FESTIVAL_PARAGRAPHS
+            ):
+                continue
+
+            remove_indices = set()
+            for token, title in self._CRITICAL_ASSURANCE_FESTIVAL_PARAGRAPHS:
+                if token not in empty_tokens:
+                    continue
+                try:
+                    title_idx = paragraph_texts.index(title)
+                except ValueError:
+                    continue
+
+                value_idx = title_idx + 1
+                if value_idx >= len(paragraphs):
+                    continue
+                if paragraph_texts[value_idx]:
+                    continue
+
+                remove_indices.add(title_idx)
+                remove_indices.add(value_idx)
+
+            if not remove_indices:
+                return
+
+            for idx in sorted(remove_indices, reverse=True):
+                paragraph = paragraphs[idx]
+                paragraph._p.getparent().remove(paragraph._p)
+            return
 
     def _render_native_table(
         self,
@@ -1333,6 +1466,193 @@ class PPTGeneratorV2:
             except Exception as e:
                 logger.error(f"Failed to remove placeholder: {e}")
 
+    def _render_p15_pie_common(
+        self,
+        slide,
+        chart_data: Dict[str, Any],
+        token: str,
+        chart_name: str,
+        colors: List[Tuple[int, int, int]],
+    ) -> None:
+        """Render one of the P15 pie charts by updating the nearest existing pie/doughnut chart."""
+        if not chart_data or 'categories' not in chart_data or 'values' not in chart_data:
+            logger.warning(f"Invalid {chart_name} chart data format")
+            return
+
+        categories = chart_data.get('categories', [])
+        values = chart_data.get('values', [])
+        if not categories or not values or len(categories) != len(values):
+            logger.warning(f"Invalid or mismatched {chart_name} chart data")
+            return
+
+        placeholder_shape_to_remove, placeholder_position = self._find_placeholder_shape(slide, token)
+        chart_shape, chart = self._find_nearest_chart(
+            slide,
+            placeholder_position,
+            {
+                self._XL_CHART_TYPE.PIE,
+                self._XL_CHART_TYPE.DOUGHNUT,
+                self._XL_CHART_TYPE.PIE_EXPLODED,
+                self._XL_CHART_TYPE.DOUGHNUT_EXPLODED,
+            },
+        )
+
+        if chart_shape and chart:
+            try:
+                chart_data_obj = self._CategoryChartData()
+                chart_data_obj.categories = categories
+                chart_data_obj.add_series('', values)
+                chart.replace_data(chart_data_obj)
+
+                plot = chart.plots[0]
+                for idx, point in enumerate(plot.series[0].points):
+                    color = colors[idx % len(colors)]
+                    point.format.fill.solid()
+                    point.format.fill.fore_color.rgb = self._RGBColor(*color)
+                    line = point.format.line
+                    line.color.rgb = self._RGBColor(255, 255, 255)
+                    line.width = self._Pt(1.5)
+
+                plot.has_data_labels = True
+                data_labels = plot.data_labels
+                data_labels.show_category_name = False
+                data_labels.show_percentage = True
+                data_labels.show_value = False
+                data_labels.font.size = self._Pt(9)
+                data_labels.font.name = "微软雅黑"
+                data_labels.font.color.rgb = self._RGBColor(51, 51, 51)
+                data_labels.number_format = '0%'
+
+                if chart.has_legend:
+                    chart.legend.font.size = self._Pt(10)
+                    chart.legend.font.name = "微软雅黑"
+                    chart.legend.font.color.rgb = self._RGBColor(51, 51, 51)
+
+                logger.info(f"Updated existing {chart_name} chart with {len(categories)} categories")
+            except Exception as exc:
+                logger.error(f"Failed to update {chart_name}: {exc}")
+        else:
+            logger.warning(f"No existing chart found in slide for {chart_name}")
+
+        if placeholder_shape_to_remove:
+            try:
+                sp = placeholder_shape_to_remove.element
+                sp.getparent().remove(sp)
+                logger.info(f"Successfully removed placeholder text box for {chart_name}")
+            except Exception as exc:
+                logger.error(f"Failed to remove placeholder for {chart_name}: {exc}")
+
+    def _render_p15_pie_1(
+        self,
+        slide,
+        chart_data: Dict[str, Any],
+        token: str = None
+    ) -> None:
+        self._render_p15_pie_common(
+            slide,
+            chart_data,
+            token or "P15_pie_1",
+            "P15_pie_1",
+            [
+                (10, 66, 117),
+                (49, 130, 206),
+                (72, 187, 120),
+                (242, 153, 74),
+                (165, 94, 234),
+            ],
+        )
+
+    def _render_p15_pie_2(
+        self,
+        slide,
+        chart_data: Dict[str, Any],
+        token: str = None
+    ) -> None:
+        self._render_p15_pie_common(
+            slide,
+            chart_data,
+            token or "P15_pie_2",
+            "P15_pie_2",
+            [
+                (68, 114, 196),
+                (91, 155, 213),
+                (237, 125, 49),
+                (165, 165, 165),
+                (255, 192, 0),
+            ],
+        )
+
+    def _render_p15_bar(
+        self,
+        slide,
+        chart_data: Dict[str, Any],
+        token: str = None
+    ) -> None:
+        """Render the P15 host TOP5 bar chart by updating the nearest existing bar/column chart."""
+        if not chart_data or 'categories' not in chart_data:
+            logger.warning("Invalid P15_bar chart data format")
+            return
+
+        categories = chart_data.get('categories', [])
+        series_list = chart_data.get('series', [])
+        if not categories or not series_list:
+            logger.warning("Invalid or missing P15_bar chart data")
+            return
+
+        placeholder_shape_to_remove, placeholder_position = self._find_placeholder_shape(slide, token or "P15_bar")
+        chart_shape, chart = self._find_nearest_chart(
+            slide,
+            placeholder_position,
+            {
+                self._XL_CHART_TYPE.BAR_CLUSTERED,
+                self._XL_CHART_TYPE.BAR_STACKED,
+                self._XL_CHART_TYPE.BAR_STACKED_100,
+                self._XL_CHART_TYPE.COLUMN_CLUSTERED,
+                self._XL_CHART_TYPE.COLUMN_STACKED,
+                self._XL_CHART_TYPE.COLUMN_STACKED_100,
+            },
+        )
+
+        if chart_shape and chart:
+            try:
+                chart_data_obj = self._CategoryChartData()
+                chart_data_obj.categories = categories
+                for series in series_list:
+                    chart_data_obj.add_series(series.get('name', 'Series'), series.get('values', []))
+                chart.replace_data(chart_data_obj)
+
+                plot = chart.plots[0]
+                for idx, series in enumerate(plot.series):
+                    color = ChartColors.MULTI_SERIES[idx % len(ChartColors.MULTI_SERIES)]
+                    series.format.fill.solid()
+                    series.format.fill.fore_color.rgb = self._RGBColor(*color)
+                    series.has_data_labels = True
+                    data_labels = series.data_labels
+                    data_labels.show_value = True
+                    data_labels.font.size = self._Pt(9)
+                    data_labels.font.name = "微软雅黑"
+                    data_labels.font.color.rgb = self._RGBColor(51, 51, 51)
+                    data_labels.number_format = '#,##0'
+
+                if chart.has_legend:
+                    chart.legend.font.size = self._Pt(10)
+                    chart.legend.font.name = "微软雅黑"
+                    chart.legend.font.color.rgb = self._RGBColor(51, 51, 51)
+
+                logger.info(f"Updated existing P15_bar chart with {len(categories)} categories")
+            except Exception as exc:
+                logger.error(f"Failed to update P15_bar chart: {exc}")
+        else:
+            logger.warning("No existing chart found in slide for P15_bar")
+
+        if placeholder_shape_to_remove:
+            try:
+                sp = placeholder_shape_to_remove.element
+                sp.getparent().remove(sp)
+                logger.info("Successfully removed placeholder text box for P15_bar")
+            except Exception as exc:
+                logger.error(f"Failed to remove placeholder for P15_bar: {exc}")
+
     def _render_p15_line(
         self,
         slide,
@@ -1370,97 +1690,17 @@ class PPTGeneratorV2:
             logger.warning("Invalid or missing P15_line chart data")
             return
 
-        # Find placeholder position first (if token provided)
-        placeholder_position = None
-        placeholder_shape_to_remove = None
-
-        if token:
-            import re
-            # More flexible pattern: match {{...}} or {{... (missing closing brace)
-            placeholder_pattern = re.compile(r'\{\{[^}]+\}?\}?')
-
-            for shape in slide.shapes:
-                try:
-                    if hasattr(shape, 'has_text_frame') and shape.has_text_frame:
-                        full_text = ''.join(
-                            run.text for paragraph in shape.text_frame.paragraphs
-                            for run in paragraph.runs
-                        ).strip()
-
-                        if placeholder_pattern.fullmatch(full_text):
-                            # Found a placeholder, record its position and the shape for removal
-                            placeholder_position = (shape.left, shape.top)
-                            placeholder_shape_to_remove = shape
-                            logger.info(f"Found placeholder '{full_text}' at position ({shape.left}, {shape.top})")
-                            break
-                except:
-                    continue
-
-        # Find existing chart in the slide - look for LINE chart specifically
-        # If placeholder was found, find the nearest chart to it
-        # Also search inside group shapes
-        chart_shape = None
-        chart = None
-        min_distance = float('inf')
-
-        def check_shape_for_line_chart(shape, parent_left=0, parent_top=0):
-            """Check if a shape contains a line chart. Returns (chart, chart_shape) or (None, None)."""
-            nonlocal chart, chart_shape, min_distance
-
-            try:
-                if shape.has_chart:
-                    # Try to access the chart to verify it's not an external link
-                    try:
-                        temp_chart = shape.chart  # Get chart reference immediately
-                        # Check if it's a line chart type
-                        if temp_chart.chart_type in (
-                            self._XL_CHART_TYPE.LINE,
-                            self._XL_CHART_TYPE.LINE_MARKERS,
-                            self._XL_CHART_TYPE.LINE_MARKERS_STACKED,
-                            self._XL_CHART_TYPE.LINE_STACKED
-                        ):
-                            # If we have a placeholder position, find nearest chart
-                            if placeholder_position:
-                                # For shapes in groups, use absolute position
-                                chart_pos = (parent_left + shape.left, parent_top + shape.top)
-                                distance = ((chart_pos[0] - placeholder_position[0]) ** 2 +
-                                          (chart_pos[1] - placeholder_position[1]) ** 2) ** 0.5
-
-                                if distance < min_distance:
-                                    min_distance = distance
-                                    chart = temp_chart
-                                    chart_shape = shape
-                                    logger.info(f"Found line chart at distance {distance} from placeholder")
-                            else:
-                                # No placeholder, just use first chart found
-                                chart = temp_chart
-                                chart_shape = shape
-                                logger.info(f"Found line chart for P15_line (no placeholder)")
-                                return True  # Stop searching
-                    except Exception as chart_error:
-                        # This shape has a chart but it's external or inaccessible
-                        logger.debug(f"Skipping chart shape with external link: {chart_error}")
-            except Exception as e:
-                # Skip shapes that cause errors when checking has_chart
-                logger.debug(f"Skipping shape due to error: {e}")
-
-            return False
-
-        # Search all shapes, including those inside groups
-        for shape in slide.shapes:
-            # Check if it's a group shape
-            if shape.shape_type == 6:  # GROUP
-                try:
-                    # Search inside the group
-                    for sub_shape in shape.shapes:
-                        if check_shape_for_line_chart(sub_shape, shape.left, shape.top):
-                            break
-                except Exception as e:
-                    logger.debug(f"Error searching group shape: {e}")
-            else:
-                # Regular shape
-                if check_shape_for_line_chart(shape):
-                    break
+        placeholder_shape_to_remove, placeholder_position = self._find_placeholder_shape(slide, token or "P15_line")
+        chart_shape, chart = self._find_nearest_chart(
+            slide,
+            placeholder_position,
+            {
+                self._XL_CHART_TYPE.LINE,
+                self._XL_CHART_TYPE.LINE_MARKERS,
+                self._XL_CHART_TYPE.LINE_MARKERS_STACKED,
+                self._XL_CHART_TYPE.LINE_STACKED,
+            },
+        )
 
         # Try to update chart if found
         if chart_shape and chart:
@@ -2011,6 +2251,11 @@ class PPTGeneratorV2:
             # Replace text tokens in all shapes
             for shape in pptx_slide.shapes:
                 self._replace_tokens_in_shape(shape, text_placeholders)
+            if slide_content.slide_key == "critical_assurance":
+                self._cleanup_critical_assurance_festival_paragraphs(
+                    pptx_slide,
+                    text_placeholders,
+                )
 
             # Render charts (using specific renderer for each type)
             for token, value, chart_type in chart_placeholders:

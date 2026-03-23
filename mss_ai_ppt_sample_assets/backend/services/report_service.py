@@ -243,7 +243,7 @@ class ReportService:
 
     def _get_chart_tokens_by_slide(self, template_id: str) -> Dict[str, Set[str]]:
         descriptor = self.template_repo.get_descriptor_v2(template_id)
-        chart_types = {"P11_bar", "P11_line", "P11_pie", "P13_pie", "P14_pie", "P15_line", "P16_combo"}
+        chart_types = {"P11_bar", "P11_line", "P11_pie", "P13_pie", "P14_pie", "P15_pie_1", "P15_pie_2", "P15_line", "P15_bar", "P16_combo"}
         result: Dict[str, Set[str]] = {}
         for slide in descriptor.slides:
             chart_tokens = {
