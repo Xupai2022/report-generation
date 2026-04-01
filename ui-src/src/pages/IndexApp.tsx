@@ -1149,14 +1149,7 @@ export function IndexApp() {
       if (restoredFields.length > 0) return;
       return showToast('warning', t('msgNoChangesToApply'));
     }
-    const firstSlideKey = firstSlide(slidespec);
-    if (firstSlideKey) {
-      setActiveSlideKey(firstSlideKey);
-      window.requestAnimationFrame(() => {
-        const firstView = document.getElementById(`view-${firstSlideKey}`);
-        if (firstView) firstView.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      });
-    }
+    // Keep current slide focus during regeneration to avoid jumping back to page 1.
     setGenerationInProgress(true);
     actionRef.current = 'rewrite';
     progressValueRef.current = 0;

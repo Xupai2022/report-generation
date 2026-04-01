@@ -265,6 +265,32 @@ class ExcelDataExtractor:
         return text if text else default
 
     @staticmethod
+    def _format_wan_text(value: float) -> str:
+        if abs(value) >= 10000:
+            return f"{value / 10000:.2f}万"
+        if float(value).is_integer():
+            return str(int(value))
+        return f"{value:.2f}".rstrip("0").rstrip(".")
+
+    @staticmethod
+    def _to_text_wan(value: Any, default: str = "") -> str:
+        raw_value, _ = ExcelDataExtractor._unwrap_cell(value)
+
+        if raw_value is None:
+            return default
+        if isinstance(raw_value, (int, float)) and not isinstance(raw_value, bool):
+            return ExcelDataExtractor._format_wan_text(float(raw_value))
+
+        text = str(raw_value).strip()
+        if text == "":
+            return default
+        try:
+            numeric = float(text.replace(",", ""))
+        except Exception:
+            return text
+        return ExcelDataExtractor._format_wan_text(numeric)
+
+    @staticmethod
     def _to_number(value: Any, default: float = 0) -> float:
         raw_value, _ = ExcelDataExtractor._unwrap_cell(value)
 
@@ -308,6 +334,11 @@ class ExcelDataExtractor:
     def _put_text(target: Dict[str, Any], key: str, raw_value: Any) -> None:
         if ExcelDataExtractor._has_value(raw_value):
             target[key] = ExcelDataExtractor._to_text(raw_value)
+
+    @staticmethod
+    def _put_text_wan(target: Dict[str, Any], key: str, raw_value: Any) -> None:
+        if ExcelDataExtractor._has_value(raw_value):
+            target[key] = ExcelDataExtractor._to_text_wan(raw_value)
 
     @staticmethod
     def _put_pct(target: Dict[str, Any], key: str, raw_value: Any) -> None:
@@ -481,8 +512,20 @@ class ExcelDataExtractor:
             "EDR_count": "D24",
             "TSS_count": "D25",
         }
+        wan_tokens = {
+            "number_of_security_logs",
+            "number_of_security_alerts",
+            "number_of_security_incidents",
+            "alert_mss",
+            "incident_mss",
+            "alert_nonmss",
+            "incident_nonmss",
+        }
         for token, addr in coverage_map.items():
-            ExcelDataExtractor._put_text(coverage_summary, token, ws[addr])
+            if token in wan_tokens:
+                ExcelDataExtractor._put_text_wan(coverage_summary, token, ws[addr])
+            else:
+                ExcelDataExtractor._put_text(coverage_summary, token, ws[addr])
         ExcelDataExtractor._add_section(output, "coverage_summary", coverage_summary)
 
         protection_overview: Dict[str, Any] = {}
@@ -515,8 +558,17 @@ class ExcelDataExtractor:
             "emergency_response_event_count": "G42",
             "event_average_response_time": "G43",
         }
+        protection_wan_tokens = {
+            "AF_external_attack_blocks",
+            "XDR_security_log_count",
+            "XDR_security_alert_total_count",
+            "XDR_security_incident_count",
+        }
         for token, addr in protection_map.items():
-            ExcelDataExtractor._put_text(protection_overview, token, ws[addr])
+            if token in protection_wan_tokens:
+                ExcelDataExtractor._put_text_wan(protection_overview, token, ws[addr])
+            else:
+                ExcelDataExtractor._put_text(protection_overview, token, ws[addr])
         ExcelDataExtractor._add_section(output, "protection_overview", protection_overview)
 
         incident_effectiveness: Dict[str, Any] = {}
@@ -747,8 +799,17 @@ class ExcelDataExtractor:
             "component_policy_effectiveness_alert_count": "D123",
             "component_anomaly_automatic_handling_count": "D124",
         }
+        platform_wan_tokens = {
+            "firewall_detected_attack_count",
+            "XDR_total_security_log_count",
+            "aggregated_security_alert_count",
+            "intelligent_security_incident_identification_count",
+        }
         for token, addr in platform_map.items():
-            ExcelDataExtractor._put_text(platform_effectiveness, token, ws[addr])
+            if token in platform_wan_tokens:
+                ExcelDataExtractor._put_text_wan(platform_effectiveness, token, ws[addr])
+            else:
+                ExcelDataExtractor._put_text(platform_effectiveness, token, ws[addr])
 
         platform_extra_map = {
             "AES_trusted_risk_event_count": "F114",
@@ -758,8 +819,16 @@ class ExcelDataExtractor:
             "XDR_monthly_average_alert_count": "F118",
             "XDR_monthly_average_incident_count": "F119",
         }
+        platform_extra_wan_tokens = {
+            "XDR_monthly_average_log_count",
+            "XDR_monthly_average_alert_count",
+            "XDR_monthly_average_incident_count",
+        }
         for token, addr in platform_extra_map.items():
-            ExcelDataExtractor._put_text(platform_effectiveness, token, ws[addr])
+            if token in platform_extra_wan_tokens:
+                ExcelDataExtractor._put_text_wan(platform_effectiveness, token, ws[addr])
+            else:
+                ExcelDataExtractor._put_text(platform_effectiveness, token, ws[addr])
 
         ExcelDataExtractor._add_section(output, "platform_effectiveness", platform_effectiveness)
 
