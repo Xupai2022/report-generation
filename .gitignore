@@ -29,3 +29,4 @@ nul
 
 # AI models
 mss_ai_ppt_sample_assets/backend/models/**.claude/
+.claude/
