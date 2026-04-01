@@ -51,7 +51,7 @@ class Settings:
         self.llm_connect_timeout_seconds: float = float(os.getenv("LLM_CONNECT_TIMEOUT_SECONDS", "5"))
 
         # LLM 读取超时（秒）：请求已发出但长时间收不到上游响应时触发。
-        self.llm_read_timeout_seconds: float = float(os.getenv("LLM_READ_TIMEOUT_SECONDS", "45"))
+        self.llm_read_timeout_seconds: float = float(os.getenv("LLM_READ_TIMEOUT_SECONDS", "240"))
 
         # LLM 写入超时（秒）：向上游发送请求体/流时写入阻塞超时。
         self.llm_write_timeout_seconds: float = float(os.getenv("LLM_WRITE_TIMEOUT_SECONDS", "15"))

@@ -2,7 +2,7 @@
     "template_id":  "mss_classic_ops",
     "name":  "MSS运营服务总结（经典版）",
     "version":  "1.0.0",
-    "pptx_file":  "经典模板.pptx",
+    "pptx_file":  "classic.pptx",
     "language":  "zh-CN",
     "slides":  [
                    {

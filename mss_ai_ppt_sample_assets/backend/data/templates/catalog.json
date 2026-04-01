@@ -4,8 +4,8 @@
       "template_id": "mss_classic_ops",
       "name": "经典模板",
       "version": "1.0.0",
-      "descriptor_file": "经典模板_descriptor.json",
-      "pptx_file": "经典模板.pptx",
+      "descriptor_file": "classic_descriptor.json",
+      "pptx_file": "classic.pptx",
       "recommended_audience": [
         "management",
         "operations"

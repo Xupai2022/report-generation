@@ -3,7 +3,7 @@
 <!-- rag:scope=common -->
 ## 1. 文档目标
 - 用途：为 `mss_classic_ops` 模板中的 AI 生成占位符提供可检索、可复用、可落地的知识。
-- 范围：仅覆盖 `经典模板_descriptor.json` 已定义的 AI 指令，不扩展到无关主题。
+- 范围：仅覆盖 `classic_descriptor.json` 已定义的 AI 指令，不扩展到无关主题。
 - 约束：所有结论必须基于输入数据，不得编造数据、不得与图表数据冲突。
 
 ## 2. 当前 descriptor 扫描结论（AI 生成位）

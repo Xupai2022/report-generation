@@ -715,9 +715,8 @@ class LLMOrchestratorV2:
 2. 禁止输出无依据的判断或结论。
 3. 在合适场景下优先给出可执行、可落地的建议。
 4. 语言清晰、专业，满足业务汇报语境。
-5. 所有报告总结、结论、建议、短句中的时间范围，必须严格限定为当前报告期，即输入中的 period_start 至 period_end。
-6. 如需描述时间范围，只能使用“period_start 至 period_end 报告期内”或等价的显式日期表达，不得擅自改写为“本季度”“本月”“本周”“全年”“年度”“本季/年度”等相对时间词。
-7. 仅返回合法 JSON（不要使用 markdown 包裹）。
+5. 如无必要不要体现“本季”“本年”等时间范围，确有必要则必须严格以当前服务期为准，如“period_start 至 period_end 内”或等价的显式日期表达。
+6. 仅返回合法 JSON（不要使用 markdown 包裹）。
 """
     def _build_user_prompt(
         self,
@@ -769,9 +768,7 @@ class LLMOrchestratorV2:
             "1) 严禁空话和套话（如“持续提升”“稳步推进”）单独成句。",
             "2) 每条结论至少包含“数据依据 + 判断”，优先补充“业务影响或行动建议”。",
             "3) 不得编造数据，不得输出与输入数据冲突的结论。",
-            "4) 所有总结、结论、建议、短句中的时间范围，必须严格以当前报告期为准。",
-            f"5) 当前报告期：{period_text}。",
-            f"6) 如需描述时间范围，只能使用“{period_text}报告期内”或等价显式日期表达，不得改写为“本季度”“本月”“本周”“全年”“年度”“本季/年度”等词语。",
+            f"4) 如无必要不要体现“本季”“本年”等时间范围，确有必要则必须严格以当前服务期为准{period_text}。",
             "",
         ]
 
@@ -1947,10 +1944,134 @@ class LLMOrchestratorV2:
         logger.info("CALLING OPENAI API (V2)")
         logger.info(f"System prompt length: {len(system_prompt)} chars")
         logger.info(f"User prompt length: {len(user_prompt)} chars")
+        logger.info(f"Model: {config.settings.openai_model}")
+        logger.info(f"Base URL: {config.settings.openai_base_url or 'default'}")
         logger.info("=" * 80)
 
         content = self._call_openai_api(system_prompt, user_prompt)
         return content
+
+    def _extract_stream_content_piece(self, delta: Any) -> str:
+        """Extract text content from a streamed delta payload across compatible providers."""
+        if delta is None:
+            return ""
+
+        pieces: List[str] = []
+
+        content = getattr(delta, "content", None)
+        if isinstance(content, str):
+            pieces.append(content)
+        elif isinstance(content, list):
+            for item in content:
+                if isinstance(item, str):
+                    pieces.append(item)
+                    continue
+                if isinstance(item, dict):
+                    text_value = item.get("text") or item.get("content")
+                    if isinstance(text_value, str):
+                        pieces.append(text_value)
+                        continue
+                text_value = getattr(item, "text", None)
+                if isinstance(text_value, str):
+                    pieces.append(text_value)
+
+        for attr_name in ("text", "reasoning_content"):
+            attr_value = getattr(delta, attr_name, None)
+            if isinstance(attr_value, str):
+                pieces.append(attr_value)
+
+        return "".join(piece for piece in pieces if piece)
+
+    def _summarize_stream_chunk(self, chunk: Any, index: int) -> Dict[str, Any]:
+        """Build a compact diagnostic summary for a streamed chunk."""
+        summary: Dict[str, Any] = {
+            "chunk_index": index,
+            "chunk_type": type(chunk).__name__,
+        }
+
+        choices = getattr(chunk, "choices", None)
+        summary["has_choices"] = bool(choices)
+        summary["choices_count"] = len(choices) if choices else 0
+
+        if not choices:
+            return summary
+
+        first_choice = choices[0]
+        summary["finish_reason"] = getattr(first_choice, "finish_reason", None)
+
+        delta = getattr(first_choice, "delta", None)
+        if delta is None:
+            summary["delta_type"] = None
+            summary["delta_fields"] = []
+            summary["content_preview"] = ""
+            return summary
+
+        summary["delta_type"] = type(delta).__name__
+        delta_fields = []
+        for attr_name in ("content", "text", "reasoning_content", "role", "tool_calls", "function_call", "refusal"):
+            attr_value = getattr(delta, attr_name, None)
+            if attr_value is not None:
+                delta_fields.append(attr_name)
+        summary["delta_fields"] = delta_fields
+
+        content_preview = self._extract_stream_content_piece(delta)
+        summary["content_preview"] = content_preview[:120]
+        return summary
+
+    def _extract_non_stream_content(self, response: Any) -> str:
+        """Extract text content from a non-stream chat completion response."""
+        choices = getattr(response, "choices", None) or []
+        if not choices:
+            return ""
+
+        message = getattr(choices[0], "message", None)
+        if message is None:
+            return ""
+
+        content = getattr(message, "content", None)
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            pieces: List[str] = []
+            for item in content:
+                if isinstance(item, str):
+                    pieces.append(item)
+                    continue
+                text_value = getattr(item, "text", None)
+                if isinstance(text_value, str):
+                    pieces.append(text_value)
+                    continue
+                if isinstance(item, dict):
+                    dict_text = item.get("text") or item.get("content")
+                    if isinstance(dict_text, str):
+                        pieces.append(dict_text)
+            return "".join(pieces)
+        return ""
+
+    def _build_empty_response_error(
+        self,
+        *,
+        stage: str,
+        chunk_count: int = 0,
+        chunk_summaries: Optional[List[Dict[str, Any]]] = None,
+        extra: Optional[Dict[str, Any]] = None,
+    ) -> LLMGenerationError:
+        """Construct a detailed empty-response error with diagnostics."""
+        diagnostics: Dict[str, Any] = {
+            "stage": stage,
+            "model": config.settings.openai_model,
+            "base_url": config.settings.openai_base_url or "default",
+            "chunk_count": chunk_count,
+        }
+        if chunk_summaries:
+            diagnostics["chunk_summaries"] = chunk_summaries
+        if extra:
+            diagnostics.update(extra)
+
+        return LLMGenerationError(
+            f"OpenAI-compatible endpoint returned empty response. Diagnostics: "
+            f"{json.dumps(diagnostics, ensure_ascii=False)}"
+        )
 
     @with_llm_retry(max_attempts=1)
     def _call_openai_api(
@@ -1971,25 +2092,99 @@ class LLMOrchestratorV2:
         )
 
         content_chunks: List[str] = []
+        chunk_count = 0
+        non_empty_choice_chunks = 0
+        chunk_summaries: List[Dict[str, Any]] = []
+        finish_reasons: Set[str] = set()
 
         for chunk in stream:
-            if not getattr(chunk, "choices", None):
+            chunk_count += 1
+            if len(chunk_summaries) < 5:
+                chunk_summaries.append(self._summarize_stream_chunk(chunk, chunk_count))
+
+            choices = getattr(chunk, "choices", None)
+            if not choices:
                 continue
 
-            delta = chunk.choices[0].delta
-            content_piece = getattr(delta, "content", None)
+            non_empty_choice_chunks += 1
+            finish_reason = getattr(choices[0], "finish_reason", None)
+            if finish_reason:
+                finish_reasons.add(str(finish_reason))
+
+            delta = getattr(choices[0], "delta", None)
+            content_piece = self._extract_stream_content_piece(delta)
             if content_piece:
                 content_chunks.append(content_piece)
 
-        content = "".join(content_chunks)
-        if not content:
-            raise LLMGenerationError("OpenAI returned empty response")
+        content = "".join(content_chunks).strip()
+        if content:
+            logger.info("=" * 80)
+            logger.info("OPENAI API CALL SUCCESSFUL")
+            logger.info(f"Response length: {len(content)} chars")
+            logger.info(
+                "Stream diagnostics: total_chunks=%s, chunks_with_choices=%s, finish_reasons=%s",
+                chunk_count,
+                non_empty_choice_chunks,
+                sorted(finish_reasons) if finish_reasons else [],
+            )
+            logger.info("=" * 80)
+            return content
 
-        logger.info("=" * 80)
-        logger.info("OPENAI API CALL SUCCESSFUL")
-        logger.info(f"Response length: {len(content)} chars")
-        logger.info("=" * 80)
-        return content
+        logger.warning(
+            "Empty stream content received from model=%s base_url=%s total_chunks=%s chunks_with_choices=%s finish_reasons=%s chunk_summaries=%s",
+            config.settings.openai_model,
+            config.settings.openai_base_url or "default",
+            chunk_count,
+            non_empty_choice_chunks,
+            sorted(finish_reasons) if finish_reasons else [],
+            json.dumps(chunk_summaries, ensure_ascii=False),
+        )
+
+        logger.info("Trying non-stream fallback for empty streamed response...")
+        fallback_response = self.client.chat.completions.create(
+            model=config.settings.openai_model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=1,
+            response_format={"type": "json_object"},
+            stream=False,
+        )
+
+        fallback_content = self._extract_non_stream_content(fallback_response).strip()
+        fallback_finish_reason = None
+        fallback_response_type = type(fallback_response).__name__
+        fallback_choices = getattr(fallback_response, "choices", None) or []
+        fallback_preview = ""
+        if isinstance(fallback_response, str):
+            fallback_preview = fallback_response[:200]
+        elif not fallback_choices:
+            fallback_preview = str(fallback_response)[:200]
+        if fallback_choices:
+            fallback_finish_reason = getattr(fallback_choices[0], "finish_reason", None)
+
+        if fallback_content:
+            logger.warning(
+                "Non-stream fallback succeeded after empty stream response; this suggests provider stream chunk incompatibility. finish_reason=%s response_length=%s",
+                fallback_finish_reason,
+                len(fallback_content),
+            )
+            return fallback_content
+
+        raise self._build_empty_response_error(
+            stage="stream_and_non_stream_empty",
+            chunk_count=chunk_count,
+            chunk_summaries=chunk_summaries,
+            extra={
+                "chunks_with_choices": non_empty_choice_chunks,
+                "finish_reasons": sorted(finish_reasons) if finish_reasons else [],
+                "fallback_finish_reason": fallback_finish_reason,
+                "fallback_choices_count": len(fallback_choices),
+                "fallback_response_type": fallback_response_type,
+                "fallback_preview": fallback_preview,
+            },
+        )
 
     def _sanitize_llm_json(self, content: str) -> str:
         """Clean up LLM response for JSON parsing."""

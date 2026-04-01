@@ -260,7 +260,228 @@ python -m mss_ai_ppt_sample_assets.backend.scripts.generate_admin_password
 - `RAG_SECTION_MIN_CHARS`
 - `RAG_PRELOAD_ON_STARTUP`
 
-## 启动方式
+## Linux 生产部署（systemd）
+
+以下方式适合 Linux 服务器生产环境部署，目标是让服务具备以下能力：
+
+- SSH / 终端断开后继续运行
+- 服务异常退出后自动拉起
+- 服务器重启后自动启动
+
+本项目推荐直接使用 systemd 托管现有 FastAPI 进程，不修改后端业务启动逻辑，继续沿用：
+
+```bash
+python -m uvicorn mss_ai_ppt_sample_assets.backend.app:app --host 0.0.0.0 --port 8000
+```
+
+仓库内已提供 systemd 模板：
+
+- `deploy/systemd/mss-ai-ppt.service`
+- `mss_ai_ppt_sample_assets/backend/scripts/rag-backend.service`
+
+推荐以前者作为正式部署模板，复制到 `/etc/systemd/system/mss-ai-ppt.service`。
+
+### 1. 准备服务器依赖
+
+至少准备以下运行环境：
+
+- Python 3.10+
+- `pip` / 虚拟环境
+- LibreOffice（用于 PPT/PDF/预览图相关能力）
+- 如启用 RAG/LLM，则需准备对应模型与外部依赖
+
+示例：
+
+```bash
+sudo apt-get update
+sudo apt-get install -y python3 python3-venv python3-pip libreoffice
+```
+
+### 2. 部署目录示例
+
+以下示例假设项目部署到：
+
+```text
+/opt/report-generation
+```
+
+建议目录结构：
+
+```text
+/opt/report-generation/
+├─ .env
+├─ deploy/
+├─ mss_ai_ppt_sample_assets/
+└─ .venv/                # 可选，若你使用虚拟环境
+```
+
+### 3. 安装 Python 依赖
+
+在项目根目录执行：
+
+```bash
+cd /opt/report-generation
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r mss_ai_ppt_sample_assets/backend/requirements.txt
+```
+
+如果你希望 systemd 使用虚拟环境 Python，可将 service 文件中的 `ExecStart` 改为：
+
+```ini
+ExecStart=/opt/report-generation/.venv/bin/python -m uvicorn mss_ai_ppt_sample_assets.backend.app:app --host 0.0.0.0 --port 8000
+```
+
+### 4. 放置 `.env` 并配置 `MSS_ENV_PATH`
+
+`backend/config.py` 支持通过 `MSS_ENV_PATH` 指定环境文件路径。
+
+当前推荐在 service 中显式配置：
+
+```ini
+Environment="MSS_ENV_PATH=/opt/report-generation/.env"
+```
+
+这样服务启动时会稳定读取该 `.env` 文件，而不是依赖当前 shell 环境。
+
+建议 `.env` 至少包含你真实需要的配置项，例如：
+
+```dotenv
+ENABLE_LLM=false
+LOG_LEVEL=INFO
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD_HASH=<replace-me>
+ADMIN_SESSION_SECRET=<replace-me-with-random-secret>
+```
+
+如果你需要自定义运行输出目录，也可在 `.env` 中配置：
+
+```dotenv
+MSS_OUTPUTS_DIR=/opt/report-generation/mss_ai_ppt_sample_assets/backend/outputs
+```
+
+### 5. 创建运行用户并设置目录权限
+
+建议使用专门的 Linux 用户运行服务，例如 `app`：
+
+```bash
+sudo useradd --system --create-home --shell /usr/sbin/nologin app
+sudo chown -R app:app /opt/report-generation
+```
+
+请确保运行用户对以下目录有写权限：
+
+- `mss_ai_ppt_sample_assets/backend/outputs/`
+- `mss_ai_ppt_sample_assets/backend/outputs/logs/`
+- 以及你在 `.env` 中通过 `MSS_OUTPUTS_DIR` 指定的实际输出目录
+
+说明：
+
+- `backend/logging_config.py` 会自动创建日志目录
+- 默认会写入滚动日志：
+  - `outputs/logs/app.log`
+  - `outputs/logs/error.log`
+
+### 6. 安装 systemd service
+
+将仓库中的模板复制到系统目录：
+
+```bash
+sudo cp /opt/report-generation/deploy/systemd/mss-ai-ppt.service /etc/systemd/system/mss-ai-ppt.service
+```
+
+当前模板核心内容如下：
+
+```ini
+[Unit]
+Description=MSS AI PPT Backend
+After=network.target
+
+[Service]
+Type=simple
+User=app
+Group=app
+WorkingDirectory=/opt/report-generation
+Environment="MSS_ENV_PATH=/opt/report-generation/.env"
+ExecStart=/usr/bin/python3 -m uvicorn mss_ai_ppt_sample_assets.backend.app:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=5
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
+```
+
+如果你的 Python 路径、部署目录或运行用户不同，请按实际情况调整 `User`、`Group`、`WorkingDirectory`、`ExecStart` 和 `MSS_ENV_PATH`。
+
+### 7. 启用并启动服务
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable mss-ai-ppt
+sudo systemctl start mss-ai-ppt
+sudo systemctl status mss-ai-ppt
+```
+
+常用管理命令：
+
+```bash
+sudo systemctl restart mss-ai-ppt
+sudo systemctl stop mss-ai-ppt
+sudo systemctl status mss-ai-ppt
+```
+
+查看 systemd 日志：
+
+```bash
+sudo journalctl -u mss-ai-ppt -f
+```
+
+### 8. 启动后的真实行为
+
+服务启动后，应用会按当前代码执行已有启动流程，包括：
+
+- session 清理
+- job 清理
+- preview 临时目录和孤儿目录清理
+- 中断任务恢复 / 标记失败
+- 可选 RAG 预热
+
+这些行为来自 `backend/app.py`，本次部署方式不会改变应用原有启动逻辑。
+
+### 9. 验证部署是否成功
+
+部署后建议依次验证：
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable mss-ai-ppt
+sudo systemctl start mss-ai-ppt
+sudo systemctl status mss-ai-ppt
+sudo journalctl -u mss-ai-ppt -f
+```
+
+再访问：
+
+- `http://<server>:8000/docs`
+- `http://<server>:8000/ui/index.html`
+- 可选：`GET /api/v1/jobs/{job_id}/status`
+
+常驻能力验证：
+
+- 断开 SSH 后重新连接，确认服务仍为 `active`
+- 执行 `sudo systemctl restart mss-ai-ppt`，确认服务可恢复
+- 重启服务器后确认服务自动拉起
+
+### 10. 生产环境注意事项
+
+部署到生产环境前，至少检查以下事项：
+
+- 不要继续使用默认 `ADMIN_SESSION_SECRET`
+- 必须把 `ADMIN_PASSWORD_HASH` 替换为真实管理员密码哈希
+- 当前应用提供 `/ws/{client_id}` WebSocket 接口；若后续接入 nginx / 反向代理，需要开启 WebSocket 透传
+- `SessionMiddleware` 当前配置为 `https_only=False`，本轮按“只改服务配置”的要求不改业务代码；若后续上 HTTPS，建议再将其调整为更严格的生产配置
+
 
 在仓库根目录启动：
 

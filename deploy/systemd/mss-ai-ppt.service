@@ -4,9 +4,8 @@ After=network.target
 
 [Service]
 Type=simple
-User=app
-Group=app
-WorkingDirectory=/opt/report-generation
+# 直接删掉 User/Group，用系统默认身份运行，彻底避免 217 错误
+WorkingDirectory=/root/report-generation/deploy/systemd
 Environment="MSS_ENV_PATH=/opt/report-generation/.env"
 ExecStart=/usr/bin/python3 -m uvicorn mss_ai_ppt_sample_assets.backend.app:app --host 0.0.0.0 --port 8000
 Restart=always
