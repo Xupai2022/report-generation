@@ -227,7 +227,7 @@ export function IndexApp() {
   const [selectedInput, setSelectedInput] = useState('');
   const [uploadingExcel, setUploadingExcel] = useState(false);
   const [excelDragActive, setExcelDragActive] = useState(false);
-  const [useMock, setUseMock] = useState(true);
+  const [useMock, setUseMock] = useState(false);
   const [selectedFocus, setSelectedFocus] = useState<FocusValue[]>(['business_protection']);
 
   const [inWorkspace, setInWorkspace] = useState(false);
@@ -1364,7 +1364,7 @@ export function IndexApp() {
       })
       .join(' / ') || t('focusSummaryNone');
 
-  const preconfigTemplateCards = templates.length <= 1 ? templates : templates.slice(0, 6);
+  const templateCards = templates;
   const heroTitle = t('preConfigHeroTitle', lang === 'zh-CN' ? '创建报告' : 'Create your report');
   const heroSubtitle = t(
     'preConfigHeroSubtitle',
@@ -1731,46 +1731,38 @@ export function IndexApp() {
                   onDragLeave={handleExcelDragLeave}
                   onDrop={handleExcelDrop}
                 >
-                  <div className="data-source-icon">
-                    <UploadCloud size={30} />
-                  </div>
-                  <h3>{t('preConfigDataCardTitle', 'Select Data Source')}</h3>
-                  <p>{t('preConfigDataCardDesc', 'Choose your Excel or CSV input data')}</p>
-                  <div className="data-source-controls">
-                    <div className="data-source-upload-row">
-                      <button className="btn-secondary data-source-upload-btn" onClick={openExcelFilePicker} disabled={uploadingExcel || loading || generationInProgress}>
-                        <UploadCloud size={14} className={uploadingExcel ? 'spin' : undefined} />
-                        {uploadingExcel
-                          ? lt('btnUploadingExcel', '上传中...', 'Uploading...')
-                          : lt('btnUploadExcelMini', '上传 Excel（测试）', 'Upload Excel (Test)')}
-                      </button>
-                      <small>{lt('msgUploadExcelHint', '不影响默认本地数据源，仅用于测试上传流程', 'Does not affect default local source. For upload flow testing only.')}</small>
-                      <input
-                        ref={excelUploadInputRef}
-                        type="file"
-                        accept=".xlsx"
-                        style={{ display: 'none' }}
-                        onChange={handleExcelFileSelected}
-                      />
+                  <button
+                    type="button"
+                    className="data-source-cover-btn"
+                    onClick={openExcelFilePicker}
+                    disabled={uploadingExcel || loading || generationInProgress}
+                  >
+                    <div className="data-source-icon">
+                      <UploadCloud size={30} />
                     </div>
-                    <select value={selectedInput} onChange={(e) => setSelectedInput(e.target.value)}>
-                      <option value="">{t('msgSelectDataSource', 'Select data source...')}</option>
-                      {selectedInput === 'custom' ? (
-                        <option value="custom">
-                          {lt('labelCustomUploadedInput', 'custom（上传 Excel）', 'custom (uploaded Excel)')}
-                        </option>
-                      ) : null}
-                      {inputs.map((input) => (
-                        <option key={input.id} value={input.id}>
-                          {input.description || input.id}
-                        </option>
-                      ))}
-                    </select>
+                    <h3>{t('preConfigDataCardTitle', lang === 'zh-CN' ? '本地目录数据' : 'Local directory data')}</h3>
+                    <p>
+                      {t(
+                        'preConfigDataCardDesc',
+                        lang === 'zh-CN'
+                          ? '默认使用本地目录数据，上传 Excel 后将自动替换为用户数据。'
+                          : 'Uses local directory data by default. Uploading Excel will replace it with your data.',
+                      )}
+                    </p>
+                  </button>
+                  <div className="data-source-footer">
                     <label className="check-row">
                       <input type="checkbox" checked={useMock} onChange={(e) => setUseMock(e.target.checked)} />
                       <span>{t('labelUseMock')}</span>
                     </label>
                   </div>
+                  <input
+                    ref={excelUploadInputRef}
+                    type="file"
+                    accept=".xlsx"
+                    style={{ display: 'none' }}
+                    onChange={handleExcelFileSelected}
+                  />
                 </div>
             </section>
 
@@ -1779,49 +1771,79 @@ export function IndexApp() {
                 <h2>
                   <LayoutTemplate size={16} className="section-icon" /> 3. {t('preConfigSectionTemplate', 'Select Template')}
                 </h2>
-                <div className={`template-gallery ${preconfigTemplateCards.length === 1 ? 'single' : ''}`}>
-                  {preconfigTemplateCards.map((tpl, idx) => {
-                    const selected = selectedTemplate === tpl.template_id;
-                    const frames = templateSlidesById[tpl.template_id] || [];
-                    const total = Math.max(frames.length, 1);
-                    const frameIndex = Math.min(templateFrameIndexById[tpl.template_id] || 0, total - 1);
-                    const imageUrl = getTemplatePreviewImageUrl(tpl.template_id, frameIndex);
-                    const fixedTemplateName = t('preConfigTemplateFixedName', lang === 'zh-CN' ? '经典模板' : 'Classic Template');
-                    const slidesCountText = t('preConfigSlidesCount', '{count} slides').replace('{count}', String(total));
-                    return (
-                      <button
-                        key={tpl.template_id}
-                        className={`template-card ${selected ? 'selected' : ''}`}
-                        onClick={() => setSelectedTemplate(tpl.template_id)}
-                      >
-                        <div
-                          className="template-preview"
-                          onPointerEnter={() => void loadTemplateSlides(tpl.template_id)}
-                          onPointerMove={(event) => scrubTemplateFrame(tpl.template_id, event.clientX, event.currentTarget)}
-                        >
-                          {imageUrl ? (
-                            <img
-                              src={`${imageUrl}?v=${templatePreviewStamp}&p=${frameIndex + 1}`}
-                              alt={t('preConfigTemplateImageAlt', 'Template page {page} thumbnail').replace('{page}', String(frameIndex + 1))}
-                            />
-                          ) : (
-                            <img src={`/placeholders/template-${(idx % 4) + 1}.svg`} alt={toTemplateName(tpl)} />
-                          )}
-                          <div className="template-preview-meta">
-                            <div className="template-meta-left">
-                              <span className="template-fixed-name">{fixedTemplateName}</span>
-                              <span className="template-slides-count">{slidesCountText}</span>
+                <div className="template-split">
+                  <div className="template-list-panel">
+                    <div className="template-list-header">
+                      <span>{t('preConfigTemplateListTitle', lang === 'zh-CN' ? '模板列表' : 'Template list')}</span>
+                      <span className="template-list-count">
+                        {t('preConfigTemplateListCount', '{count} items').replace('{count}', String(templateCards.length))}
+                      </span>
+                    </div>
+                    <div className="template-list">
+                      {templateCards.map((tpl) => {
+                        const selected = selectedTemplate === tpl.template_id;
+                        const fixedTemplateName = t('preConfigTemplateFixedName', lang === 'zh-CN' ? '经典模板' : 'Classic Template');
+                        return (
+                          <button
+                            key={tpl.template_id}
+                            className={`template-list-item ${selected ? 'selected' : ''}`}
+                            onClick={() => setSelectedTemplate(tpl.template_id)}
+                            onMouseEnter={() => void loadTemplateSlides(tpl.template_id)}
+                          >
+                            <div className="template-list-main">
+                              <span className="template-list-name">{fixedTemplateName}</span>
                             </div>
-                          </div>
-                        </div>
-                        {selected ? (
-                          <span className="template-selected-check">
-                            <CheckCircle2 size={16} />
-                          </span>
-                        ) : null}
-                      </button>
-                    );
-                  })}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="template-gallery-panel">
+                    <div className={`template-gallery ${templateCards.length === 1 ? 'single' : ''}`}>
+                      {templateCards.map((tpl, idx) => {
+                        const selected = selectedTemplate === tpl.template_id;
+                        const frames = templateSlidesById[tpl.template_id] || [];
+                        const total = Math.max(frames.length, 1);
+                        const frameIndex = Math.min(templateFrameIndexById[tpl.template_id] || 0, total - 1);
+                        const imageUrl = getTemplatePreviewImageUrl(tpl.template_id, frameIndex);
+                        const fixedTemplateName = t('preConfigTemplateFixedName', lang === 'zh-CN' ? '经典模板' : 'Classic Template');
+                        const slidesCountText = t('preConfigSlidesCount', '{count} slides').replace('{count}', String(total));
+                        return (
+                          <button
+                            key={tpl.template_id}
+                            className={`template-card ${selected ? 'selected' : ''}`}
+                            onClick={() => setSelectedTemplate(tpl.template_id)}
+                          >
+                            <div
+                              className="template-preview"
+                              onPointerEnter={() => void loadTemplateSlides(tpl.template_id)}
+                              onPointerMove={(event) => scrubTemplateFrame(tpl.template_id, event.clientX, event.currentTarget)}
+                            >
+                              {imageUrl ? (
+                                <img
+                                  src={`${imageUrl}?v=${templatePreviewStamp}&p=${frameIndex + 1}`}
+                                  alt={t('preConfigTemplateImageAlt', 'Template page {page} thumbnail').replace('{page}', String(frameIndex + 1))}
+                                />
+                              ) : (
+                                <img src={`/placeholders/template-${(idx % 4) + 1}.svg`} alt={toTemplateName(tpl)} />
+                              )}
+                              <div className="template-preview-meta">
+                                <div className="template-meta-left">
+                                  <span className="template-fixed-name">{fixedTemplateName}</span>
+                                  <span className="template-slides-count">{slidesCountText}</span>
+                                </div>
+                              </div>
+                            </div>
+                            {selected ? (
+                              <span className="template-selected-check">
+                                <CheckCircle2 size={16} />
+                              </span>
+                            ) : null}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               </section>
             </div>
