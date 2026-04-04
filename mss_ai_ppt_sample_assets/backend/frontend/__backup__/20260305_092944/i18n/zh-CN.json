@@ -8,7 +8,7 @@
   "sectionOverview": "总览",
   "labelInput": "输入数据",
   "labelTemplate": "选择模板",
-  "labelUseMock": "Mock 数据（调试）",
+  "labelUseMock": "Mock 数据（若上传自己的数据，请勿勾选）",
   "btnGenerate": "生成报告",
   "btnPreview": "预览",
   "btnDownload": "下载 PPT",

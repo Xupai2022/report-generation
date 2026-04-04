@@ -216,11 +216,34 @@ button:disabled {
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
   gap: 36px 52px;
+  align-items: stretch;
 }
 
 .preconfig-right-col,
-.preconfig-template-section {
+.preconfig-template-section,
+.preconfig-data-section {
   min-height: 100%;
+}
+.preconfig-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.preconfig-right-col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.preconfig-grid > .preconfig-section,
+.preconfig-grid > .preconfig-right-col {
+  align-self: stretch;
+}
+.preconfig-data-section,
+.preconfig-template-section {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .preconfig-focus-section {
@@ -245,10 +268,16 @@ button:disabled {
 .data-source-card {
   border: 2px dashed #e2e8f0;
   border-radius: 24px;
-  padding: 28px;
+  padding: 0;
   background: rgba(248, 250, 252, .65);
   text-align: center;
   transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+  position: relative;
+  height: 100%;
+  min-height: 100%;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
 }
 
 .data-source-card.drag-active {
@@ -282,39 +311,35 @@ button:disabled {
   font-size: 13px;
 }
 
-.data-source-controls {
+.data-source-cover-btn {
+  position: absolute;
+  inset: 0;
+  padding: 28px 28px 56px;
+  border: 0;
+  background: transparent;
+  text-align: center;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  text-align: left;
-}
-
-.data-source-upload-row {
-  display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 8px;
+  color: inherit;
 }
-
-.data-source-upload-btn {
-  align-self: flex-start;
-  height: 34px;
-  padding: 0 10px;
-  font-size: 12px;
+.data-source-cover-btn:disabled {
+  cursor: not-allowed;
+  opacity: .7;
 }
-
-.data-source-upload-row small {
-  color: #64748b;
-  font-size: 11px;
-  line-height: 1.4;
-}
-
-.data-source-controls select {
-  height: 44px;
-  border: 1px solid #cbd5e1;
-  border-radius: 12px;
-  padding: 0 12px;
-  background: #fff;
+.data-source-footer {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 16px;
+  display: flex;
+  justify-content: flex-start;
+  z-index: 2;
 }
 
 .card select,
@@ -443,6 +468,85 @@ button:disabled {
 }
 .template-gallery.single {
   grid-template-columns: 1fr;
+}
+.template-split {
+  display: grid;
+  grid-template-columns: minmax(120px, 130px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+}
+.template-list-panel {
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  background: #f8fafc;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 100%;
+}
+.template-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-weight: 700;
+}
+.template-list-count {
+  font-size: 11px;
+  color: #94a3b8;
+}
+.template-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 520px;
+  overflow: auto;
+  padding-right: 4px;
+}
+.template-list-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+  padding: 8px 10px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease, background .18s ease;
+}
+.template-list-item:hover {
+  border-color: #cbd5f5;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, .08);
+  transform: translateY(-1px);
+}
+.template-list-item.selected {
+  border-color: #6366f1;
+  background: #eef2ff;
+  box-shadow: 0 14px 26px rgba(99, 102, 241, .16);
+}
+.template-list-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.template-list-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.template-gallery-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  min-height: 100%;
 }
 .template-card {
   border: 2px solid #f1f5f9;
@@ -2230,6 +2334,15 @@ button:disabled {
   }
   .template-card {
     min-height: 260px;
+  }
+  .template-split {
+    grid-template-columns: 1fr;
+  }
+  .template-list {
+    max-height: 240px;
+  }
+  .template-list-item {
+    padding: 10px 12px;
   }
   .template-preview {
     aspect-ratio: 16 / 9;

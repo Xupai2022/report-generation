@@ -7,7 +7,7 @@
   "sectionLogs": "System Logs",
   "labelInput": "Input Data",
   "labelTemplate": "Select Template",
-  "labelUseMock": "Mock Data (Debug)",
+  "labelUseMock": "Mock data (Please do not check this box if you upload your own data)",
   "btnGenerate": "Generate Report",
   "btnPreview": "Preview",
   "btnDownload": "Download PPT",
