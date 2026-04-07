@@ -15,6 +15,7 @@ from mss_ai_ppt_sample_assets.backend.schemas.admin import (
     AdminStatistics
 )
 from mss_ai_ppt_sample_assets.backend import config
+from mss_ai_ppt_sample_assets.backend.modules.preview_generator import sanitize_job_id
 
 logger = logging.getLogger(__name__)
 
@@ -286,19 +287,24 @@ class AdminService:
         Returns:
             List of preview URLs
         """
-        # Convert job_id format for preview directory
-        # job_id format: session_id:template_id
-        # preview directory: session_id_template_id
-        preview_job_id = job_id.replace(":", "_")
+        preview_job_id = sanitize_job_id(job_id)
         preview_dir = config.PREVIEWS_DIR / preview_job_id
 
         if not preview_dir.exists():
             return []
 
-        # Find all slide images
-        preview_files = sorted(preview_dir.glob("slide*.png"))
+        def _slide_num(path: Path) -> int:
+            stem = path.stem
+            if stem.startswith("slide"):
+                suffix = stem[len("slide"):]
+                try:
+                    return int(suffix)
+                except Exception:
+                    return 10**9
+            return 10**9
 
-        # Generate URLs
+        preview_files = sorted(preview_dir.glob("slide*.png"), key=_slide_num)
+
         urls = []
         for preview_file in preview_files:
             url = f"/static/previews/{preview_job_id}/{preview_file.name}"
