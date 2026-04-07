@@ -526,6 +526,11 @@ button:disabled {
   box-shadow: 0 10px 22px rgba(15, 23, 42, .08);
   transform: translateY(-1px);
 }
+.template-list-item.hovered {
+  border-color: #94a3f5;
+  background: #f5f6ff;
+  box-shadow: 0 12px 24px rgba(99, 102, 241, .14);
+}
 .template-list-item.selected {
   border-color: #6366f1;
   background: #eef2ff;
@@ -558,6 +563,10 @@ button:disabled {
   text-align: left;
   min-height: 320px;
   display: block;
+}
+.template-card.hovered {
+  border-color: #94a3f5;
+  box-shadow: 0 14px 28px rgba(99, 102, 241, .14);
 }
 .template-card.selected {
   border-color: #6366f1;
