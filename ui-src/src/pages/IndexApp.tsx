@@ -100,6 +100,7 @@ function toTemplateName(tpl: TemplateItem): string {
 function getTemplatePreviewImageUrl(templateId: string, frameIndex: number) {
   const folderByTemplate: Record<string, string> = {
     mss_classic_ops: '/static/previews/template_classic_preview',
+    mss_classic_ops_2: '/static/previews/template_classic_ops_2_preview',
   };
   const folder = folderByTemplate[templateId];
   if (!folder) return '';
@@ -224,6 +225,7 @@ export function IndexApp() {
   const [templatePreviewStamp, setTemplatePreviewStamp] = useState<number>(() => Date.now());
 
   const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [hoverTemplate, setHoverTemplate] = useState<string>('');
   const [selectedInput, setSelectedInput] = useState('');
   const [uploadingExcel, setUploadingExcel] = useState(false);
   const [excelDragActive, setExcelDragActive] = useState(false);
@@ -1771,24 +1773,28 @@ export function IndexApp() {
                 <h2>
                   <LayoutTemplate size={16} className="section-icon" /> 3. {t('preConfigSectionTemplate', 'Select Template')}
                 </h2>
-                <div className="template-split">
+                <div
+                  className="template-split"
+                  onMouseLeave={() => setHoverTemplate('')}
+                >
                   <div className="template-list-panel">
                     <div className="template-list-header">
                       <span>{t('preConfigTemplateListTitle', lang === 'zh-CN' ? '模板列表' : 'Template list')}</span>
-                      <span className="template-list-count">
-                        {t('preConfigTemplateListCount', '{count} items').replace('{count}', String(templateCards.length))}
-                      </span>
                     </div>
                     <div className="template-list">
                       {templateCards.map((tpl) => {
                         const selected = selectedTemplate === tpl.template_id;
+                        const hovered = hoverTemplate === tpl.template_id;
                         const fixedTemplateName = t('preConfigTemplateFixedName', lang === 'zh-CN' ? '经典模板' : 'Classic Template');
                         return (
                           <button
                             key={tpl.template_id}
-                            className={`template-list-item ${selected ? 'selected' : ''}`}
+                            className={`template-list-item ${selected ? 'selected' : ''} ${hovered && !selected ? 'hovered' : ''}`}
                             onClick={() => setSelectedTemplate(tpl.template_id)}
-                            onMouseEnter={() => void loadTemplateSlides(tpl.template_id)}
+                            onMouseEnter={() => {
+                              setHoverTemplate(tpl.template_id);
+                              void loadTemplateSlides(tpl.template_id);
+                            }}
                           >
                             <div className="template-list-main">
                               <span className="template-list-name">{fixedTemplateName}</span>
@@ -1799,9 +1805,15 @@ export function IndexApp() {
                     </div>
                   </div>
                   <div className="template-gallery-panel">
-                    <div className={`template-gallery ${templateCards.length === 1 ? 'single' : ''}`}>
-                      {templateCards.map((tpl, idx) => {
+                    <div className="template-gallery single">
+                      {(() => {
+                        const activeTemplateId = hoverTemplate || selectedTemplate;
+                        const tpl = templateCards.find((item) => item.template_id === activeTemplateId)
+                          || templateCards.find((item) => item.template_id === selectedTemplate)
+                          || templateCards[0];
+                        if (!tpl) return null;
                         const selected = selectedTemplate === tpl.template_id;
+                        const hovered = hoverTemplate === tpl.template_id;
                         const frames = templateSlidesById[tpl.template_id] || [];
                         const total = Math.max(frames.length, 1);
                         const frameIndex = Math.min(templateFrameIndexById[tpl.template_id] || 0, total - 1);
@@ -1811,12 +1823,15 @@ export function IndexApp() {
                         return (
                           <button
                             key={tpl.template_id}
-                            className={`template-card ${selected ? 'selected' : ''}`}
+                            className={`template-card ${selected ? 'selected' : ''} ${hovered && !selected ? 'hovered' : ''}`}
                             onClick={() => setSelectedTemplate(tpl.template_id)}
                           >
                             <div
                               className="template-preview"
-                              onPointerEnter={() => void loadTemplateSlides(tpl.template_id)}
+                              onPointerEnter={() => {
+                                setHoverTemplate(tpl.template_id);
+                                void loadTemplateSlides(tpl.template_id);
+                              }}
                               onPointerMove={(event) => scrubTemplateFrame(tpl.template_id, event.clientX, event.currentTarget)}
                             >
                               {imageUrl ? (
@@ -1825,7 +1840,7 @@ export function IndexApp() {
                                   alt={t('preConfigTemplateImageAlt', 'Template page {page} thumbnail').replace('{page}', String(frameIndex + 1))}
                                 />
                               ) : (
-                                <img src={`/placeholders/template-${(idx % 4) + 1}.svg`} alt={toTemplateName(tpl)} />
+                                <img src="/placeholders/template-1.svg" alt={toTemplateName(tpl)} />
                               )}
                               <div className="template-preview-meta">
                                 <div className="template-meta-left">
@@ -1841,7 +1856,7 @@ export function IndexApp() {
                             ) : null}
                           </button>
                         );
-                      })}
+                      })()}
                     </div>
                   </div>
                 </div>
