@@ -917,7 +917,7 @@ export function IndexApp() {
     if (uploadingExcel || loading || generationInProgress) return;
     setUploadingExcel(true);
     try {
-      const result = await MainApi.uploadExcel(file);
+      const result = await MainApi.uploadExcel(file, selectedTemplate);
       const sid = String(result.session_id || '').trim();
       if (!sid) throw new Error(lt('msgUploadMissingSessionId', '上传成功但未返回 session_id', 'Upload succeeded but session_id is missing'));
       setSessionId(sid);

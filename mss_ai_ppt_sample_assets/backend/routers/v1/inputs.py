@@ -1,6 +1,6 @@
 """Inputs API endpoints - Input data management and Excel upload."""
 
-from fastapi import APIRouter, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, HTTPException, status, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from typing import Optional
 import logging
@@ -279,9 +279,17 @@ async def get_input(input_id: str):
         }
     }
 )
-async def upload_excel(file: UploadFile = File(...)):
+async def upload_excel(
+    file: UploadFile = File(...),
+    template_id: Optional[str] = Form(None),
+):
     """Upload Excel file and parse to JSON."""
-    logger.info(f"📥 Upload request: filename={file.filename}, content_type={file.content_type}")
+    logger.info(
+        "📥 Upload request: filename=%s, content_type=%s, template_id=%s",
+        file.filename,
+        file.content_type,
+        template_id,
+    )
 
     try:
         # Generate session
@@ -296,7 +304,8 @@ async def upload_excel(file: UploadFile = File(...)):
             file_content=file_content,
             filename=file.filename,
             content_type=file.content_type,
-            session_dir=session_dir
+            session_dir=session_dir,
+            template_id=template_id,
         )
 
         # Generate response with file info

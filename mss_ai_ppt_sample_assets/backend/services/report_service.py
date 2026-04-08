@@ -151,7 +151,6 @@ class ReportService:
         return False
 
     def _get_token_source_map_by_slide(self, template_id: str) -> Dict[str, Dict[str, str]]:
-        descriptor = self.template_repo.get_descriptor_v2(template_id)
         source_map: Dict[str, Dict[str, str]] = {}
         for slide in descriptor.slides:
             token_map: Dict[str, str] = {}
@@ -173,11 +172,11 @@ class ReportService:
             with input_path.open("w", encoding="utf-8") as f:
                 json.dump(payload, f, ensure_ascii=False, indent=2)
 
-    def _load_or_bootstrap_session_input(self, input_id: str, session_id: str) -> TenantInput:
+    def _load_or_bootstrap_session_input(self, input_id: str, session_id: str, template_id: str) -> TenantInput:
         input_path = self.session_manager.get_input_path(session_id)
         if input_path.exists():
             return TenantInput(raw=self._read_session_input_json(session_id))
-        return self._load_input_from_excel_runtime(input_id, session_id)
+        return self._load_input_from_excel_runtime(input_id, session_id, template_id)
 
     def _persist_manual_updates_to_session_input(
         self,
@@ -199,7 +198,7 @@ class ReportService:
             return warnings
 
         try:
-            tenant_input = self._load_or_bootstrap_session_input(input_id, session_id)
+            tenant_input = self._load_or_bootstrap_session_input(input_id, session_id, template_id)
         except Exception as e:
             logger.warning("Failed to load/initialize session input.json for session %s: %s", session_id, e)
             warnings.append("Unable to sync session input.json for this session.")
@@ -308,7 +307,7 @@ class ReportService:
 
         return None
 
-    def _load_input_from_excel_runtime(self, input_id: str, session_id: str) -> TenantInput:
+    def _load_input_from_excel_runtime(self, input_id: str, session_id: str, template_id: str) -> TenantInput:
         """Parse input from Excel at generation time and persist session intermediate JSON."""
         excel_path = self._resolve_excel_source_path(input_id, session_id)
         if not excel_path:
@@ -317,7 +316,7 @@ class ReportService:
                 "Expected session uploaded.xlsx or configured excel_file."
             )
 
-        parsed = ExcelDataExtractor.extract_data(excel_path)
+        parsed = ExcelDataExtractor.extract_data(excel_path, template_id=template_id)
 
         # Keep JSON only as this-run intermediate artifact under session directory.
         input_path = self.session_manager.get_input_path(session_id)
@@ -325,8 +324,18 @@ class ReportService:
             with input_path.open("w", encoding="utf-8") as f:
                 json.dump(parsed, f, ensure_ascii=False, indent=2)
 
-        logger.info("Input parsed from Excel at runtime: %s -> %s", excel_path, input_path)
+        logger.info(
+            "Input parsed from Excel at runtime: template=%s, source=%s -> %s",
+            template_id,
+            excel_path,
+            input_path,
+        )
         return TenantInput(raw=parsed)
+
+    def _should_parse_excel_runtime(self, input_id: str, template_id: str) -> bool:
+        runtime_excel_templates = set(ExcelDataExtractor.TEMPLATE_EXTRACTORS.keys())
+        runtime_excel_input_ids = {"classic_ops_dataxlsx"}
+        return template_id in runtime_excel_templates or input_id in runtime_excel_input_ids
 
     def generate(
         self,
@@ -366,11 +375,10 @@ class ReportService:
             session_id = self.session_manager.generate_session_id()
             logger.debug(f"Generated new session ID: {session_id}")
 
-        # Classic ops must always parse from Excel at runtime.
-        if template_id == "mss_classic_ops" or input_id == "classic_ops_dataxlsx":
-            tenant_input = self._load_input_from_excel_runtime(input_id, session_id)
+        if self._should_parse_excel_runtime(input_id, template_id):
+            tenant_input = self._load_input_from_excel_runtime(input_id, session_id, template_id)
             logger.debug(
-                "Loaded runtime Excel input for classic flow: template=%s, input=%s, keys=%s",
+                "Loaded runtime Excel input: template=%s, input=%s, keys=%s",
                 template_id,
                 input_id,
                 len(tenant_input.raw),
@@ -646,6 +654,7 @@ class ReportService:
         tenant_input = self._load_or_bootstrap_session_input(
             input_id=input_id,
             session_id=session_id,
+            template_id=template_id,
         )
 
         rag_context = None

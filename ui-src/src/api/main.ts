@@ -21,9 +21,12 @@ import { apiFetch } from './client';
 export const MainApi = {
   listTemplates: () => apiFetch<TemplateItem[]>('/api/v1/templates'),
   listInputs: () => apiFetch<InputItem[]>('/api/v1/inputs'),
-  uploadExcel: async (file: File) => {
+  uploadExcel: async (file: File, templateId?: string) => {
     const formData = new FormData();
     formData.append('file', file);
+    if (templateId) {
+      formData.append('template_id', templateId);
+    }
 
     const response = await fetch('/api/v1/inputs/excel', {
       method: 'POST',

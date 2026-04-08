@@ -16,7 +16,7 @@ import logging
 import re
 from datetime import date, datetime
 from pathlib import Path
-from typing import Any, Dict, List, Set
+from typing import Any, Callable, Dict, List, Set
 
 import openpyxl
 from openpyxl.utils.exceptions import InvalidFileException
@@ -84,7 +84,24 @@ class ExcelValidator:
 class ExcelDataExtractor:
     """Extracts structured data from Excel files."""
 
+    DEFAULT_TEMPLATE_ID = "mss_classic_ops"
     CLASSIC_REQUIRED_SHEET = "数据统计"
+
+    @classmethod
+    def _get_template_config(cls, template_id: str | None = None) -> Dict[str, Any]:
+        resolved_template_id = (template_id or cls.DEFAULT_TEMPLATE_ID).strip() or cls.DEFAULT_TEMPLATE_ID
+        config = cls.TEMPLATE_EXTRACTORS.get(resolved_template_id)
+        if not config:
+            supported_templates = ", ".join(sorted(cls.TEMPLATE_EXTRACTORS.keys()))
+            raise DataValidationError(
+                field="template_id",
+                message=(
+                    f"No Excel extractor registered for template '{resolved_template_id}'. "
+                    f"Supported templates: {supported_templates}."
+                ),
+                template_id=resolved_template_id,
+            )
+        return config
 
     @staticmethod
     def _unwrap_cell(value: Any) -> tuple[Any, str]:
@@ -837,31 +854,42 @@ class ExcelDataExtractor:
         return ExcelDataExtractor._remove_ai_generated_fields(output)
 
     @staticmethod
-    def extract_data(excel_path: Path) -> Dict[str, Any]:
-        """Extract data from Excel file.
+    def _extract_classic_ops_2(ws) -> Dict[str, Any]:
+        raise DataValidationError(
+            field="template_id",
+            message="Excel extraction for template 'mss_classic_ops_2' is not implemented yet.",
+            template_id="mss_classic_ops_2",
+        )
 
-        Supported layout:
-        - Classic ops workbook sheet `数据统计`
-        """
+    @staticmethod
+    def extract_data(excel_path: Path, template_id: str | None = None) -> Dict[str, Any]:
+        """Extract data from Excel file by template-specific extractor."""
+        template_config = ExcelDataExtractor._get_template_config(template_id)
+        resolved_template_id = template_config["template_id"]
+        required_sheet = template_config["required_sheet"]
+        extractor = template_config["extractor"]
         try:
             wb = openpyxl.load_workbook(excel_path, read_only=True, data_only=True)
             sheet_names = set(wb.sheetnames)
 
-            if ExcelDataExtractor.CLASSIC_REQUIRED_SHEET in sheet_names:
-                ws = wb[ExcelDataExtractor.CLASSIC_REQUIRED_SHEET]
-                data = ExcelDataExtractor._extract_classic_ops(ws)
+            if required_sheet not in sheet_names:
+                expected_sheets = ", ".join(sorted({cfg["required_sheet"] for cfg in ExcelDataExtractor.TEMPLATE_EXTRACTORS.values()}))
                 wb.close()
-                logger.info("Excel parsed as classic-ops format")
-                return data
+                raise DataValidationError(
+                    field="worksheet",
+                    message=(
+                        f"Workbook does not match template '{resolved_template_id}'. "
+                        f"Expected sheet: {required_sheet}. Available sheets: {', '.join(sorted(sheet_names)) or 'none'}. "
+                        f"Registered template sheets: {expected_sheets}."
+                    ),
+                    template_id=resolved_template_id,
+                )
 
+            ws = wb[required_sheet]
+            data = extractor(ws)
             wb.close()
-            raise DataValidationError(
-                field="worksheet",
-                message=(
-                    "Unsupported workbook layout. "
-                    "Expected sheet: 数据统计."
-                ),
-            )
+            logger.info("Excel parsed with template extractor: %s", resolved_template_id)
+            return data
         except InvalidFileException as e:
             raise FileValidationError(
                 filename=str(excel_path.name),
@@ -872,8 +900,23 @@ class ExcelDataExtractor:
         except Exception as e:
             raise DataValidationError(
                 field="excel_data",
-                message=f"Excel parsing failed: {e}",
+                message=f"Excel parsing failed for template '{resolved_template_id}': {e}",
+                template_id=resolved_template_id,
             ) from e
+
+
+ExcelDataExtractor.TEMPLATE_EXTRACTORS = {
+    "mss_classic_ops": {
+        "template_id": "mss_classic_ops",
+        "required_sheet": ExcelDataExtractor.CLASSIC_REQUIRED_SHEET,
+        "extractor": ExcelDataExtractor._extract_classic_ops,
+    },
+    "mss_classic_ops_2": {
+        "template_id": "mss_classic_ops_2",
+        "required_sheet": ExcelDataExtractor.CLASSIC_REQUIRED_SHEET,
+        "extractor": ExcelDataExtractor._extract_classic_ops_2,
+    },
+}
 
 
 class ExcelHandler:
@@ -890,6 +933,7 @@ class ExcelHandler:
         filename: str,
         content_type: str,
         session_dir: Path,
+        template_id: str | None = None,
     ) -> Dict[str, Any]:
         """Process uploaded Excel file and persist parsed JSON."""
         self.validator.validate_extension(filename)
@@ -903,7 +947,10 @@ class ExcelHandler:
             excel_path.write_bytes(file_content)
             logger.info("File saved: %s (%.2f KB)", excel_path, len(file_content) / 1024)
 
-            input_data = self.extractor.extract_data(excel_path)
+            if template_id is None:
+                logger.warning("Excel upload missing template_id, defaulting to %s", self.extractor.DEFAULT_TEMPLATE_ID)
+
+            input_data = self.extractor.extract_data(excel_path, template_id=template_id)
 
             json_path = session_dir / "input.json"
             with json_path.open("w", encoding="utf-8") as f:
