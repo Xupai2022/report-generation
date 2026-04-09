@@ -27,6 +27,9 @@ nul
 !mss_ai_ppt_sample_assets/backend/outputs/previews/template_classic_preview/
 !mss_ai_ppt_sample_assets/backend/outputs/previews/template_classic_preview/**
 
+# Generated docs site
+site/
+
 # AI models
 mss_ai_ppt_sample_assets/backend/models/**.claude/
 .claude/

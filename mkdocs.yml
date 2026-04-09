@@ -1,0 +1,31 @@
+site_name: 部门项目知识库
+site_url: http://127.0.0.1:8000/
+
+theme:
+  name: material
+  language: zh
+
+nav:
+  - 首页: README.md
+  - 快速开始: quickstart/getting-started.md
+  - 使用指南:
+      - 使用流程: guide/usage.md
+      - 架构说明: guide/architecture.md
+      - 后端说明: guide/backend.md
+      - 前端说明: guide/frontend.md
+      - 运维部署: guide/deployment.md
+      - 排障与诊断: guide/troubleshooting.md
+  - 参考附录:
+      - 环境变量清单: appendix/env-vars.md
+      - API 端点索引: appendix/api-endpoints.md
+      - 运行时路径: appendix/runtime-paths.md
+      - 部署样例说明: appendix/deployment-sample.md
+
+markdown_extensions:
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+plugins:
+  - search

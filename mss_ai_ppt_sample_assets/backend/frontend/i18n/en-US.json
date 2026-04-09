@@ -7,7 +7,7 @@
   "sectionLogs": "System Logs",
   "labelInput": "Input Data",
   "labelTemplate": "Select Template",
-  "labelUseMock": "Mock Data (When checked, AI mode will not be used)",
+  "labelUseMock": "Mock Data (Disable AI mode when checked)",
   "btnGenerate": "Generate Report",
   "btnPreview": "Preview",
   "btnDownload": "Download PPT",
