@@ -88,6 +88,8 @@ class Settings:
         self.soar_mongo_alarm_collection: str = os.getenv("SOAR_MONGO_ALARM_COLLECTION", "alarm")
         self.soar_mongo_event_collection: str = os.getenv("SOAR_MONGO_EVENT_COLLECTION", "Event_info")
         self.soar_mongo_connect_timeout_ms: int = int(os.getenv("SOAR_MONGO_CONNECT_TIMEOUT_MS", "5000"))
+        self.soar_default_company_id: str = os.getenv("SOAR_DEFAULT_COMPANY_ID", "41621089")
+        self.soar_default_date_range: str = os.getenv("SOAR_DEFAULT_DATE_RANGE", "2025-04-10~2026-04-14")
         configured_soar_uri = (os.getenv("SOAR_MONGO_URI") or "").strip()
         self.soar_mongo_uri: Optional[str] = configured_soar_uri or self._build_soar_mongo_uri()
 

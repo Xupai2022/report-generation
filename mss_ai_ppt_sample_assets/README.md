@@ -274,12 +274,11 @@ Raw extraction script:
 ```powershell
 cd f:\report-generation
 python -m mss_ai_ppt_sample_assets.backend.scripts.export_soar_mongo_data `
-  --company-id 41621089 `
-  --start-time 2025-04-10T19:28:55.394000+08:00 `
-  --end-time 2026-04-14T19:28:55.394000+08:00 `
   --output mss_ai_ppt_sample_assets/backend/outputs/soar_raw_export.json
 ```
 
+Default date range uses `SOAR_DEFAULT_DATE_RANGE`, and `2025-04-10~2026-04-14`
+means Beijing time `2025-04-10T00:00:00+08:00` to `2026-04-14T23:59:59.999999+08:00`.
 This script only performs query + projection export for `alarm` and `Event_info`.
 
 ## Linux 生产部署（systemd）

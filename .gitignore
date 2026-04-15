@@ -33,3 +33,5 @@ site/
 # AI models
 mss_ai_ppt_sample_assets/backend/models/**.claude/
 .claude/
+mss_ai_ppt_sample_assets/backend/models/bge-reranker-v2-m3/*.safetensors
+mss_ai_ppt_sample_assets/backend/models/bge-reranker-v2-m3/sentencepiece.bpe.model
