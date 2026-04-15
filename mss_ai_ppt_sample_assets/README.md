@@ -260,6 +260,28 @@ python -m mss_ai_ppt_sample_assets.backend.scripts.generate_admin_password
 - `RAG_SECTION_MIN_CHARS`
 - `RAG_PRELOAD_ON_STARTUP`
 
+### SOAR Mongo ingestion
+
+- `SOAR_MONGO_URI`
+- or split config: `SOAR_MONGO_USERNAME`, `SOAR_MONGO_PASSWORD`, `SOAR_MONGO_HOST`, `SOAR_MONGO_PORT`, `SOAR_MONGO_AUTH_DB`
+- `SOAR_MONGO_DATABASE`
+- `SOAR_MONGO_ALARM_COLLECTION`
+- `SOAR_MONGO_EVENT_COLLECTION`
+- `SOAR_MONGO_CONNECT_TIMEOUT_MS`
+
+Raw extraction script:
+
+```powershell
+cd f:\report-generation
+python -m mss_ai_ppt_sample_assets.backend.scripts.export_soar_mongo_data `
+  --company-id 41621089 `
+  --start-time 2025-04-10T19:28:55.394000+08:00 `
+  --end-time 2026-04-14T19:28:55.394000+08:00 `
+  --output mss_ai_ppt_sample_assets/backend/outputs/soar_raw_export.json
+```
+
+This script only performs query + projection export for `alarm` and `Event_info`.
+
 ## Linux 生产部署（systemd）
 
 以下方式适合 Linux 服务器生产环境部署，目标是让服务具备以下能力：

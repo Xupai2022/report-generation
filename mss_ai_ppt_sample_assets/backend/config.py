@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import Optional
+from urllib.parse import quote_plus
 from dotenv import load_dotenv
 
 # Load .env file from project root
@@ -77,6 +78,19 @@ class Settings:
         )
         self.default_locale: str = os.getenv("DEFAULT_LOCALE", "zh-CN")
 
+        # SOAR MongoDB ingestion configuration
+        self.soar_mongo_username: Optional[str] = os.getenv("SOAR_MONGO_USERNAME")
+        self.soar_mongo_password: Optional[str] = os.getenv("SOAR_MONGO_PASSWORD")
+        self.soar_mongo_host: str = os.getenv("SOAR_MONGO_HOST", "")
+        self.soar_mongo_port: int = int(os.getenv("SOAR_MONGO_PORT", "27017"))
+        self.soar_mongo_auth_db: str = os.getenv("SOAR_MONGO_AUTH_DB", "admin")
+        self.soar_mongo_database: str = os.getenv("SOAR_MONGO_DATABASE", "SOAR_DB")
+        self.soar_mongo_alarm_collection: str = os.getenv("SOAR_MONGO_ALARM_COLLECTION", "alarm")
+        self.soar_mongo_event_collection: str = os.getenv("SOAR_MONGO_EVENT_COLLECTION", "Event_info")
+        self.soar_mongo_connect_timeout_ms: int = int(os.getenv("SOAR_MONGO_CONNECT_TIMEOUT_MS", "5000"))
+        configured_soar_uri = (os.getenv("SOAR_MONGO_URI") or "").strip()
+        self.soar_mongo_uri: Optional[str] = configured_soar_uri or self._build_soar_mongo_uri()
+
         # Preview cleanup configuration
         self.preview_cleanup_days: int = int(os.getenv("PREVIEW_CLEANUP_DAYS", "7"))
 
@@ -143,6 +157,21 @@ class Settings:
                 "OPENAI_API_KEY is required when ENABLE_LLM=true. "
                 "Please set it in your .env file."
             )
+
+    def _build_soar_mongo_uri(self) -> Optional[str]:
+        if not self.soar_mongo_host:
+            return None
+
+        credentials = ""
+        if self.soar_mongo_username:
+            encoded_user = quote_plus(self.soar_mongo_username)
+            encoded_password = quote_plus(self.soar_mongo_password or "")
+            credentials = f"{encoded_user}:{encoded_password}@"
+
+        return (
+            f"mongodb://{credentials}{self.soar_mongo_host}:{self.soar_mongo_port}/"
+            f"{self.soar_mongo_auth_db}?authSource={self.soar_mongo_auth_db}"
+        )
 
 
 settings = Settings()
