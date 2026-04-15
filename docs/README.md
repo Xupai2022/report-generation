@@ -29,6 +29,7 @@
 - [快速开始](quickstart/getting-started.md)
 - [使用指南](guide/usage.md)
 - [架构说明](guide/architecture.md)
+- [数据接入迁移方案](guide/data-ingestion-migration-plan.md)
 - [后端说明](guide/backend.md)
 - [前端说明](guide/frontend.md)
 - [运维部署](guide/deployment.md)
@@ -45,10 +46,10 @@
 1. [快速开始](quickstart/getting-started.md)
 2. [使用指南](guide/usage.md)
 3. [架构说明](guide/architecture.md)
-4. [后端说明](guide/backend.md)
-5. [前端说明](guide/frontend.md)
-6. [运维部署](guide/deployment.md)
-7. [参考附录](appendix/env-vars.md)
+4. [数据接入迁移方案](guide/data-ingestion-migration-plan.md)
+5. [后端说明](guide/backend.md)
+6. [前端说明](guide/frontend.md)
+7. [运维部署](guide/deployment.md)
 
 ## 主要事实来源
 
