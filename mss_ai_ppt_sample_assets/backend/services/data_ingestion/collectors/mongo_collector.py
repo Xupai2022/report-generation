@@ -11,7 +11,7 @@ from ..models import MongoCollectionConfig, MongoIngestionRequest
 
 logger = logging.getLogger(__name__)
 
-EVENT_STATUS_DISPLAY: Dict[str, str] = {
+ALARM_EVENT_STATUS_DISPLAY: Dict[str, str] = {
     "inited": "未处置",
     "finished": "已完成",
     "reject_ignore": "已忽略（驳回）",
@@ -42,7 +42,7 @@ ATTACK_DIRECTION_DISPLAY: Dict[int, str] = {
     4: "外-外",
 }
 
-SERVICE_STATUS_DISPLAY: Dict[int, str] = {
+ALARM_SERVICE_STATUS_DISPLAY: Dict[int, str] = {
     7: "服务内（7*24H）",
     8: "服务外",
     9: "服务内（5*8H）",
@@ -52,6 +52,24 @@ SERVICE_STATUS_DISPLAY: Dict[int, str] = {
 PUSH_STATUS_DISPLAY: Dict[int, str] = {
     1: "已通告",
     -1: "未通告",
+}
+
+EVENT_EVENT_STATUS_DISPLAY: Dict[str, str] = {
+    "inited": "未处置",
+    "disposal": "处置中",
+    "suspend": "已暂停",
+    "finished": "已完成",
+    "accept_risk": "接受风险",
+    "protected": "已防护",
+    "announced": "已通告",
+    "rejected": "已驳回",
+}
+
+EVENT_SERVICE_STATUS_DISPLAY: Dict[int, str] = {
+    0: "服务内（7*24H）",
+    1: "服务外",
+    3: "服务内（5*8H）",
+    -1: "全部服务",
 }
 
 ALARM_PROJECTION: Dict[str, int] = {
@@ -74,6 +92,18 @@ ALARM_PROJECTION: Dict[str, int] = {
 }
 
 EVENT_PROJECTION: Dict[str, int] = {
+    "create_time": 1,
+    "manage_type": 1,
+    "manage_sub_type": 1,
+    "host_ip": 1,
+    "event_status": 1,
+    "service_status": 1,
+    "latest_time": 1,
+    "checkout_time": 1,
+    "dispose_time": 1,
+    "contain_time": 1,
+    "finished_time": 1,
+    "incidence": 1,
     "update_protected_time": 1,
     "update_announced_time": 1,
     "update_accept_risk_time": 1,
@@ -171,7 +201,7 @@ def _serialize_datetime(value: datetime) -> str:
 
 def _transform_alarm_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
     transformed = dict(doc)
-    transformed["event_status"] = EVENT_STATUS_DISPLAY.get(
+    transformed["event_status"] = ALARM_EVENT_STATUS_DISPLAY.get(
         transformed.get("event_status"),
         transformed.get("event_status"),
     )
@@ -183,7 +213,7 @@ def _transform_alarm_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
         transformed.get("attack_direction"),
         transformed.get("attack_direction"),
     )
-    transformed["service_status"] = SERVICE_STATUS_DISPLAY.get(
+    transformed["service_status"] = ALARM_SERVICE_STATUS_DISPLAY.get(
         transformed.get("service_status"),
         transformed.get("service_status"),
     )
@@ -196,6 +226,14 @@ def _transform_alarm_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
 
 def _transform_event_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
     transformed = dict(doc)
+    transformed["event_status"] = EVENT_EVENT_STATUS_DISPLAY.get(
+        transformed.get("event_status"),
+        transformed.get("event_status"),
+    )
+    transformed["service_status"] = EVENT_SERVICE_STATUS_DISPLAY.get(
+        transformed.get("service_status"),
+        transformed.get("service_status"),
+    )
     transformed["push_status"] = PUSH_STATUS_DISPLAY.get(
         transformed.get("push_status"),
         transformed.get("push_status"),
