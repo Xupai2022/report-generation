@@ -57,6 +57,14 @@ PUSH_STATUS_DISPLAY: Dict[int, str] = {
     -1: "未通告",
 }
 
+REJECT_REASON_DISPLAY: Dict[str, str] = {
+    "1": "业务触发",
+    "2": "技术误报",
+    "3": "接受风险",
+    "4": "误推送",
+    "5": "正报延迟",
+}
+
 EVENT_EVENT_STATUS_DISPLAY: Dict[str, str] = {
     "inited": "未处置",
     "disposal": "处置中",
@@ -308,6 +316,10 @@ def _transform_alarm_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
     transformed["service_status"] = ALARM_SERVICE_STATUS_DISPLAY.get(
         doc.get("service_status"),
         doc.get("service_status"),
+    )
+    transformed["reject_reason"] = REJECT_REASON_DISPLAY.get(
+        _stringify_enum_key(doc.get("reject_reason")),
+        doc.get("reject_reason"),
     )
 
     if transformed.get("reject_reason") in (None, ""):
