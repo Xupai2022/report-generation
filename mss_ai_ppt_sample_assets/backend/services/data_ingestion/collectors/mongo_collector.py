@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from datetime import datetime
+import json
 import logging
+from pathlib import Path
 from typing import Any, Dict
 
 from pymongo import MongoClient
@@ -10,6 +12,7 @@ from .... import config
 from ..models import MongoCollectionConfig, MongoIngestionRequest
 
 logger = logging.getLogger(__name__)
+_EVENT_MANAGE_SUB_TYPE_DISPLAY: Dict[str, str] | None = None
 
 ALARM_EVENT_STATUS_DISPLAY: Dict[str, str] = {
     "inited": "未处置",
@@ -72,6 +75,44 @@ EVENT_SERVICE_STATUS_DISPLAY: Dict[int, str] = {
     -1: "全部服务",
 }
 
+EVENT_MANAGE_TYPE_DISPLAY: Dict[str, str] = {
+    "INTRANET_THREAT": "内部威胁",
+    "MANAGEMENT": "管理要求",
+    "ACTIVE_INVOLVEMENT": "主动投入",
+    "SERVICE_SPREAD": "服务蔓延",
+    "UNDECLARED_THREAT": "未公开威胁",
+    "INTERNET_THREAT": "外部威胁",
+    "VULNERABILITY": "脆弱性",
+    "CUSTOMER_FEEDBACK": "用户反馈",
+    "STRATEGY_OPTIMIZE": "策略调优",
+    "EMERGENCY_RESPONSE": "应急工单",
+    "STRATEGY_SERVICE": "策略工单",
+    "OTHER": "其他",
+    "CONSULTANT": "咨询问题",
+    "PRODUCTION": "产品问题",
+    "94": "脆弱性风险",
+    "214": "访问风险",
+    "201": "服务探测",
+    "215": "主机探测",
+    "90": "网站攻击",
+    "203": "后门通信",
+    "204": "账号爆破",
+    "205": "攻击利用",
+    "96": "邮件攻击",
+    "10": "Dos攻击",
+    "207": "黑链",
+    "30": "漏洞攻击",
+    "208": "黑客工具",
+    "213": "数据库攻击利用",
+    "40": "访问恶意文件",
+    "209": "感染病毒",
+    "212": "行为异常",
+    "216": "流量异常",
+    "217": "登录异常",
+    "218": "终端行为异常",
+    "219": "容器异常",
+}
+
 ALARM_PROJECTION: Dict[str, int] = {
     "alarm_name": 1,
     "asset": 1,
@@ -111,6 +152,41 @@ EVENT_PROJECTION: Dict[str, int] = {
     "wechat_push_time": 1,
     "_id": 0,
 }
+
+ALARM_OUTPUT_FIELDS = (
+    "alarm_name",
+    "asset",
+    "type",
+    "event_status",
+    "first_time",
+    "latest_time",
+    "service_status",
+    "create_time",
+    "attack_state",
+    "attack_direction",
+    "current_operate_time",
+    "rejected_event_id",
+    "current_operator",
+    "reject_reason",
+)
+EVENT_OUTPUT_FIELDS = (
+    "create_time",
+    "type",
+    "host_ip",
+    "event_status",
+    "service_status",
+    "latest_time",
+    "checkout_time",
+    "dispose_time",
+    "contain_time",
+    "finished_time",
+    "incidence",
+    "update_protected_time",
+    "update_announced_time",
+    "update_accept_risk_time",
+    "push_status",
+    "wechat_push_time",
+)
 
 
 class SOARMongoCollector:
@@ -200,42 +276,101 @@ def _serialize_datetime(value: datetime) -> str:
 
 
 def _transform_alarm_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
-    transformed = dict(doc)
+    transformed = {field: doc.get(field) for field in ALARM_OUTPUT_FIELDS}
+    transformed["type"] = _build_type_display(
+        doc.get("manage_type_name"),
+        doc.get("manage_sub_type_name"),
+        separator=">",
+    )
     transformed["event_status"] = ALARM_EVENT_STATUS_DISPLAY.get(
-        transformed.get("event_status"),
-        transformed.get("event_status"),
+        doc.get("event_status"),
+        doc.get("event_status"),
     )
     transformed["attack_state"] = ATTACK_STATE_DISPLAY.get(
-        transformed.get("attack_state"),
-        transformed.get("attack_state"),
+        doc.get("attack_state"),
+        doc.get("attack_state"),
     )
     transformed["attack_direction"] = ATTACK_DIRECTION_DISPLAY.get(
-        transformed.get("attack_direction"),
-        transformed.get("attack_direction"),
+        doc.get("attack_direction"),
+        doc.get("attack_direction"),
     )
     transformed["service_status"] = ALARM_SERVICE_STATUS_DISPLAY.get(
-        transformed.get("service_status"),
-        transformed.get("service_status"),
+        doc.get("service_status"),
+        doc.get("service_status"),
     )
 
-    if "reject_reason" not in transformed or transformed.get("reject_reason") in (None, ""):
+    if transformed.get("reject_reason") in (None, ""):
         transformed["reject_reason"] = "占位"
 
     return transformed
 
 
 def _transform_event_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
-    transformed = dict(doc)
+    transformed = {field: doc.get(field) for field in EVENT_OUTPUT_FIELDS}
+    manage_type_display = EVENT_MANAGE_TYPE_DISPLAY.get(
+        _stringify_enum_key(doc.get("manage_type")),
+        doc.get("manage_type"),
+    )
+    manage_sub_type_display = _get_event_manage_sub_type_display().get(
+        _stringify_enum_key(doc.get("manage_sub_type")),
+        doc.get("manage_sub_type"),
+    )
+    transformed["type"] = _build_type_display(
+        manage_type_display,
+        manage_sub_type_display,
+        separator="->",
+    )
     transformed["event_status"] = EVENT_EVENT_STATUS_DISPLAY.get(
-        transformed.get("event_status"),
-        transformed.get("event_status"),
+        doc.get("event_status"),
+        doc.get("event_status"),
     )
     transformed["service_status"] = EVENT_SERVICE_STATUS_DISPLAY.get(
-        transformed.get("service_status"),
-        transformed.get("service_status"),
+        doc.get("service_status"),
+        doc.get("service_status"),
     )
     transformed["push_status"] = PUSH_STATUS_DISPLAY.get(
-        transformed.get("push_status"),
-        transformed.get("push_status"),
+        doc.get("push_status"),
+        doc.get("push_status"),
     )
     return transformed
+
+
+def _stringify_enum_key(value: Any) -> str | None:
+    if value is None:
+        return None
+    return str(value)
+
+
+def _get_event_manage_sub_type_display() -> Dict[str, str]:
+    global _EVENT_MANAGE_SUB_TYPE_DISPLAY
+    if _EVENT_MANAGE_SUB_TYPE_DISPLAY is not None:
+        return _EVENT_MANAGE_SUB_TYPE_DISPLAY
+
+    mapping_file = Path(config.settings.soar_manage_sub_type_map_file)
+    if not mapping_file.exists():
+        logger.warning("manage_sub_type mapping file not found: %s", mapping_file)
+        _EVENT_MANAGE_SUB_TYPE_DISPLAY = {}
+        return _EVENT_MANAGE_SUB_TYPE_DISPLAY
+
+    try:
+        payload = json.loads(mapping_file.read_text(encoding="utf-8"))
+        items = payload.get("data", {}).get("manage_sub_type", [])
+        _EVENT_MANAGE_SUB_TYPE_DISPLAY = {
+            str(item.get("value")): item.get("name")
+            for item in items
+            if item.get("value") is not None and item.get("name") is not None
+        }
+    except Exception as exc:
+        logger.warning("Failed to load manage_sub_type mapping file %s: %s", mapping_file, exc)
+        _EVENT_MANAGE_SUB_TYPE_DISPLAY = {}
+
+    return _EVENT_MANAGE_SUB_TYPE_DISPLAY
+
+
+def _build_type_display(primary: Any, secondary: Any, separator: str) -> str:
+    primary_text = None if primary in (None, "") else str(primary)
+    secondary_text = None if secondary in (None, "") else str(secondary)
+
+    if primary_text and secondary_text:
+        return f"{primary_text}{separator}{secondary_text}"
+    return primary_text or secondary_text

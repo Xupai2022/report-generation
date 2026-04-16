@@ -268,6 +268,7 @@ python -m mss_ai_ppt_sample_assets.backend.scripts.generate_admin_password
 - `SOAR_MONGO_ALARM_COLLECTION`
 - `SOAR_MONGO_EVENT_COLLECTION`
 - `SOAR_MONGO_CONNECT_TIMEOUT_MS`
+- `SOAR_MANAGE_SUB_TYPE_MAP_FILE`
 
 Raw extraction script:
 
@@ -279,6 +280,8 @@ python -m mss_ai_ppt_sample_assets.backend.scripts.export_soar_mongo_data `
 
 Default date range uses `SOAR_DEFAULT_DATE_RANGE`, and `2025-04-10~2026-04-14`
 means Beijing time `2025-04-10T00:00:00+08:00` to `2026-04-14T23:59:59.999999+08:00`.
+`manage_sub_type` is resolved from the repository asset configured by `SOAR_MANAGE_SUB_TYPE_MAP_FILE`
+(default: `backend/data/ingestion/manage_sub_type_map.json`).
 This script only performs query + projection export for `alarm` and `Event_info`.
 
 ## Linux 生产部署（systemd）
