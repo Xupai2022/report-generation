@@ -322,9 +322,6 @@ def _transform_alarm_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
         doc.get("reject_reason"),
     )
 
-    if transformed.get("reject_reason") in (None, ""):
-        transformed["reject_reason"] = "占位"
-
     return transformed
 
 
