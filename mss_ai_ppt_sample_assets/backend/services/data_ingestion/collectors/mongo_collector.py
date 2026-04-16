@@ -75,6 +75,15 @@ EVENT_SERVICE_STATUS_DISPLAY: Dict[int, str] = {
     -1: "全部服务",
 }
 
+EVENT_GRADING_TAG_DISPLAY: Dict[int, str] = {
+    0: "重大事件",
+    1: "重要事件",
+    2: "一般事件",
+    3: "重要威胁",
+    4: "一般威胁",
+    5: "其他",
+}
+
 EVENT_MANAGE_TYPE_DISPLAY: Dict[str, str] = {
     "INTRANET_THREAT": "内部威胁",
     "MANAGEMENT": "管理要求",
@@ -136,6 +145,7 @@ EVENT_PROJECTION: Dict[str, int] = {
     "create_time": 1,
     "manage_type": 1,
     "manage_sub_type": 1,
+    "event_grading_tag": 1,
     "host_ip": 1,
     "event_status": 1,
     "service_status": 1,
@@ -170,6 +180,7 @@ ALARM_OUTPUT_FIELDS = (
     "reject_reason",
 )
 EVENT_OUTPUT_FIELDS = (
+    "event_grading_tag", 
     "create_time",
     "type",
     "host_ip",
@@ -323,6 +334,10 @@ def _transform_event_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
     transformed["event_status"] = EVENT_EVENT_STATUS_DISPLAY.get(
         doc.get("event_status"),
         doc.get("event_status"),
+    )
+    transformed["event_grading_tag"] = EVENT_GRADING_TAG_DISPLAY.get(
+        doc.get("event_grading_tag"),
+        doc.get("event_grading_tag"),
     )
     transformed["service_status"] = EVENT_SERVICE_STATUS_DISPLAY.get(
         doc.get("service_status"),
