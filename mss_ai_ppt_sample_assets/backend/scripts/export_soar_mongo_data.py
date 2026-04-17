@@ -4,12 +4,15 @@ import argparse
 from datetime import date, datetime, time, timedelta, timezone
 import json
 from pathlib import Path
+from typing import Any
 
 from openpyxl import Workbook
 
 from mss_ai_ppt_sample_assets.backend import config
 
 BEIJING_TZ = timezone(timedelta(hours=8))
+DEFAULT_OUTPUT_STEM = "soar_raw_export"
+DEFAULT_OUTPUT_DIR = Path("mss_ai_ppt_sample_assets/backend/outputs")
 
 
 def parse_args() -> argparse.Namespace:
@@ -35,9 +38,9 @@ def parse_args() -> argparse.Namespace:
         help="Optional override for inclusive end time in ISO-8601 format",
     )
     parser.add_argument(
-        "--output",
-        default="mss_ai_ppt_sample_assets/backend/outputs/soar_raw_export.json",
-        help="Output JSON file path",
+        "--output-dir",
+        default=str(DEFAULT_OUTPUT_DIR),
+        help="Output directory for the exported JSON and XLSX files",
     )
     return parser.parse_args()
 
@@ -57,16 +60,17 @@ def main() -> None:
     collector = SOARMongoCollector()
     payload = collector.collect(request)
 
-    output_path = Path(args.output).resolve()
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    _write_output(payload, output_path)
+    output_dir = Path(args.output_dir).resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    json_output_path, xlsx_output_path = _write_default_outputs(payload, output_dir)
 
     print(f"alarm_count={payload['meta']['alarm_count']}")
     print(f"event_count={payload['meta']['event_count']}")
     print(f"company_id={args.company_id}")
     print(f"start_time={request.start_time.isoformat()}")
     print(f"end_time={request.end_time.isoformat()}")
-    print(f"output={output_path}")
+    print(f"json_output={json_output_path}")
+    print(f"xlsx_output={xlsx_output_path}")
 
 
 def _resolve_time_range(
@@ -116,7 +120,7 @@ def _json_default(value):
     raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
 
-def _write_output(payload: dict, output_path: Path) -> None:
+def _write_output(payload: dict[str, Any], output_path: Path) -> None:
     suffix = output_path.suffix.lower()
     if suffix == ".json":
         output_path.write_text(
@@ -132,7 +136,15 @@ def _write_output(payload: dict, output_path: Path) -> None:
     raise ValueError("output file extension must be .json or .xlsx")
 
 
-def _write_xlsx_output(payload: dict, output_path: Path) -> None:
+def _write_default_outputs(payload: dict[str, Any], output_dir: Path) -> tuple[Path, Path]:
+    json_output_path = output_dir / f"{DEFAULT_OUTPUT_STEM}.json"
+    xlsx_output_path = output_dir / f"{DEFAULT_OUTPUT_STEM}.xlsx"
+    _write_output(payload, json_output_path)
+    _write_output(payload, xlsx_output_path)
+    return json_output_path, xlsx_output_path
+
+
+def _write_xlsx_output(payload: dict[str, Any], output_path: Path) -> None:
     workbook = Workbook()
     default_sheet = workbook.active
     workbook.remove(default_sheet)
@@ -142,7 +154,7 @@ def _write_xlsx_output(payload: dict, output_path: Path) -> None:
     workbook.save(output_path)
 
 
-def _write_sheet(workbook: Workbook, title: str, rows: list[dict]) -> None:
+def _write_sheet(workbook: Workbook, title: str, rows: list[dict[str, Any]]) -> None:
     sheet = workbook.create_sheet(title=title)
     headers = _collect_headers(rows)
     if not headers:
@@ -153,7 +165,7 @@ def _write_sheet(workbook: Workbook, title: str, rows: list[dict]) -> None:
         sheet.append([_excel_cell_value(row.get(header)) for header in headers])
 
 
-def _collect_headers(rows: list[dict]) -> list[str]:
+def _collect_headers(rows: list[dict[str, Any]]) -> list[str]:
     headers: list[str] = []
     seen: set[str] = set()
     for row in rows:
@@ -165,9 +177,11 @@ def _collect_headers(rows: list[dict]) -> list[str]:
     return headers
 
 
-def _excel_cell_value(value):
+def _excel_cell_value(value: Any):
     if isinstance(value, (datetime, date)):
         return value.isoformat(sep=" ")
+    if isinstance(value, (list, dict)):
+        return json.dumps(value, default=_json_default, ensure_ascii=False)
     return value
 
 
