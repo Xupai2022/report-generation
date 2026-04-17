@@ -10,6 +10,7 @@ from pymongo import MongoClient
 
 from .... import config
 from ..models import MongoCollectionConfig, MongoIngestionRequest
+from ..transformers import enrich_event_docs
 
 logger = logging.getLogger(__name__)
 _EVENT_MANAGE_SUB_TYPE_DISPLAY: Dict[str, str] | None = None
@@ -46,10 +47,10 @@ ATTACK_DIRECTION_DISPLAY: Dict[int, str] = {
 }
 
 ALARM_SERVICE_STATUS_DISPLAY: Dict[int, str] = {
-    7: "服务内（7*24H）",
-    8: "服务外",
-    9: "服务内（5*8H）",
-    10: "全部服务",
+    0: "服务内（7*24H）",
+    1: "服务外",
+    3: "服务内（5*8H）",
+    -1: "全部服务",
 }
 
 PUSH_STATUS_DISPLAY: Dict[int, str] = {
@@ -268,6 +269,7 @@ class SOARMongoCollector:
                     query, EVENT_PROJECTION
                 )
             )
+            event_docs = enrich_event_docs(event_docs)
         finally:
             client.close()
 
