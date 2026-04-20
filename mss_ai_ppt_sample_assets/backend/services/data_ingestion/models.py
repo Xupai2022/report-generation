@@ -11,6 +11,8 @@ class MongoCollectionConfig(BaseModel):
     database_name: str = Field(..., description="Mongo database name")
     alarm_collection: str = Field(..., description="Alarm collection name")
     event_collection: str = Field(..., description="Event collection name")
+    asset_collection: str = Field(..., description="Asset collection name")
+    business_collection: str = Field(..., description="Business collection name，与asset关联")
 
 
 class MongoIngestionRequest(BaseModel):

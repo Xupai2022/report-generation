@@ -66,6 +66,7 @@ def main() -> None:
 
     print(f"alarm_count={payload['meta']['alarm_count']}")
     print(f"event_count={payload['meta']['event_count']}")
+    print(f"asset_count={payload['meta']['asset_count']}")
     print(f"company_id={args.company_id}")
     print(f"start_time={request.start_time.isoformat()}")
     print(f"end_time={request.end_time.isoformat()}")
@@ -145,12 +146,11 @@ def _write_default_outputs(payload: dict[str, Any], output_dir: Path) -> tuple[P
 
 
 def _write_xlsx_output(payload: dict[str, Any], output_path: Path) -> None:
-    workbook = Workbook()
-    default_sheet = workbook.active
-    workbook.remove(default_sheet)
+    workbook = Workbook(write_only=True)
 
     _write_sheet(workbook, "告警表", payload.get("alarm", []))
     _write_sheet(workbook, "事件表", payload.get("event", []))
+    _write_sheet(workbook, "资产表", payload.get("asset", []))
     workbook.save(output_path)
 
 

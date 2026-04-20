@@ -207,6 +207,14 @@ EVENT_OUTPUT_FIELDS = (
     "push_status",
     "wechat_push_time",
 )
+ASSET_OUTPUT_FIELDS = (
+    "business_name",
+    "asset",
+    "level",
+    "is_service",
+    "asset_type",
+    "security_domain",
+)
 
 
 class SOARMongoCollector:
@@ -228,10 +236,13 @@ class SOARMongoCollector:
             database_name=config.settings.soar_mongo_database,
             alarm_collection=config.settings.soar_mongo_alarm_collection,
             event_collection=config.settings.soar_mongo_event_collection,
+            asset_collection=config.settings.soar_mongo_asset_collection,
+            business_collection=config.settings.soar_mongo_business_collection,
         )
         self.connect_timeout_ms = int(
             connect_timeout_ms or config.settings.soar_mongo_connect_timeout_ms
         )
+        self.asset_batch_size = max(1, int(config.settings.soar_mongo_asset_batch_size))
 
     def collect(self, request: MongoIngestionRequest) -> Dict[str, Any]:
         query = {
@@ -270,6 +281,7 @@ class SOARMongoCollector:
                 )
             )
             event_docs = enrich_event_docs(event_docs)
+            asset_docs = list(self._collect_asset_docs(database, request))
         finally:
             client.close()
 
@@ -281,13 +293,26 @@ class SOARMongoCollector:
                 "database_name": self.collections.database_name,
                 "alarm_collection": self.collections.alarm_collection,
                 "event_collection": self.collections.event_collection,
+                "asset_collection": self.collections.asset_collection,
+                "business_collection": self.collections.business_collection,
                 "alarm_count": len(alarm_docs),
                 "event_count": len(event_docs),
+                "asset_count": len(asset_docs),
                 "extracted_at": _serialize_datetime(datetime.utcnow()),
             },
             "alarm": alarm_docs,
             "event": event_docs,
+            "asset": asset_docs,
         }
+
+    def _collect_asset_docs(self, database, request: MongoIngestionRequest):
+        cursor = database[self.collections.asset_collection].aggregate(
+            _build_asset_pipeline(request.company_id, self.collections.business_collection),
+            allowDiskUse=True,
+            batchSize=self.asset_batch_size,
+        )
+        for doc in cursor:
+            yield _transform_asset_doc(doc)
 
 
 def _serialize_datetime(value: datetime) -> str:
@@ -359,6 +384,46 @@ def _transform_event_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
         doc.get("push_status"),
     )
     return transformed
+
+
+def _transform_asset_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
+    return {field: doc.get(field) for field in ASSET_OUTPUT_FIELDS}
+
+
+def _build_asset_pipeline(company_id: str, business_collection: str) -> list[Dict[str, Any]]:
+    return [
+        {
+            "$match": {
+                "is_deleted": 0,
+                "company_id": company_id,
+            }
+        },
+        {
+            "$lookup": {
+                "from": business_collection,
+                "localField": "business_id",
+                "foreignField": "_id",
+                "as": "business",
+            }
+        },
+        {
+            "$unwind": {
+                "path": "$business",
+                "preserveNullAndEmptyArrays": True,
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "business_name": {"$ifNull": ["$business.business_name", ""]},
+                "asset": "$asset",
+                "level": {"$ifNull": ["$business.level", ""]},
+                "is_service": "$is_service",
+                "asset_type": "$asset_type",
+                "security_domain": {"$ifNull": ["$security_domain", ""]},
+            }
+        },
+    ]
 
 
 def _stringify_enum_key(value: Any) -> str | None:

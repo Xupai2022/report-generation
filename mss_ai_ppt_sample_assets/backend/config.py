@@ -87,7 +87,10 @@ class Settings:
         self.soar_mongo_database: str = os.getenv("SOAR_MONGO_DATABASE", "SOAR_DB")
         self.soar_mongo_alarm_collection: str = os.getenv("SOAR_MONGO_ALARM_COLLECTION", "alarm")
         self.soar_mongo_event_collection: str = os.getenv("SOAR_MONGO_EVENT_COLLECTION", "Event_info")
+        self.soar_mongo_asset_collection: str = os.getenv("SOAR_MONGO_ASSET_COLLECTION", "Assets")
+        self.soar_mongo_business_collection: str = os.getenv("SOAR_MONGO_BUSINESS_COLLECTION", "Business")
         self.soar_mongo_connect_timeout_ms: int = int(os.getenv("SOAR_MONGO_CONNECT_TIMEOUT_MS", "5000"))
+        self.soar_mongo_asset_batch_size: int = int(os.getenv("SOAR_MONGO_ASSET_BATCH_SIZE", "5000"))
         self.soar_default_company_id: str = os.getenv("SOAR_DEFAULT_COMPANY_ID", "41621089")
         self.soar_default_date_range: str = os.getenv("SOAR_DEFAULT_DATE_RANGE", "2025-04-10~2026-04-14")
         self.soar_manage_sub_type_map_file: str = os.getenv(
