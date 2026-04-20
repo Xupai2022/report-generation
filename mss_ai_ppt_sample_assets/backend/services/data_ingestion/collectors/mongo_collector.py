@@ -223,6 +223,7 @@ EVENT_OUTPUT_FIELDS = (
     "create_time",
     "type",
     "host_ip",
+    "内网外网资产",
     "event_status",
     "service_status",
     "latest_time",
@@ -311,6 +312,13 @@ class SOARMongoCollector:
                 )
             )
             event_docs = enrich_event_docs(event_docs)
+            _attach_event_asset_security_domains(
+                event_docs,
+                database=database,
+                company_id=request.company_id,
+                asset_collection=self.collections.asset_collection,
+                batch_size=self.asset_batch_size,
+            )
             asset_docs = list(self._collect_asset_docs(database, request))
         finally:
             client.close()
@@ -416,6 +424,33 @@ def _transform_event_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
     return transformed
 
 
+def _attach_event_asset_security_domains(
+    event_docs: list[Dict[str, Any]],
+    *,
+    database,
+    company_id: str,
+    asset_collection: str,
+    batch_size: int,
+) -> None:
+    host_ips = _collect_event_host_ips(event_docs)
+    if not host_ips:
+        return
+
+    security_domain_by_ip = _load_asset_security_domain_map(
+        database=database,
+        company_id=company_id,
+        asset_collection=asset_collection,
+        host_ips=host_ips,
+        batch_size=batch_size,
+    )
+
+    for event_doc in event_docs:
+        event_doc["内网外网资产"] = _resolve_event_security_domain(
+            event_doc.get("host_ip"),
+            security_domain_by_ip,
+        )
+
+
 def _transform_asset_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
     transformed = {field: doc.get(field) for field in ASSET_OUTPUT_FIELDS}
     transformed["asset_type"] = ASSET_TYPE_DISPLAY.get(
@@ -431,6 +466,109 @@ def _transform_asset_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
         doc.get("level"),
     )
     return transformed
+
+
+def _collect_event_host_ips(event_docs: list[Dict[str, Any]]) -> list[str]:
+    seen: set[str] = set()
+    host_ips: list[str] = []
+    for event_doc in event_docs:
+        for host_ip in _extract_host_ip_candidates(event_doc.get("host_ip")):
+            if host_ip in seen:
+                continue
+            seen.add(host_ip)
+            host_ips.append(host_ip)
+    return host_ips
+
+
+def _load_asset_security_domain_map(
+    *,
+    database,
+    company_id: str,
+    asset_collection: str,
+    host_ips: list[str],
+    batch_size: int,
+) -> Dict[str, str]:
+    security_domain_by_ip: Dict[str, str] = {}
+
+    for ip_batch in _chunked(host_ips, batch_size):
+        cursor = database[asset_collection].find(
+            {
+                "company_id": company_id,
+                "is_deleted": 0,
+                "asset": {"$in": ip_batch},
+            },
+            {
+                "_id": 0,
+                "asset": 1,
+                "security_domain": 1,
+            },
+            batch_size=batch_size,
+        )
+
+        for doc in cursor:
+            asset_ip = doc.get("asset")
+            if asset_ip in (None, ""):
+                continue
+
+            security_domain = doc.get("security_domain") or ""
+            existing = security_domain_by_ip.get(asset_ip)
+            if existing:
+                continue
+            security_domain_by_ip[str(asset_ip)] = security_domain
+
+    return security_domain_by_ip
+
+
+def _resolve_event_security_domain(host_ip_value: Any, security_domain_by_ip: Dict[str, str]) -> str:
+    domains: list[str] = []
+    seen: set[str] = set()
+    for host_ip in _extract_host_ip_candidates(host_ip_value):
+        security_domain = security_domain_by_ip.get(host_ip)
+        if security_domain in (None, "") or security_domain in seen:
+            continue
+        seen.add(security_domain)
+        domains.append(security_domain)
+    return "、".join(domains)
+
+
+def _extract_host_ip_candidates(value: Any) -> list[str]:
+    if value in (None, ""):
+        return []
+
+    if isinstance(value, str):
+        return _split_host_ip_text(value)
+
+    if isinstance(value, (list, tuple, set)):
+        candidates: list[str] = []
+        for item in value:
+            candidates.extend(_extract_host_ip_candidates(item))
+        return candidates
+
+    return [str(value).strip()] if str(value).strip() else []
+
+
+def _split_host_ip_text(value: str) -> list[str]:
+    normalized = value
+    for delimiter in ("，", ";", "；", "/", "|", "\n", "\t"):
+        normalized = normalized.replace(delimiter, ",")
+    normalized = " ".join(normalized.split())
+    if " " in normalized:
+        normalized = normalized.replace(" ", ",")
+
+    results: list[str] = []
+    seen: set[str] = set()
+    for item in normalized.split(","):
+        candidate = item.strip()
+        if not candidate or candidate in seen:
+            continue
+        seen.add(candidate)
+        results.append(candidate)
+    return results
+
+
+def _chunked(values: list[str], chunk_size: int):
+    for start in range(0, len(values), chunk_size):
+        yield values[start : start + chunk_size]
 
 
 def _build_asset_pipeline(company_id: str, business_collection: str) -> list[Dict[str, Any]]:
