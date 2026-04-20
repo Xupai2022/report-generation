@@ -84,6 +84,36 @@ EVENT_SERVICE_STATUS_DISPLAY: Dict[int, str] = {
     -1: "全部服务",
 }
 
+ASSET_TYPE_DISPLAY: Dict[str, str] = {
+    "server": "服务器",
+    "safety_equipment": "安全设备",
+    "net_equipment": "网络设备",
+    "endpoint": "终端",
+    "iot_equipment": "物联网设备",
+    "unknown": "其他/未知",
+    "firewall": "防火墙",
+    "VPN": "VPN",
+    "WAF": "WAF",
+    "IDPS": "IDPS",
+    "honeypot": "蜜罐",
+    "scanner": "扫描器",
+    "DNS": "DNS",
+    "proxy_server": "代理服务器",
+    "fortress_machine": "堡垒机",
+}
+
+ASSET_SERVICE_STATUS_DISPLAY: Dict[int, str] = {
+    1: "服务内 7×24",
+    3: "服务内 5×8",
+    0: "服务外",
+}
+
+ASSET_LEVEL_DISPLAY: Dict[str, str] = {
+    "1": "核心",
+    "2": "重要",
+    "3": "一般",
+}
+
 EVENT_GRADING_TAG_DISPLAY: Dict[int, str] = {
     0: "重大事件",
     1: "重要事件",
@@ -387,7 +417,20 @@ def _transform_event_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _transform_asset_doc(doc: Dict[str, Any]) -> Dict[str, Any]:
-    return {field: doc.get(field) for field in ASSET_OUTPUT_FIELDS}
+    transformed = {field: doc.get(field) for field in ASSET_OUTPUT_FIELDS}
+    transformed["asset_type"] = ASSET_TYPE_DISPLAY.get(
+        _stringify_enum_key(doc.get("asset_type")),
+        doc.get("asset_type"),
+    )
+    transformed["is_service"] = ASSET_SERVICE_STATUS_DISPLAY.get(
+        doc.get("is_service"),
+        doc.get("is_service"),
+    )
+    transformed["level"] = ASSET_LEVEL_DISPLAY.get(
+        _stringify_enum_key(doc.get("level")),
+        doc.get("level"),
+    )
+    return transformed
 
 
 def _build_asset_pipeline(company_id: str, business_collection: str) -> list[Dict[str, Any]]:
