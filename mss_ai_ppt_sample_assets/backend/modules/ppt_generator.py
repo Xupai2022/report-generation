@@ -114,6 +114,7 @@ class PPTGeneratorV2:
             'P15_line': self._render_p15_line,
             'P15_bar': self._render_p15_bar,
             'P16_combo': self._render_p16_combo,
+            'P26_line': self._render_p26_line,
             # Add more specific chart types here
         }
 
@@ -217,21 +218,28 @@ class PPTGeneratorV2:
         if not mapping:
             return
 
-        # Group shapes do not expose text directly; recurse into child shapes.
-        if shape.shape_type == 6:  # GROUP
-            for sub_shape in shape.shapes:
-                self._replace_tokens_in_shape(sub_shape, mapping)
-            return
-
-        if not shape.has_text_frame:
-            return
-
         placeholder_pairs: List[Tuple[str, str]] = []
         for token, value in mapping.items():
             placeholder = f"{{{{{token}}}}}"
             replacement = "" if value is None else str(value)
             placeholder_pairs.append((placeholder, replacement))
         placeholder_pairs.sort(key=lambda x: len(x[0]), reverse=True)
+
+        # Group shapes do not expose text directly; recurse into child shapes.
+        if shape.shape_type == 6:  # GROUP
+            for sub_shape in shape.shapes:
+                self._replace_tokens_in_shape(sub_shape, mapping)
+            return
+
+        if getattr(shape, "has_table", False):
+            for row in shape.table.rows:
+                for cell in row.cells:
+                    for paragraph in cell.text_frame.paragraphs:
+                        self._replace_tokens_in_paragraph(paragraph, placeholder_pairs)
+            return
+
+        if not shape.has_text_frame:
+            return
 
         for paragraph in shape.text_frame.paragraphs:
             changed, replaced_text = self._replace_tokens_in_paragraph(paragraph, placeholder_pairs)
@@ -1788,6 +1796,74 @@ class PPTGeneratorV2:
                 logger.info(f"Successfully removed placeholder text box for P15_line")
             except Exception as e:
                 logger.error(f"Failed to remove placeholder: {e}")
+
+    def _render_p26_line(
+        self,
+        slide,
+        chart_data: Dict[str, Any],
+        token: str = None
+    ) -> None:
+        """Render P26 vulnerability trend line chart."""
+        if not chart_data or 'months' not in chart_data:
+            logger.warning("Invalid P26_line chart data format")
+            return
+
+        months = chart_data.get('months', [])
+        series_list = chart_data.get('series', [])
+        if not months or not series_list:
+            logger.warning("Invalid or missing P26_line chart data")
+            return
+
+        placeholder_shape_to_remove, placeholder_position = self._find_placeholder_shape(slide, token or "P26_line")
+        chart_shape, chart = self._find_nearest_chart(
+            slide,
+            placeholder_position,
+            {
+                self._XL_CHART_TYPE.LINE,
+                self._XL_CHART_TYPE.LINE_MARKERS,
+                self._XL_CHART_TYPE.LINE_MARKERS_STACKED,
+                self._XL_CHART_TYPE.LINE_STACKED,
+            },
+        )
+
+        if chart_shape and chart:
+            try:
+                chart_data_obj = self._CategoryChartData()
+                chart_data_obj.categories = months
+                for series in series_list:
+                    chart_data_obj.add_series(series.get('name', 'Series'), series.get('values', []))
+                chart.replace_data(chart_data_obj)
+
+                plot = chart.plots[0]
+                for idx, series in enumerate(plot.series):
+                    series.has_data_labels = True
+                    data_labels = series.data_labels
+                    data_labels.position = self._XL_LABEL_POSITION.ABOVE
+                    data_labels.show_value = True
+                    data_labels.show_category_name = False
+                    data_labels.font.size = self._Pt(8)
+                    data_labels.font.name = "微软雅黑"
+                    data_labels.font.color.rgb = self._RGBColor(51, 51, 51)
+                    data_labels.number_format = '#,##0'
+
+                if chart.has_legend:
+                    chart.legend.font.size = self._Pt(10)
+                    chart.legend.font.name = "微软雅黑"
+                    chart.legend.font.color.rgb = self._RGBColor(51, 51, 51)
+
+                logger.info(f"Updated existing P26_line chart with {len(months)} months and {len(series_list)} series")
+            except Exception as exc:
+                logger.error(f"Failed to update P26_line chart: {exc}")
+        else:
+            logger.warning("No existing chart found in slide for P26_line")
+
+        if placeholder_shape_to_remove:
+            try:
+                sp = placeholder_shape_to_remove.element
+                sp.getparent().remove(sp)
+                logger.info("Successfully removed placeholder text box for P26_line")
+            except Exception as exc:
+                logger.error(f"Failed to remove placeholder for P26_line: {exc}")
 
     def _render_p11_line(
         self,

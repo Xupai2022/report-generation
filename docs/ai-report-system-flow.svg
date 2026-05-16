@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="4400" viewBox="0 0 1500 4400">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#4b5563"/>
+    </marker>
+    <style>
+      .title { font: 700 28px "Microsoft YaHei", "PingFang SC", sans-serif; fill: #111827; }
+      .subtitle { font: 400 14px "Microsoft YaHei", "PingFang SC", sans-serif; fill: #4b5563; }
+      .box { fill: #ffffff; stroke: #374151; stroke-width: 2; rx: 10; ry: 10; }
+      .decision { fill: #fff7d6; stroke: #a16207; stroke-width: 2; rx: 10; ry: 10; }
+      .note { fill: #eef2ff; stroke: #4f46e5; stroke-width: 2; rx: 10; ry: 10; }
+      .output { fill: #ecfdf5; stroke: #047857; stroke-width: 2; rx: 10; ry: 10; }
+      .danger { fill: #fef2f2; stroke: #b91c1c; stroke-width: 2; rx: 10; ry: 10; }
+      .section { fill: #f3f4f6; stroke: #9ca3af; stroke-width: 2; rx: 12; ry: 12; }
+      .h { font: 700 18px "Microsoft YaHei", "PingFang SC", sans-serif; fill: #111827; }
+      .t { font: 400 15px "Microsoft YaHei", "PingFang SC", sans-serif; fill: #1f2937; }
+      .small { font: 400 13px "Microsoft YaHei", "PingFang SC", sans-serif; fill: #374151; }
+      .tiny { font: 400 12px "Microsoft YaHei", "PingFang SC", sans-serif; fill: #6b7280; }
+      .line { stroke: #4b5563; stroke-width: 2.2; fill: none; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <text x="60" y="45" class="title">AI 报告项目真实流程图</text>
+  <text x="60" y="72" class="subtitle">基于当前代码核对后的在线生成主链路 + 补充链路，按你旧图的结构重画。</text>
+
+  <rect x="510" y="95" width="300" height="68" class="box"/>
+  <text x="660" y="135" text-anchor="middle" class="h">用户上传 Excel 文件</text>
+
+  <line x1="660" y1="163" x2="660" y2="205" class="line"/>
+
+  <rect x="380" y="205" width="560" height="132" class="box"/>
+  <text x="660" y="235" text-anchor="middle" class="h">文件验证层</text>
+  <text x="410" y="268" class="t">1. 扩展名校验：仅允许 .xlsx</text>
+  <text x="410" y="296" class="t">2. MIME 类型校验：阻断伪装文件</text>
+  <text x="410" y="324" class="t">3. 大小校验：默认 &lt;= 10MB</text>
+
+  <rect x="1020" y="233" width="180" height="76" class="danger"/>
+  <text x="1110" y="278" text-anchor="middle" class="h">失败即终止</text>
+
+  <line x1="660" y1="337" x2="660" y2="382" class="line"/>
+
+  <rect x="490" y="382" width="340" height="74" class="box"/>
+  <text x="660" y="425" text-anchor="middle" class="h">保存到 session 目录</text>
+
+  <line x1="660" y1="456" x2="660" y2="500" class="line"/>
+
+  <rect x="320" y="500" width="680" height="172" class="box"/>
+  <text x="660" y="530" text-anchor="middle" class="h">Excel 数据解析</text>
+  <text x="350" y="565" class="t">当前真实逻辑不是只读 A2 / B2 / C2。</text>
+  <text x="350" y="595" class="t">已确认 classic 模板至少会读取：</text>
+  <text x="380" y="625" class="small">- L1 / M1：period_start / period_end</text>
+  <text x="380" y="650" class="small">- D3 / D4 / D5 / D6：架构统计等</text>
+  <text x="380" y="675" class="small">- 以及大量业务映射单元格</text>
+
+  <rect x="1040" y="548" width="190" height="88" class="danger"/>
+  <text x="1135" y="582" text-anchor="middle" class="h">解析失败</text>
+  <text x="1135" y="610" text-anchor="middle" class="small">终止流程</text>
+  <text x="1135" y="632" text-anchor="middle" class="small">并清理已上传文件</text>
+
+  <line x1="660" y1="672" x2="660" y2="716" class="line"/>
+
+  <rect x="370" y="716" width="580" height="108" class="output"/>
+  <text x="660" y="748" text-anchor="middle" class="h">构建 input.json 到 session 目录</text>
+  <text x="400" y="783" class="t">1. 写入 outputs/sessions/{session_id}/input.json</text>
+  <text x="400" y="810" class="t">2. 返回 session_id 给前端</text>
+
+  <line x1="660" y1="824" x2="660" y2="870" class="line"/>
+  <text x="690" y="858" class="small">用户调用 /api/v1/reports</text>
+
+  <rect x="525" y="870" width="270" height="72" class="decision"/>
+  <text x="660" y="913" text-anchor="middle" class="h">use_mock ?</text>
+
+  <path d="M795 906 H930 V1255 H865" class="line"/>
+  <text x="846" y="896" class="small">yes</text>
+
+  <line x1="660" y1="942" x2="660" y2="990" class="line"/>
+  <text x="684" y="980" class="small">no</text>
+
+  <rect x="430" y="990" width="460" height="98" class="box"/>
+  <text x="660" y="1025" text-anchor="middle" class="h">等待 LLM 并发槽位</text>
+  <text x="465" y="1060" class="t">真实代码：asyncio.Semaphore(5)</text>
+  <text x="465" y="1085" class="small">不是旧图里的 3，并且仅非 mock 请求占用该槽位</text>
+
+  <line x1="660" y1="1088" x2="660" y2="1138" class="line"/>
+
+  <rect x="520" y="1138" width="280" height="72" class="box"/>
+  <text x="660" y="1181" text-anchor="middle" class="h">获得 LLM 执行资格</text>
+
+  <line x1="660" y1="1210" x2="660" y2="1255" class="line"/>
+
+  <rect x="290" y="1255" width="740" height="124" class="box"/>
+  <text x="660" y="1288" text-anchor="middle" class="h">ReportService.generate()</text>
+  <text x="325" y="1320" class="t">1. 接收 session_id / input_id / template_id</text>
+  <text x="325" y="1348" class="t">2. 对 classic 模板会重新解析 uploaded.xlsx / data.xlsx</text>
+  <text x="325" y="1375" class="t">3. 然后进入 _generate_v2()</text>
+
+  <rect x="1080" y="1264" width="320" height="124" class="note"/>
+  <text x="1240" y="1292" text-anchor="middle" class="h">和旧图不同</text>
+  <text x="1105" y="1320" class="small">当前 generate() 不是直接从</text>
+  <text x="1105" y="1343" class="small">session/input.json 读 TenantInput，</text>
+  <text x="1105" y="1366" class="small">而是优先重新解析 Excel 并覆盖 input.json。</text>
+
+  <line x1="660" y1="1379" x2="660" y2="1432" class="line"/>
+
+  <rect x="470" y="1432" width="380" height="72" class="decision"/>
+  <text x="660" y="1474" text-anchor="middle" class="h">use_rag &amp;&amp; RAG_ENABLED ?</text>
+
+  <path d="M850 1468 H1040 V1608 H860" class="line"/>
+  <text x="900" y="1458" class="small">yes</text>
+
+  <line x1="660" y1="1504" x2="660" y2="1560" class="line"/>
+  <text x="685" y="1548" class="small">no</text>
+
+  <rect x="455" y="1560" width="410" height="76" class="box"/>
+  <text x="660" y="1604" text-anchor="middle" class="h">跳过 RAG，直接生成</text>
+
+  <rect x="1040" y="1538" width="310" height="140" class="note"/>
+  <text x="1195" y="1570" text-anchor="middle" class="h">RAGService.retrieve_for_generation()</text>
+  <text x="1065" y="1600" class="small">- 基于 slide/task 构造检索 query</text>
+  <text x="1065" y="1625" class="small">- 查询 Qdrant</text>
+  <text x="1065" y="1650" class="small">- 可附带 embedding / reranker</text>
+  <text x="1065" y="1675" class="small">- 返回 rag_context / retrieval_trace</text>
+
+  <line x1="660" y1="1636" x2="660" y2="1692" class="line"/>
+
+  <rect x="250" y="1692" width="820" height="120" class="box"/>
+  <text x="660" y="1726" text-anchor="middle" class="h">LLMOrchestrator.generate_slidespec_v2()</text>
+  <text x="285" y="1758" class="t">1. 加载 descriptor</text>
+  <text x="285" y="1785" class="t">2. 创建空 SlideSpecV2</text>
+  <text x="535" y="1758" class="t">3. 提取非 AI 占位符</text>
+  <text x="535" y="1785" class="t">4. 生成 AI 占位符并合并</text>
+
+  <line x1="660" y1="1812" x2="660" y2="1868" class="line"/>
+
+  <rect x="280" y="1868" width="760" height="150" class="box"/>
+  <text x="660" y="1900" text-anchor="middle" class="h">提取数据占位符（非 AI 生成部分）</text>
+  <text x="315" y="1935" class="small">- 文本：descriptor.source -&gt; TenantInput 取值 -&gt; format</text>
+  <text x="315" y="1962" class="small">- 图表：_extract_chart_data()</text>
+  <text x="315" y="1989" class="small">- 表格：_extract_table_data()</text>
+  <text x="315" y="2016" class="small">- 结果直接写入 slidespec.placeholders</text>
+
+  <line x1="660" y1="2018" x2="660" y2="2074" class="line"/>
+
+  <rect x="480" y="2074" width="360" height="72" class="decision"/>
+  <text x="660" y="2116" text-anchor="middle" class="h">ENABLE_LLM &amp;&amp; !use_mock ?</text>
+
+  <path d="M840 2110 H1005 V2420 H840" class="line"/>
+  <text x="905" y="2100" class="small">no</text>
+
+  <line x1="660" y1="2146" x2="660" y2="2202" class="line"/>
+  <text x="685" y="2190" class="small">yes</text>
+
+  <rect x="380" y="2202" width="560" height="136" class="box"/>
+  <text x="660" y="2234" text-anchor="middle" class="h">智能分批生成 AI 内容</text>
+  <text x="410" y="2266" class="small">- 不是旧图里的固定“&gt;6000 就拆分”</text>
+  <text x="410" y="2293" class="small">- 当前默认 max_tokens_per_batch = 15000</text>
+  <text x="410" y="2320" class="small">- 按 local_only / full_data / prompt 估算智能拆分</text>
+
+  <line x1="660" y1="2338" x2="660" y2="2392" class="line"/>
+
+  <rect x="380" y="2392" width="560" height="124" class="box"/>
+  <text x="660" y="2425" text-anchor="middle" class="h">构建 Prompt</text>
+  <text x="410" y="2456" class="small">- System：角色、输出约束</text>
+  <text x="410" y="2482" class="small">- User：页面、占位符、输入数据</text>
+  <text x="410" y="2508" class="small">- 可附带 RAG context</text>
+
+  <rect x="1015" y="2362" width="325" height="116" class="note"/>
+  <text x="1177" y="2394" text-anchor="middle" class="h">Fallback / Mock 模式</text>
+  <text x="1045" y="2424" class="small">_fill_ai_placeholders_with_fallback()</text>
+  <text x="1045" y="2450" class="small">不走真实 LLM，请求会直接使用兜底文案。</text>
+
+  <line x1="660" y1="2516" x2="660" y2="2572" class="line"/>
+
+  <rect x="400" y="2572" width="520" height="72" class="box"/>
+  <text x="660" y="2614" text-anchor="middle" class="h">进入 _call_and_parse_with_retry_compat()</text>
+
+  <line x1="660" y1="2644" x2="660" y2="2696" class="line"/>
+
+  <rect x="360" y="2696" width="600" height="92" class="box"/>
+  <text x="660" y="2728" text-anchor="middle" class="h">可选保存 Prompt Dump</text>
+  <text x="390" y="2758" class="small">如果 prompt_dump 存在，会把 system / user prompt</text>
+  <text x="390" y="2782" class="small">写入 outputs/sessions/{session_id}/ 下的 markdown 文件</text>
+
+  <line x1="660" y1="2788" x2="660" y2="2840" class="line"/>
+
+  <rect x="430" y="2840" width="460" height="72" class="decision"/>
+  <text x="660" y="2882" text-anchor="middle" class="h">开始 parse attempt（最多 5 次）</text>
+
+  <line x1="660" y1="2912" x2="660" y2="2966" class="line"/>
+
+  <rect x="400" y="2966" width="520" height="72" class="box"/>
+  <text x="660" y="3008" text-anchor="middle" class="h">调用 _call_openai_with_retry()</text>
+
+  <line x1="660" y1="3038" x2="660" y2="3092" class="line"/>
+
+  <rect x="360" y="3092" width="600" height="92" class="box"/>
+  <text x="660" y="3124" text-anchor="middle" class="h">stream=True 调用 OpenAI 兼容接口</text>
+  <text x="390" y="3154" class="small">chat.completions.create(..., response_format=json_object, stream=True)</text>
+  <text x="390" y="3178" class="small">逐块提取 delta.content / text / reasoning_content 拼接 content</text>
+
+  <line x1="660" y1="3184" x2="660" y2="3238" class="line"/>
+
+  <rect x="480" y="3238" width="360" height="72" class="decision"/>
+  <text x="660" y="3280" text-anchor="middle" class="h">流式 content 非空？</text>
+
+  <path d="M840 3274 H1030" class="line"/>
+  <text x="885" y="3264" class="small">no</text>
+
+  <line x1="660" y1="3310" x2="660" y2="3366" class="line"/>
+  <text x="684" y="3354" class="small">yes</text>
+
+  <rect x="1000" y="3216" width="320" height="98" class="box"/>
+  <text x="1160" y="3248" text-anchor="middle" class="h">尝试 non-stream fallback</text>
+  <text x="1030" y="3278" class="small">再次调用 chat.completions.create()</text>
+  <text x="1030" y="3302" class="small">但这次 stream=False</text>
+
+  <line x1="1160" y1="3314" x2="1160" y2="3366" class="line"/>
+
+  <rect x="1030" y="3366" width="260" height="72" class="decision"/>
+  <text x="1160" y="3408" text-anchor="middle" class="h">fallback 非空？</text>
+
+  <path d="M1030 3402 H940 V3415 H990" class="line"/>
+  <text x="968" y="3392" class="small">yes</text>
+
+  <line x1="1160" y1="3438" x2="1160" y2="3498" class="line"/>
+  <text x="1185" y="3484" class="small">no</text>
+
+  <rect x="1000" y="3498" width="320" height="92" class="danger"/>
+  <text x="1160" y="3530" text-anchor="middle" class="h">抛出空响应异常</text>
+  <text x="1160" y="3558" text-anchor="middle" class="small">LLMGenerationError</text>
+  <text x="1160" y="3582" text-anchor="middle" class="small">包含 stream/fallback 诊断信息</text>
+
+  <rect x="330" y="3366" width="660" height="98" class="box"/>
+  <text x="660" y="3398" text-anchor="middle" class="h">解析并后处理 LLM 返回</text>
+  <text x="360" y="3428" class="small">- _parse_llm_response()</text>
+  <text x="360" y="3452" class="small">- _post_process_ai_placeholders()</text>
+
+  <line x1="660" y1="3464" x2="660" y2="3520" class="line"/>
+
+  <rect x="500" y="3520" width="320" height="72" class="decision"/>
+  <text x="660" y="3562" text-anchor="middle" class="h">JSON 解析成功？</text>
+
+  <line x1="660" y1="3592" x2="660" y2="3650" class="line"/>
+  <text x="684" y="3636" class="small">yes</text>
+
+  <path d="M820 3556 H1000 V3686 H890" class="line"/>
+  <text x="880" y="3546" class="small">no</text>
+
+  <rect x="1000" y="3638" width="320" height="96" class="box"/>
+  <text x="1160" y="3670" text-anchor="middle" class="h">解析失败处理</text>
+  <text x="1030" y="3700" class="small">如果 attempt &lt; 5：</text>
+  <text x="1030" y="3724" class="small">回到“parse attempt”继续重试</text>
+
+  <path d="M1000 3686 H930 V2876 H890" class="line"/>
+
+  <rect x="1030" y="3770" width="260" height="76" class="note"/>
+  <text x="1160" y="3800" text-anchor="middle" class="h">任务级网络重试</text>
+  <text x="1160" y="3826" text-anchor="middle" class="small">timeout / connection / rate limit</text>
+  <text x="1160" y="3848" text-anchor="middle" class="small">由 _process_report_async() 外层处理</text>
+
+  <rect x="420" y="3650" width="480" height="72" class="box"/>
+  <text x="660" y="3692" text-anchor="middle" class="h">合并该批次 AI 结果到 SlideSpecV2</text>
+
+  <line x1="660" y1="3722" x2="660" y2="3780" class="line"/>
+
+  <rect x="240" y="3780" width="840" height="132" class="box"/>
+  <text x="660" y="3812" text-anchor="middle" class="h">PPTGenerator.render() 渲染 PowerPoint</text>
+  <text x="275" y="3844" class="small">1. 加载模板 PPTX</text>
+  <text x="275" y="3870" class="small">2. 根据 descriptor 定位占位符</text>
+  <text x="520" y="3844" class="small">3. 替换文本 / 图表 / 表格</text>
+  <text x="520" y="3870" class="small">4. FileLock 防止并发写 report.pptx</text>
+  <text x="275" y="3896" class="small">5. 输出到 outputs/sessions/{session_id}/report.pptx</text>
+
+  <line x1="660" y1="3912" x2="660" y2="3968" class="line"/>
+
+  <rect x="450" y="3968" width="420" height="72" class="output"/>
+  <text x="660" y="4010" text-anchor="middle" class="h">保存 slidespec.json</text>
+
+  <line x1="660" y1="4040" x2="660" y2="4094" class="line"/>
+
+  <rect x="470" y="4094" width="380" height="72" class="box"/>
+  <text x="660" y="4136" text-anchor="middle" class="h">用户预览</text>
+
+  <path d="M850 4130 H980 V3994" class="line"/>
+  <rect x="980" y="3924" width="300" height="92" class="box"/>
+  <text x="1130" y="3954" text-anchor="middle" class="h">复制临时 PPT</text>
+  <text x="1130" y="3982" text-anchor="middle" class="small">避免文件锁冲突</text>
+
+  <line x1="1130" y1="4016" x2="1130" y2="4066" class="line"/>
+  <rect x="980" y="4066" width="300" height="92" class="box"/>
+  <text x="1130" y="4096" text-anchor="middle" class="h">LibreOffice 转换</text>
+  <text x="1130" y="4124" text-anchor="middle" class="small">PPTX -&gt; PDF</text>
+
+  <line x1="1130" y1="4158" x2="1130" y2="4208" class="line"/>
+  <rect x="980" y="4208" width="300" height="92" class="box"/>
+  <text x="1130" y="4238" text-anchor="middle" class="h">PyMuPDF 转换</text>
+  <text x="1130" y="4266" text-anchor="middle" class="small">PDF -&gt; PNG 图片</text>
+
+  <path d="M980 4254 H850" class="line"/>
+
+  <line x1="660" y1="4166" x2="660" y2="4216" class="line"/>
+  <rect x="470" y="4216" width="380" height="60" class="output"/>
+  <text x="660" y="4254" text-anchor="middle" class="h">下载 PPTX / 下载 PDF</text>
+
+  <line x1="660" y1="4276" x2="660" y2="4324" class="line"/>
+  <rect x="470" y="4324" width="380" height="60" class="output"/>
+  <text x="660" y="4362" text-anchor="middle" class="h">评价</text>
+
+  <rect x="70" y="910" width="250" height="128" class="note"/>
+  <text x="195" y="942" text-anchor="middle" class="h">异步任务真实入口</text>
+  <text x="95" y="974" class="small">routers/v1/reports.py</text>
+  <text x="95" y="1000" class="small">- create_report()</text>
+  <text x="95" y="1024" class="small">- _process_report_async()</text>
+
+  <rect x="70" y="1468" width="250" height="146" class="note"/>
+  <text x="195" y="1500" text-anchor="middle" class="h">单页 AI 改写补充</text>
+  <text x="95" y="1530" class="small">/slides/ai-rewrite 会：</text>
+  <text x="95" y="1555" class="small">1. 读取现有 slidespec</text>
+  <text x="95" y="1580" class="small">2. rewrite_single_slide_v2</text>
+  <text x="95" y="1605" class="small">3. 重渲染 PPT 和预览</text>
+  <text x="95" y="1630" class="small">4. 当前显式绕过 RAG</text>
+
+  <rect x="70" y="3950" width="360" height="194" class="section"/>
+  <text x="250" y="3984" text-anchor="middle" class="h">离线 Mongo 采集链路</text>
+  <text x="95" y="4018" class="small">这条链路存在，但不在在线 /generate 主流程内。</text>
+  <text x="95" y="4048" class="small">export_soar_mongo_data.py</text>
+  <text x="95" y="4072" class="small">-&gt; SOARMongoCollector.collect()</text>
+  <text x="95" y="4096" class="small">-&gt; 查询 alarm / event / asset / business</text>
+  <text x="95" y="4120" class="small">-&gt; enrich_event_docs() / 回查 security_domain</text>
+  <text x="95" y="4144" class="small">-&gt; 导出 soar_raw_export.json / .xlsx</text>
+</svg>

@@ -91,10 +91,27 @@ interface ModifiedSlideSummary {
 }
 
 function toTemplateName(tpl: TemplateItem): string {
+  if (tpl.template_id === 'mss_classic_ops_2') {
+    return '价值复盘';
+  }
   if (typeof tpl.name === 'string' && tpl.name.trim()) {
     return tpl.name;
   }
   return tpl.template_id;
+}
+
+function getDefaultInputIdForTemplate(templateId: string, inputs: InputItem[]): string {
+  const matched = inputs.find((item) => item.template_id === templateId);
+  if (matched?.id) return matched.id;
+
+  const fallbackByTemplate: Record<string, string> = {
+    mss_classic_ops: 'classic_ops_dataxlsx',
+    mss_classic_ops_2: 'plus_ops_dataxlsx',
+  };
+  const fallback = fallbackByTemplate[templateId];
+  if (fallback && inputs.some((item) => item.id === fallback)) return fallback;
+
+  return inputs[0]?.id || '';
 }
 
 function getTemplatePreviewImageUrl(templateId: string, frameIndex: number) {
@@ -584,7 +601,7 @@ export function IndexApp() {
       setTemplates(templatesData);
       setInputs(inputsData);
       const firstTemplate = templatesData[0]?.template_id || '';
-      const firstInput = inputsData[0]?.id || '';
+      const firstInput = getDefaultInputIdForTemplate(firstTemplate, inputsData);
       setSelectedTemplate(firstTemplate);
       setSelectedInput(firstInput);
       if (firstTemplate) void loadTemplateSlides(firstTemplate);
@@ -1397,6 +1414,13 @@ export function IndexApp() {
     });
   };
 
+  const selectTemplate = (templateId: string) => {
+    setSelectedTemplate(templateId);
+    if (selectedInput !== 'custom') {
+      setSelectedInput(getDefaultInputIdForTemplate(templateId, inputs));
+    }
+  };
+
   const onChangeAiMode = (mode: 'all' | 'selected') => {
     if (!activeSlideKey) return;
     setAiModeBySlide((prev) => ({ ...prev, [activeSlideKey]: mode }));
@@ -1785,19 +1809,19 @@ export function IndexApp() {
                       {templateCards.map((tpl) => {
                         const selected = selectedTemplate === tpl.template_id;
                         const hovered = hoverTemplate === tpl.template_id;
-                        const fixedTemplateName = t('preConfigTemplateFixedName', lang === 'zh-CN' ? '经典模板' : 'Classic Template');
+                        const templateName = toTemplateName(tpl);
                         return (
                           <button
                             key={tpl.template_id}
                             className={`template-list-item ${selected ? 'selected' : ''} ${hovered && !selected ? 'hovered' : ''}`}
-                            onClick={() => setSelectedTemplate(tpl.template_id)}
+                            onClick={() => selectTemplate(tpl.template_id)}
                             onMouseEnter={() => {
                               setHoverTemplate(tpl.template_id);
                               void loadTemplateSlides(tpl.template_id);
                             }}
                           >
                             <div className="template-list-main">
-                              <span className="template-list-name">{fixedTemplateName}</span>
+                              <span className="template-list-name">{templateName}</span>
                             </div>
                           </button>
                         );
@@ -1815,16 +1839,17 @@ export function IndexApp() {
                         const selected = selectedTemplate === tpl.template_id;
                         const hovered = hoverTemplate === tpl.template_id;
                         const frames = templateSlidesById[tpl.template_id] || [];
-                        const total = Math.max(frames.length, 1);
+                        const catalogSlidesCount = typeof tpl.slides_count === 'number' ? tpl.slides_count : Number(tpl.slides_count) || 0;
+                        const total = Math.max(frames.length, catalogSlidesCount, 1);
                         const frameIndex = Math.min(templateFrameIndexById[tpl.template_id] || 0, total - 1);
                         const imageUrl = getTemplatePreviewImageUrl(tpl.template_id, frameIndex);
-                        const fixedTemplateName = t('preConfigTemplateFixedName', lang === 'zh-CN' ? '经典模板' : 'Classic Template');
+                        const templateName = toTemplateName(tpl);
                         const slidesCountText = t('preConfigSlidesCount', '{count} slides').replace('{count}', String(total));
                         return (
                           <button
                             key={tpl.template_id}
                             className={`template-card ${selected ? 'selected' : ''} ${hovered && !selected ? 'hovered' : ''}`}
-                            onClick={() => setSelectedTemplate(tpl.template_id)}
+                            onClick={() => selectTemplate(tpl.template_id)}
                           >
                             <div
                               className="template-preview"
@@ -1844,7 +1869,7 @@ export function IndexApp() {
                               )}
                               <div className="template-preview-meta">
                                 <div className="template-meta-left">
-                                  <span className="template-fixed-name">{fixedTemplateName}</span>
+                                  <span className="template-fixed-name">{templateName}</span>
                                   <span className="template-slides-count">{slidesCountText}</span>
                                 </div>
                               </div>

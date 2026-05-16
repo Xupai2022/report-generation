@@ -434,21 +434,24 @@ class LLMOrchestratorV2:
                 logger.warning(f"Line chart data source {data_source} is not a dict")
                 return {}
 
-        elif chart_type == 'P11_line':
+        elif chart_type in ('P11_line', 'P26_line'):
             # Expect source_data to be a dict with 'months' (or 'categories') and multiple series
             # Example: {"months": ["Jan", "Feb", ...], "critical": [5, 3, ...], "high": [12, 15, ...], "medium": [45, 38, ...]}
             if isinstance(source_data, dict):
                 # Get the category field (months or categories)
                 months = source_data.get('months', source_data.get('categories', []))
 
-                # Extract all numeric series (skip 'months' and 'categories' keys)
-                series_data = []
-                for key, values in source_data.items():
-                    if key not in ['months', 'categories'] and isinstance(values, list):
-                        series_data.append({
-                            'name': key,
-                            'values': values
-                        })
+                if isinstance(source_data.get('series'), list):
+                    series_data = source_data.get('series', [])
+                else:
+                    # Extract all numeric series (skip metadata keys)
+                    series_data = []
+                    for key, values in source_data.items():
+                        if key not in ['months', 'categories', 'series'] and isinstance(values, list):
+                            series_data.append({
+                                'name': key,
+                                'values': values
+                            })
 
                 if months and series_data:
                     result['months'] = months
@@ -585,7 +588,11 @@ class LLMOrchestratorV2:
                 result[slide_key] = {}
 
             # Handle chart placeholders
-            if placeholder.type in ('P11_bar', 'P11_line', 'P11_pie', 'P13_pie', 'P14_pie', 'P15_pie_1', 'P15_pie_2', 'P15_line', 'P15_bar', 'P16_combo') and placeholder.chart_config:
+            if placeholder.type in (
+                'P11_bar', 'P11_line', 'P11_pie', 'P13_pie', 'P14_pie',
+                'P15_pie_1', 'P15_pie_2', 'P15_line', 'P15_bar', 'P16_combo',
+                'P26_line',
+            ) and placeholder.chart_config:
                 chart_data = self._extract_chart_data(
                     tenant_input,
                     placeholder.chart_config,

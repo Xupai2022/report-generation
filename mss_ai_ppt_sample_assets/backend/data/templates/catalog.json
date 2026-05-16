@@ -18,18 +18,18 @@
     },
     {
       "template_id": "mss_classic_ops_2",
-      "name": "经典模板-??",
+      "name": "MSS运营服务总结（plus版）",
       "version": "1.0.0",
-      "descriptor_file": "classic_copy_descriptor.json",
-      "pptx_file": "classic_copy.pptx",
+      "descriptor_file": "plus_descriptor.json",
+      "pptx_file": "plus.pptx",
       "recommended_audience": [
         "management",
         "operations"
       ],
-      "slides_count": 25,
+      "slides_count": 27,
       "features": [
         "excel_driven_content",
-        "classic_layout"
+        "plus_layout"
       ]
     }
   ]

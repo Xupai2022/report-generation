@@ -855,11 +855,304 @@ class ExcelDataExtractor:
 
     @staticmethod
     def _extract_classic_ops_2(ws) -> Dict[str, Any]:
-        raise DataValidationError(
-            field="template_id",
-            message="Excel extraction for template 'mss_classic_ops_2' is not implemented yet.",
-            template_id="mss_classic_ops_2",
-        )
+        output: Dict[str, Any] = {
+            "schema_version": "1.0",
+            "template_id": "mss_classic_ops_2",
+        }
+
+        raw_period_start = ws["L1"]
+        raw_period_end = ws["M1"]
+        period: Dict[str, Any] = {}
+
+        if ExcelDataExtractor._has_value(raw_period_start):
+            start = ExcelDataExtractor._to_text(raw_period_start)
+            period["start"] = start
+            period["start_month"] = start[:7] if len(start) >= 7 else start
+
+        if ExcelDataExtractor._has_value(raw_period_end):
+            end = ExcelDataExtractor._to_text(raw_period_end)
+            period["end"] = end
+            period["end_month"] = end[:7] if len(end) >= 7 else end
+
+        if period:
+            output["period"] = period
+
+        cover: Dict[str, Any] = {}
+        if period.get("start"):
+            cover["period_start"] = period["start"]
+        if period.get("end"):
+            cover["period_end"] = period["end"]
+        ExcelDataExtractor._add_section(output, "cover", cover)
+
+        success_metric: Dict[str, Any] = {}
+        ExcelDataExtractor._put_text(success_metric, "core_system_1", ws["D3"])
+        ExcelDataExtractor._put_text(success_metric, "core_system_2", ws["D4"])
+        ExcelDataExtractor._put_text(success_metric, "core_system_3", ws["D5"])
+        ExcelDataExtractor._add_section(output, "success_metric", success_metric)
+
+        ensure_result: Dict[str, Any] = {}
+        ensure_result_map = {
+            "vulnerability_count": "D6",
+            "system_1_vulnerability_count": "D7",
+            "system_2_vulnerability_count": "D8",
+            "system_3_vulnerability_count": "D9",
+            "weak_password_count": "D10",
+            "latest_vulnerability_intelligence_count": "D11",
+            "latest_vulnerability_affected_assets_count": "D12",
+            "closed_loop_risk_count": "D14",
+            "latest_affected_vulnerability_count": "D15",
+            "protected_vulnerability_count": "D16",
+            "fixed_vulnerability_count": "D17",
+            "vulnerability_exploitation_attempt_count": "D18",
+            "policy_optimization_count": "G4",
+            "external_threat_alert_count": "G5",
+            "average_threat_containment_time": "G6",
+            "security_incident_count": "G7",
+            "average_incident_response_time": "G8",
+            "incident_closure_rate": "G9",
+        }
+        for token, addr in ensure_result_map.items():
+            ExcelDataExtractor._put_text(ensure_result, token, ws[addr])
+        ExcelDataExtractor._add_section(output, "ensure_result", ensure_result)
+
+        reduce_security_alert_risk: Dict[str, Any] = {}
+        reduce_security_alert_risk_map = {
+            "previous_service_period_reported_count": "D20",
+            "malicious_external_connection_count": "D21",
+            "vulnerability_scan_count": "D22",
+            "fixed_vulnerability_count": "D23",
+            "protected_vulnerability_count": "D24",
+            "reported_count": "D25",
+        }
+        for token, addr in reduce_security_alert_risk_map.items():
+            ExcelDataExtractor._put_text(reduce_security_alert_risk, token, ws[addr])
+        ExcelDataExtractor._add_section(output, "reduce_security_alert_risk", reduce_security_alert_risk)
+
+        critical_period_protection: Dict[str, Any] = {}
+        critical_period_protection_map = {
+            "critical_period_security_log_count": "D27",
+            "critical_period_alert_count": "D28",
+            "critical_period_incident_count": "D29",
+            "containment_rate": "D30",
+        }
+        for token, addr in critical_period_protection_map.items():
+            ExcelDataExtractor._put_text(critical_period_protection, token, ws[addr])
+        critical_protection_periods = [
+            ExcelDataExtractor._to_text(ws.cell(row, 6))
+            for row in range(91, 98)
+            if ExcelDataExtractor._has_value(ws.cell(row, 6))
+        ]
+        if critical_protection_periods:
+            critical_period_protection["critical_protection_periods_text"] = "、".join(critical_protection_periods)
+        ExcelDataExtractor._add_section(output, "critical_period_protection", critical_period_protection)
+
+        security_level_quantification: Dict[str, Any] = {}
+        security_level_quantification_map = {
+            "asset_coverage_rate": "D32",
+            "threat_containment_rate": "D33",
+            "high_risk_vulnerability_protection_rate": "D34",
+            "average_analysis_time": "D35",
+            "average_response_time": "D36",
+            "closed_loop_vulnerability_count": "D37",
+            "threat_and_incident_count": "D38",
+            "two_senior_security_engineer_cost": "D39",
+        }
+        for token, addr in security_level_quantification_map.items():
+            ExcelDataExtractor._put_text(security_level_quantification, token, ws[addr])
+        ExcelDataExtractor._add_section(output, "security_level_quantification", security_level_quantification)
+
+        incident_effectiveness: Dict[str, Any] = {}
+        incident_effectiveness_map = {
+            "incident_total": "C49",
+            "average_response_time": "D49",
+            "average_resolution_duration": "E49",
+            "event_closed_loop_rate": "F49",
+        }
+        for token, addr in incident_effectiveness_map.items():
+            ExcelDataExtractor._put_text(incident_effectiveness, token, ws[addr])
+
+        response_timeliness_labels: List[str] = []
+        response_timeliness_values: List[Any] = []
+        for row in (51, 52, 54, 55):
+            raw_label = ws.cell(row, 6)
+            raw_value = ws.cell(row, 7)
+            if not ExcelDataExtractor._has_value(raw_label) and not ExcelDataExtractor._has_value(raw_value):
+                continue
+            response_timeliness_labels.append(ExcelDataExtractor._to_text(raw_label))
+            response_timeliness_values.append(ExcelDataExtractor._to_number(raw_value, 0))
+        if response_timeliness_labels:
+            incident_effectiveness["response_timeliness"] = {
+                "labels": response_timeliness_labels,
+                "values": response_timeliness_values,
+            }
+
+        trend_cols = range(3, 15)
+        response_trend_months = [
+            ExcelDataExtractor._to_text(ws.cell(58, col))
+            for col in trend_cols
+            if ExcelDataExtractor._has_value(ws.cell(58, col))
+        ]
+        response_trend_values = [
+            ExcelDataExtractor._to_number(ws.cell(59, col).value, 0)
+            for col in trend_cols
+            if ExcelDataExtractor._has_value(ws.cell(58, col))
+        ]
+        if response_trend_months:
+            incident_effectiveness["response_trend"] = {
+                "months": response_trend_months,
+                "avg_response_minutes": response_trend_values,
+            }
+
+        incident_distribution = ExcelDataExtractor._read_labeled_pairs(ws, 51, 55, 3, 4)
+        if incident_distribution["labels"]:
+            incident_effectiveness["incident_distribution"] = {
+                "categories": incident_distribution["labels"],
+                "values": incident_distribution["values"],
+            }
+
+        ExcelDataExtractor._add_section(output, "incident_effectiveness", incident_effectiveness)
+
+        threat_effectiveness: Dict[str, Any] = {}
+        threat_effectiveness_map = {
+            "external_attack_log_count_XDR": "D61",
+            "real_time_threat_alert_count": "D62",
+            "MSS_threat_ticket_count": "D63",
+            "threat_ticket_average_response_time": "D64",
+            "security_device_policy_check_count": "D65",
+            "optimized_policy_risk_count": "D66",
+            "latest_threat_intelligence_count": "D67",
+            "latest_threat_impacted_asset_count": "D68",
+        }
+        for token, addr in threat_effectiveness_map.items():
+            ExcelDataExtractor._put_text(threat_effectiveness, token, ws[addr])
+
+        attack_source_region_top5 = ExcelDataExtractor._read_labeled_pairs(ws, 62, 66, 6, 7)
+        if attack_source_region_top5["labels"]:
+            threat_effectiveness["attack_source_region_top5"] = {
+                "categories": attack_source_region_top5["labels"],
+                "values": attack_source_region_top5["values"],
+            }
+
+        attack_type_top5 = ExcelDataExtractor._read_labeled_pairs(ws, 62, 66, 9, 10)
+        if attack_type_top5["labels"]:
+            threat_effectiveness["attack_type_top5"] = {
+                "categories": attack_type_top5["labels"],
+                "values": attack_type_top5["values"],
+            }
+
+        externally_attacked_hosts_top5 = ExcelDataExtractor._read_labeled_pairs(ws, 62, 66, 12, 13)
+        if externally_attacked_hosts_top5["labels"]:
+            threat_effectiveness["externally_attacked_hosts_top5"] = {
+                "categories": externally_attacked_hosts_top5["labels"],
+                "values": externally_attacked_hosts_top5["values"],
+            }
+
+        threat_trend_cols = range(3, 15)
+        threat_trend_months = [
+            ExcelDataExtractor._to_text(ws.cell(71, col))
+            for col in threat_trend_cols
+            if ExcelDataExtractor._has_value(ws.cell(71, col))
+        ]
+        if threat_trend_months:
+            threat_effectiveness["threat_trend"] = {
+                "months": threat_trend_months,
+                "external_attacks": [
+                    ExcelDataExtractor._to_number(ws.cell(72, col).value, 0)
+                    for col in threat_trend_cols
+                    if ExcelDataExtractor._has_value(ws.cell(71, col))
+                ],
+                "malicious_outbound": [
+                    ExcelDataExtractor._to_number(ws.cell(73, col).value, 0)
+                    for col in threat_trend_cols
+                    if ExcelDataExtractor._has_value(ws.cell(71, col))
+                ],
+                "series_labels": [
+                    ExcelDataExtractor._to_text(ws["B72"]),
+                    ExcelDataExtractor._to_text(ws["B73"]),
+                ],
+            }
+        ExcelDataExtractor._add_section(output, "threat_effectiveness", threat_effectiveness)
+
+        risk_prevention_work_details: Dict[str, Any] = {}
+        risk_prevention_map = {
+            "high_risk_exploitable_vulnerability_count": "C80",
+            "closed_loop_external_asset_vulnerability_count": "D80",
+            "admin_weak_password_count": "E80",
+            "high_risk_exploitable_vulnerability_closure_rate": "F80",
+        }
+        for token, addr in risk_prevention_map.items():
+            ExcelDataExtractor._put_text(risk_prevention_work_details, token, ws[addr])
+
+        vulnerability_distribution = ExcelDataExtractor._read_labeled_pairs(ws, 83, 85, 3, 4)
+        if vulnerability_distribution["labels"]:
+            risk_prevention_work_details["vulnerability_distribution"] = {
+                "categories": vulnerability_distribution["labels"],
+                "values": vulnerability_distribution["values"],
+            }
+
+        vulnerability_trend_cols = range(3, 15)
+        vulnerability_trend_months = [
+            ExcelDataExtractor._to_text(ws.cell(86, col))
+            for col in vulnerability_trend_cols
+            if ExcelDataExtractor._has_value(ws.cell(86, col))
+        ]
+        if vulnerability_trend_months:
+            risk_prevention_work_details["vulnerability_trend"] = {
+                "months": vulnerability_trend_months,
+                "series": [
+                    {
+                        "name": ExcelDataExtractor._to_text(ws["B87"]),
+                        "values": [
+                            ExcelDataExtractor._to_number(ws.cell(87, col).value, 0)
+                            for col in vulnerability_trend_cols
+                            if ExcelDataExtractor._has_value(ws.cell(86, col))
+                        ],
+                    },
+                    {
+                        "name": ExcelDataExtractor._to_text(ws["B88"]),
+                        "values": [
+                            ExcelDataExtractor._to_number(ws.cell(88, col).value, 0)
+                            for col in vulnerability_trend_cols
+                            if ExcelDataExtractor._has_value(ws.cell(86, col))
+                        ],
+                    },
+                ],
+            }
+        ExcelDataExtractor._add_section(output, "risk_prevention_work_details", risk_prevention_work_details)
+
+        critical_assurance: Dict[str, Any] = {}
+        critical_assurance_map = {
+            "duty_critical": "D90",
+            "incident_critical": "D91",
+            "availability_assure": "D92",
+        }
+        for token, addr in critical_assurance_map.items():
+            ExcelDataExtractor._put_text(critical_assurance, token, ws[addr])
+
+        posture_rows = []
+        for row in range(91, 98):
+            raw_category = ws.cell(row, 6)
+            raw_attack_count = ws.cell(row, 7)
+            raw_defense_rate = ws.cell(row, 8)
+            if (
+                not ExcelDataExtractor._has_value(raw_category)
+                and not ExcelDataExtractor._has_value(raw_attack_count)
+                and not ExcelDataExtractor._has_value(raw_defense_rate)
+            ):
+                continue
+            posture_rows.append((raw_category, raw_attack_count, raw_defense_rate))
+
+        if posture_rows:
+            critical_assurance["posture_comparison"] = {
+                "categories": [ExcelDataExtractor._to_text(row[0]) for row in posture_rows],
+                "attack_counts": [ExcelDataExtractor._to_number(row[1], 0) for row in posture_rows],
+                "defense_rates": [ExcelDataExtractor._to_number(row[2], 0) for row in posture_rows],
+            }
+        ExcelDataExtractor._add_section(output, "critical_assurance", critical_assurance)
+
+        output = ExcelDataExtractor._format_numbers_for_output(output)
+        output = ExcelDataExtractor._normalize_chart_payload_numbers(output)
+        return output
 
     @staticmethod
     def extract_data(excel_path: Path, template_id: str | None = None) -> Dict[str, Any]:

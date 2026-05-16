@@ -29,6 +29,7 @@ class PlaceholderDefinition(BaseModel):
         "P15_line",  # Monthly threats trend line chart (月度威胁趋势折线图)
         "P15_bar",  # Externally attacked hosts TOP5 bar chart
         "P16_combo",  # Combo chart with bar (daily attacks) and line (defense rate)
+        "P26_line",
     ] = "text"
     ai_generate: bool = False  # Whether content should be AI-generated
 
