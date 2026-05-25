@@ -394,7 +394,7 @@ class ExcelDataExtractor:
         descriptor_dir = Path(__file__).resolve().parent.parent / "data" / "templates"
         descriptor = None
 
-        for path in descriptor_dir.glob("*_descriptor.json"):
+        for path in descriptor_dir.rglob("*_descriptor.json"):
             try:
                 content = json.loads(path.read_text(encoding="utf-8-sig"))
             except Exception:
@@ -882,6 +882,7 @@ class ExcelDataExtractor:
             cover["period_start"] = period["start"]
         if period.get("end"):
             cover["period_end"] = period["end"]
+        ExcelDataExtractor._put_text(cover, "company", ws["J1"])
         ExcelDataExtractor._add_section(output, "cover", cover)
 
         success_metric: Dict[str, Any] = {}
@@ -1079,6 +1080,16 @@ class ExcelDataExtractor:
             "closed_loop_external_asset_vulnerability_count": "D80",
             "admin_weak_password_count": "E80",
             "high_risk_exploitable_vulnerability_closure_rate": "F80",
+            "internet_ip_count": "I79",
+            "internet_port_count": "I80",
+            "exposed_risk_port_count": "I81",
+            "external_network_asset_vulnerability_count": "I82",
+            "server_asset_count": "K79",
+            "mss_service_asset_count": "K80",
+            "total_vulnerability_count": "K81",
+            "protected_vulnerability_count": "K82",
+            "fixed_vulnerability_count": "K83",
+            "vulnerability_scan_count": "N79",
         }
         for token, addr in risk_prevention_map.items():
             ExcelDataExtractor._put_text(risk_prevention_work_details, token, ws[addr])

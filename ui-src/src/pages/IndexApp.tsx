@@ -63,6 +63,13 @@ interface ToastState {
   type: ToastType;
 }
 
+interface UploadedExcelInfo {
+  filename: string;
+  fileSizeMb?: number;
+  sessionId: string;
+  uploadedAt: number;
+}
+
 interface AiRewriteModeBySlide {
   [slideKey: string]: 'all' | 'selected';
 }
@@ -245,6 +252,7 @@ export function IndexApp() {
   const [hoverTemplate, setHoverTemplate] = useState<string>('');
   const [selectedInput, setSelectedInput] = useState('');
   const [uploadingExcel, setUploadingExcel] = useState(false);
+  const [uploadedExcelInfo, setUploadedExcelInfo] = useState<UploadedExcelInfo | null>(null);
   const [excelDragActive, setExcelDragActive] = useState(false);
   const [useMock, setUseMock] = useState(false);
   const [selectedFocus, setSelectedFocus] = useState<FocusValue[]>(['business_protection']);
@@ -400,6 +408,17 @@ export function IndexApp() {
     if (lang === 'zh-CN' && hasEn && !hasZh) return zh;
     if (lang === 'en-US' && hasZh) return en;
     return value;
+  };
+
+  const formatUploadedAt = (timestamp: number) => {
+    const elapsedMs = Date.now() - timestamp;
+    if (elapsedMs < 60_000) {
+      return lt('uploadStatusJustNow', '刚刚上传', 'Just uploaded');
+    }
+    return new Date(timestamp).toLocaleTimeString(lang === 'zh-CN' ? 'zh-CN' : 'en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   const localizeServerMessage = (raw: string): string => {
@@ -939,7 +958,13 @@ export function IndexApp() {
       if (!sid) throw new Error(lt('msgUploadMissingSessionId', '上传成功但未返回 session_id', 'Upload succeeded but session_id is missing'));
       setSessionId(sid);
       setSelectedInput('custom');
-      showToast('success', lt('msgUploadExcelSuccess', 'Excel 上传成功，已切换为“custom”数据源', 'Excel uploaded. Switched data source to "custom".'));
+      setUploadedExcelInfo({
+        filename: String(result.filename || file.name),
+        fileSizeMb: typeof result.file_size_mb === 'number' ? result.file_size_mb : Math.round((file.size / 1024 / 1024) * 100) / 100,
+        sessionId: sid,
+        uploadedAt: Date.now(),
+      });
+      showToast('success', lt('msgUploadExcelSuccess', 'Excel 已上传', 'Excel uploaded.'));
     } catch (error) {
       const message = error instanceof Error ? error.message : lt('msgUploadExcelFailed', 'Excel 上传失败', 'Excel upload failed');
       showToast('error', message);
@@ -1751,7 +1776,7 @@ export function IndexApp() {
                   <FileSpreadsheet size={16} className="section-icon" /> 1. {t('preConfigSectionData', 'Data Source')}
                 </h2>
                 <div
-                  className={`data-source-card ${excelDragActive ? 'drag-active' : ''}`}
+                  className={`data-source-card ${excelDragActive ? 'drag-active' : ''} ${uploadingExcel ? 'is-uploading' : ''} ${uploadedExcelInfo ? 'has-uploaded-excel' : ''}`}
                   onDragEnter={handleExcelDragEnter}
                   onDragOver={handleExcelDragOver}
                   onDragLeave={handleExcelDragLeave}
@@ -1764,7 +1789,7 @@ export function IndexApp() {
                     disabled={uploadingExcel || loading || generationInProgress}
                   >
                     <div className="data-source-icon">
-                      <UploadCloud size={30} />
+                      {uploadedExcelInfo ? <CheckCircle2 size={30} /> : <UploadCloud size={30} />}
                     </div>
                     <h3>{t('preConfigDataCardTitle', lang === 'zh-CN' ? '本地目录数据' : 'Local directory data')}</h3>
                     <p>
@@ -1775,6 +1800,33 @@ export function IndexApp() {
                           : 'Uses local directory data by default. Uploading Excel will replace it with your data.',
                       )}
                     </p>
+                    <div className={`data-source-status ${uploadedExcelInfo ? 'success' : uploadingExcel ? 'processing' : 'default'}`}>
+                      <span className="data-source-status-icon">
+                        {uploadedExcelInfo ? <CheckCircle2 size={15} /> : uploadingExcel ? <RefreshCw className="spin" size={15} /> : <FileSpreadsheet size={15} />}
+                      </span>
+                      <span className="data-source-status-main">
+                        <strong>
+                          {uploadedExcelInfo
+                            ? lt('uploadStatusUsingExcel', '已使用上传的 Excel', 'Using uploaded Excel')
+                            : uploadingExcel
+                              ? lt('uploadStatusParsingExcel', '正在解析 Excel...', 'Parsing Excel...')
+                              : lt('uploadStatusUsingDefault', '当前使用默认本地数据', 'Using default local data')}
+                        </strong>
+                        <small title={uploadedExcelInfo?.filename}>
+                          {uploadedExcelInfo
+                            ? [
+                                uploadedExcelInfo.filename,
+                                typeof uploadedExcelInfo.fileSizeMb === 'number' ? `${uploadedExcelInfo.fileSizeMb} MB` : null,
+                                formatUploadedAt(uploadedExcelInfo.uploadedAt),
+                              ]
+                                .filter(Boolean)
+                                .join(' · ')
+                            : uploadingExcel
+                              ? lt('uploadStatusParsingHint', '文件上传后会自动切换为本次数据', 'This file will become the active data source after upload.')
+                              : lt('uploadStatusDefaultHint', '上传 Excel 后将自动切换为该文件', 'Upload Excel to switch this report to that file.')}
+                        </small>
+                      </span>
+                    </div>
                   </button>
                   <div className="data-source-footer">
                     <label className="check-row">

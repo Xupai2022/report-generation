@@ -21,6 +21,12 @@
                                                 "source":  "cover.period_end",
                                                 "default":  "失败",
                                                 "cn_name":  "结束日期"
+                                            },
+                                            {
+                                                "token":  "company",
+                                                "source":  "cover.company",
+                                                "default":  "失败",
+                                                "cn_name":  "客户名称"
                                             }
                                         ]
                    },
@@ -740,10 +746,64 @@
                                                 "cn_name":  "已防护漏洞数"
                                             },
                                             {
+                                                "token":  "internet_ip_count",
+                                                "default":  "失败",
+                                                "source":  "risk_prevention_work_details.internet_ip_count",
+                                                "cn_name":  "互联网IP数量"
+                                            },
+                                            {
+                                                "token":  "internet_port_count",
+                                                "default":  "失败",
+                                                "source":  "risk_prevention_work_details.internet_port_count",
+                                                "cn_name":  "互联网端口数量"
+                                            },
+                                            {
+                                                "token":  "exposed_risk_port_count",
+                                                "default":  "失败",
+                                                "source":  "risk_prevention_work_details.exposed_risk_port_count",
+                                                "cn_name":  "暴露面风险端口数量"
+                                            },
+                                            {
+                                                "token":  "external_network_asset_vulnerability_count",
+                                                "default":  "失败",
+                                                "source":  "risk_prevention_work_details.external_network_asset_vulnerability_count",
+                                                "cn_name":  "外网资产漏洞数量"
+                                            },
+                                            {
+                                                "token":  "server_asset_count",
+                                                "default":  "失败",
+                                                "source":  "risk_prevention_work_details.server_asset_count",
+                                                "cn_name":  "内网服务器资产数量"
+                                            },
+                                            {
+                                                "token":  "mss_service_asset_count",
+                                                "default":  "失败",
+                                                "source":  "risk_prevention_work_details.mss_service_asset_count",
+                                                "cn_name":  "内网MSS服务资产数"
+                                            },
+                                            {
+                                                "token":  "total_vulnerability_count",
+                                                "default":  "失败",
+                                                "source":  "risk_prevention_work_details.total_vulnerability_count",
+                                                "cn_name":  "内网MSS资产安全漏洞总数"
+                                            },
+                                            {
+                                                "token":  "protected_vulnerability_count",
+                                                "default":  "失败",
+                                                "source":  "risk_prevention_work_details.protected_vulnerability_count",
+                                                "cn_name":  "已防护漏洞数"
+                                            },
+                                            {
                                                 "token":  "fixed_vulnerability_count",
                                                 "default":  "失败",
                                                 "source":  "risk_prevention_work_details.fixed_vulnerability_count",
                                                 "cn_name":  "已修复漏洞数"
+                                            },
+                                            {
+                                                "token":  "vulnerability_scan_count",
+                                                "default":  "失败",
+                                                "source":  "risk_prevention_work_details.vulnerability_scan_count",
+                                                "cn_name":  "漏洞扫描次数"
                                             },
                                             {
                                                 "token":  "P26_pie",
