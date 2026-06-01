@@ -344,9 +344,9 @@ class LLMOrchestratorV2:
 
         result = {}
 
-        if chart_type in ('P11_bar', 'P15_bar'):
+        if chart_type in ('P11_bar', 'P15_bar', 'P27_bar', 'P28_bar'):
             # Expect source_data to have 'labels' and 'values' or similar structure
-            default_x_field = 'categories' if chart_type == 'P15_bar' else 'labels'
+            default_x_field = 'categories' if chart_type in ('P15_bar', 'P28_bar') else 'labels'
             x_field = chart_config.get('x_field', default_x_field)
             y_field = chart_config.get('y_field', 'values')
 
@@ -379,7 +379,10 @@ class LLMOrchestratorV2:
                 logger.warning(f"Bar chart data source {data_source} is neither dict nor list")
                 return {}
 
-        elif chart_type in ('P11_pie', 'P13_pie', 'P14_pie', 'P15_pie_1', 'P15_pie_2'):
+        elif chart_type in (
+            'P11_pie', 'P13_pie', 'P14_pie', 'P15_pie_1', 'P15_pie_2',
+            'P27_pie', 'P28_pie_1', 'P28_pie_2', 'P29_pie',
+        ):
             # Expect source_data to be a dict like {'high': 52, 'medium': 473, 'low': 816}
             # or a dict with 'categories' and 'values' arrays for P11_pie/P13_pie/P14_pie
             if isinstance(source_data, dict):
@@ -413,7 +416,7 @@ class LLMOrchestratorV2:
                 logger.warning(f"Pie chart data source {data_source} is not a dict")
                 return {}
 
-        elif chart_type == 'P15_line':
+        elif chart_type in ('P15_line', 'P28_line'):
             # Expect source_data to be a dict with 'months', 'external_attacks', 'malicious_outbound'
             if isinstance(source_data, dict):
                 months = source_data.get('months', [])
@@ -434,7 +437,7 @@ class LLMOrchestratorV2:
                 logger.warning(f"Line chart data source {data_source} is not a dict")
                 return {}
 
-        elif chart_type in ('P11_line', 'P26_line'):
+        elif chart_type in ('P11_line', 'P26_line', 'P27_line', 'P29_line'):
             # Expect source_data to be a dict with 'months' (or 'categories') and multiple series
             # Example: {"months": ["Jan", "Feb", ...], "critical": [5, 3, ...], "high": [12, 15, ...], "medium": [45, 38, ...]}
             if isinstance(source_data, dict):
@@ -463,7 +466,7 @@ class LLMOrchestratorV2:
                 logger.warning(f"P11_line data source {data_source} is not a dict")
                 return {}
 
-        elif chart_type == 'P16_combo':
+        elif chart_type in ('P16_combo', 'P30_combo'):
             # Expect source_data to be a dict with 'categories', 'attack_counts', 'defense_rates'
             # attack_counts: daily attack numbers like [123, 145, ...]
             # defense_rates: percentages like [1.0, 0.98, ...] (1.0 = 100%)
@@ -591,7 +594,9 @@ class LLMOrchestratorV2:
             if placeholder.type in (
                 'P11_bar', 'P11_line', 'P11_pie', 'P13_pie', 'P14_pie',
                 'P15_pie_1', 'P15_pie_2', 'P15_line', 'P15_bar', 'P16_combo',
-                'P26_line',
+                'P26_line', 'P27_bar', 'P27_line', 'P27_pie', 'P28_pie_1',
+                'P28_pie_2', 'P28_line', 'P28_bar', 'P29_pie', 'P29_line',
+                'P30_combo',
             ) and placeholder.chart_config:
                 chart_data = self._extract_chart_data(
                     tenant_input,

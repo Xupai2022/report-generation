@@ -911,6 +911,8 @@ class ExcelDataExtractor:
             "security_incident_count": "G7",
             "average_incident_response_time": "G8",
             "incident_closure_rate": "G9",
+            "risk_total": "G11",
+            "event_total": "G12",
         }
         for token, addr in ensure_result_map.items():
             ExcelDataExtractor._put_text(ensure_result, token, ws[addr])

@@ -246,7 +246,9 @@ class ReportService:
         chart_types = {
             "P11_bar", "P11_line", "P11_pie", "P13_pie", "P14_pie",
             "P15_pie_1", "P15_pie_2", "P15_line", "P15_bar",
-            "P16_combo", "P26_line",
+            "P16_combo", "P26_line", "P27_bar", "P27_line", "P27_pie",
+            "P28_pie_1", "P28_pie_2", "P28_line", "P28_bar",
+            "P29_pie", "P29_line", "P30_combo",
         }
         result: Dict[str, Set[str]] = {}
         for slide in descriptor.slides:

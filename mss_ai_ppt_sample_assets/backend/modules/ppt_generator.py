@@ -115,6 +115,16 @@ class PPTGeneratorV2:
             'P15_bar': self._render_p15_bar,
             'P16_combo': self._render_p16_combo,
             'P26_line': self._render_p26_line,
+            'P27_bar': self._render_p11_bar,
+            'P27_line': self._render_p11_line,
+            'P27_pie': self._render_p11_pie,
+            'P28_pie_1': self._render_p15_pie_1,
+            'P28_pie_2': self._render_p15_pie_2,
+            'P28_bar': self._render_p15_bar,
+            'P28_line': self._render_p15_line,
+            'P29_pie': self._render_p14_pie,
+            'P29_line': self._render_p26_line,
+            'P30_combo': self._render_p16_combo,
             # Add more specific chart types here
         }
 

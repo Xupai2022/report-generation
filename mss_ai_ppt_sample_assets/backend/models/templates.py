@@ -30,6 +30,17 @@ class PlaceholderDefinition(BaseModel):
         "P15_bar",  # Externally attacked hosts TOP5 bar chart
         "P16_combo",  # Combo chart with bar (daily attacks) and line (defense rate)
         "P26_line",
+        # Plus template page-numbered chart aliases.
+        "P27_bar",
+        "P27_line",
+        "P27_pie",
+        "P28_pie_1",
+        "P28_pie_2",
+        "P28_bar",
+        "P28_line",
+        "P29_pie",
+        "P29_line",
+        "P30_combo",
     ] = "text"
     ai_generate: bool = False  # Whether content should be AI-generated
 

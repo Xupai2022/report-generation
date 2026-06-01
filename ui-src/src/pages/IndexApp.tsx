@@ -317,6 +317,8 @@ export function IndexApp() {
   const previewWheelAtRef = useRef<number>(0);
   const previewWheelAccumRef = useRef<number>(0);
   const previewScrollRafRef = useRef<number | null>(null);
+  const programmaticPreviewScrollRef = useRef(false);
+  const previewScrollUnlockRef = useRef<number | null>(null);
 
   const activeSlide = useMemo<SlideSpecSlide | null>(() => {
     if (!slidespec || !activeSlideKey) return null;
@@ -1652,10 +1654,26 @@ export function IndexApp() {
     if (anchor) setActiveSlideKey(anchor);
   };
 
+  const scheduleProgrammaticPreviewScrollUnlock = (delay = 180) => {
+    if (previewScrollUnlockRef.current) window.clearTimeout(previewScrollUnlockRef.current);
+    previewScrollUnlockRef.current = window.setTimeout(() => {
+      previewScrollUnlockRef.current = null;
+      programmaticPreviewScrollRef.current = false;
+      const anchor = getPreviewAnchorSlideKey();
+      if (anchor) setActiveSlideKey((prev) => (prev === anchor ? prev : anchor));
+    }, delay);
+  };
+
   const focusSlidePreview = (slideKey: string, behavior: ScrollBehavior = 'auto') => {
     setActiveSlideKey(slideKey);
     const view = document.getElementById(`view-${slideKey}`);
-    if (view) view.scrollIntoView({ block: 'center', behavior });
+    if (view) {
+      if (behavior === 'smooth' && previewLayout === 'list') {
+        programmaticPreviewScrollRef.current = true;
+        scheduleProgrammaticPreviewScrollUnlock(700);
+      }
+      view.scrollIntoView({ block: 'center', behavior });
+    }
   };
 
   const stepActiveSlide = (delta: number) => {
@@ -1685,6 +1703,10 @@ export function IndexApp() {
 
   const onPreviewScroll = () => {
     if (previewLayout !== 'list') return;
+    if (programmaticPreviewScrollRef.current) {
+      scheduleProgrammaticPreviewScrollUnlock();
+      return;
+    }
     if (previewScrollRafRef.current) window.cancelAnimationFrame(previewScrollRafRef.current);
     previewScrollRafRef.current = window.requestAnimationFrame(() => {
       previewScrollRafRef.current = null;
@@ -1724,6 +1746,7 @@ export function IndexApp() {
   useEffect(() => {
     return () => {
       if (previewScrollRafRef.current) window.cancelAnimationFrame(previewScrollRafRef.current);
+      if (previewScrollUnlockRef.current) window.clearTimeout(previewScrollUnlockRef.current);
     };
   }, []);
 

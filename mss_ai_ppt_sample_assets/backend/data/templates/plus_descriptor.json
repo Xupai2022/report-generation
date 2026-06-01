@@ -51,7 +51,30 @@
                        "slide_key":  "goal_review",
                        "title":  "目标回顾",
                        "placeholders":  [
-
+                                            {
+                                                "token":  "core_system_1",
+                                                "source":  "success_metric.core_system_1",
+                                                "default":  "失败",
+                                                "cn_name":  "核心系统1"
+                                            },
+                                            {
+                                                "token":  "core_system_2",
+                                                "source":  "success_metric.core_system_2",
+                                                "default":  "失败",
+                                                "cn_name":  "核心系统2"
+                                            },
+                                            {
+                                                "token":  "core_system_3",
+                                                "source":  "success_metric.core_system_3",
+                                                "default":  "失败",
+                                                "cn_name":  "核心系统3"
+                                            },
+                                            {
+                                                "token":  "company",
+                                                "source":  "cover.company",
+                                                "default":  "失败",
+                                                "cn_name":  "客户名称"
+                                            }
                                         ]
                    },
                    {
@@ -76,6 +99,12 @@
                                                 "source":  "success_metric.core_system_3",
                                                 "default":  "失败",
                                                 "cn_name":  "核心系统3"
+                                            },
+                                            {
+                                                "token":  "company",
+                                                "source":  "cover.company",
+                                                "default":  "失败",
+                                                "cn_name":  "客户名称"
                                             }
                                         ]
                    },
@@ -93,11 +122,17 @@
                        "title":  "保障成果",
                        "placeholders":  [
                                             {
-                                                "token":  "result_summary",
-                                                "ai_generate":  true,
-                                                "ai_instruction":  "基于 success_metric.core_system_1、success_metric.core_system_2、success_metric.core_system_3 ，每个系统都要生成两个保障效果短句。格式为：xxx系统：yyyyyy,zzzzzz; 供参考示例：OA系统:保障高效办公，提升协同效率",
-                                                "cn_name":  "各系统成果总结"
+                                                "token":  "risk_total",
+                                                "source":  "ensure_result.risk_total",
+                                                "default":  "失败",
+                                                "cn_name":  "风险总数"
                                             },
+                                            {
+                                                "token":  "event_total",
+                                                "source":  "ensure_result.event_total",
+                                                "default":  "失败",
+                                                "cn_name":  "事件总数"
+                                            },                                           
                                             {
                                                 "token":  "vulnerability_count",
                                                 "source":  "ensure_result.vulnerability_count",
@@ -428,6 +463,14 @@
                    },
                    {
                        "slide_no":  19,
+                       "slide_key":  "key_issue_1",
+                       "title":  "关键问题1",
+                       "placeholders":  [
+
+                                        ]
+                   },
+                   {
+                       "slide_no":  20,
                        "slide_key":  "chapter4",
                        "title":  "下阶段协同计划-封面",
                        "placeholders":  [
@@ -435,23 +478,49 @@
                                         ]
                    },
                    {
-                       "slide_no":  20,
-                       "slide_key":  "plan_agreement",
-                       "title":  "计划约定",
-                       "placeholders":  [
-
-                                        ]
-                   },
-                   {
                        "slide_no":  21,
-                       "slide_key":  "architecture_upgrade",
-                       "title":  "安全运营技术架构升级",
+                       "slide_key":  "three_year_evolution_route",
+                       "title":  "三年演进路线",
                        "placeholders":  [
 
                                         ]
                    },
                    {
                        "slide_no":  22,
+                       "slide_key":  "next_phase_operation_plan",
+                       "title":  "下一阶段运营规划",
+                       "placeholders":  [
+
+                                        ]
+                   },
+                   {
+                       "slide_no":  23,
+                       "slide_key":  "key_value_result_coop_update",
+                       "title":  "关键价值成果与分工协作机制刷新",
+                       "placeholders":  [
+                                            {
+                                                "token":  "company",
+                                                "source":  "cover.company",
+                                                "default":  "失败",
+                                                "cn_name":  "客户名称"
+                                            }
+                                        ]
+                   },
+                   {
+                       "slide_no":  24,
+                       "slide_key":  "next_phase_action_plan",
+                       "title":  "下一阶段行动计划",
+                       "placeholders":  [
+                                            {
+                                                "token":  "company",
+                                                "source":  "cover.company",
+                                                "default":  "失败",
+                                                "cn_name":  "客户名称"
+                                            }
+                                        ]
+                   },
+                   {
+                       "slide_no":  25,
                        "slide_key":  "thanks",
                        "title":  "致谢",
                        "placeholders":  [
@@ -459,15 +528,15 @@
                                         ]
                    },
                    {
-                       "slide_no":  23,
-                       "slide_key":  "chapter5",
-                       "title":  "附录-封面",
+                       "slide_no":  26,
+                       "slide_key":  "appendix",
+                       "title":  "附录",
                        "placeholders":  [
 
                                         ]
                    },
                    {
-                       "slide_no":  24,
+                       "slide_no":  27,
                        "slide_key":  "incident_effectiveness",
                        "title":  "安全事件管理详情",
                        "placeholders":  [
@@ -508,8 +577,8 @@
                                                 "cn_name":  "用户信赖度保障"
                                             },
                                             {
-                                                "token":  "P24_bar",
-                                                "type":  "P11_bar",
+                                                "token":  "P27_bar",
+                                                "type":  "P27_bar",
                                                 "chart_config":  {
                                                                      "data_source":  "incident_effectiveness.response_timeliness",
                                                                      "x_field":  "labels",
@@ -517,31 +586,31 @@
                                                                      "series_name":  "时间"
                                                                  },
                                                 "source":  "incident_effectiveness.response_timeliness",
-                                                "cn_name":  "P24 柱状图数据"
+                                                "cn_name":  "P27 柱状图数据"
                                             },
                                             {
-                                                "token":  "P24_line",
-                                                "type":  "P11_line",
+                                                "token":  "P27_line",
+                                                "type":  "P27_line",
                                                 "chart_config":  {
                                                                      "data_source":  "incident_effectiveness.response_trend"
                                                                  },
                                                 "source":  "incident_effectiveness.response_trend",
-                                                "cn_name":  "P24 折线图数据"
+                                                "cn_name":  "P27 折线图数据"
                                             },
                                             {
-                                                "token":  "P24_pie",
-                                                "type":  "P11_pie",
+                                                "token":  "P27_pie",
+                                                "type":  "P27_pie",
                                                 "chart_config":  {
                                                                      "data_source":  "incident_effectiveness.incident_distribution"
                                                                  },
                                                 "source":  "incident_effectiveness.incident_distribution",
-                                                "cn_name":  "P24 饼图数据"
+                                                "cn_name":  "P27 饼图数据"
                                             }
                                         ],
                        "context_policy":  "local_only"
                    },
                    {
-                       "slide_no":  25,
+                       "slide_no":  28,
                        "slide_key":  "threat_effectiveness",
                        "title":  "威胁趋势分析",
                        "placeholders":  [
@@ -618,47 +687,47 @@
                                                 "cn_name":  "威胁运营总结"
                                             },
                                             {
-                                                "token":  "P25_pie_1",
-                                                "type":  "P15_pie_1",
+                                                "token":  "P28_pie_1",
+                                                "type":  "P28_pie_1",
                                                 "chart_config":  {
                                                                      "data_source":  "threat_effectiveness.attack_source_region_top5"
                                                                  },
                                                 "source":  "threat_effectiveness.attack_source_region_top5",
-                                                "cn_name":  "P25 饼图1数据"
+                                                "cn_name":  "P28 饼图1数据"
                                             },
                                             {
-                                                "token":  "P25_pie_2",
-                                                "type":  "P15_pie_2",
+                                                "token":  "P28_pie_2",
+                                                "type":  "P28_pie_2",
                                                 "chart_config":  {
                                                                      "data_source":  "threat_effectiveness.attack_type_top5"
                                                                  },
                                                 "source":  "threat_effectiveness.attack_type_top5",
-                                                "cn_name":  "P25 饼图2数据"
+                                                "cn_name":  "P28 饼图2数据"
                                             },
                                             {
-                                                "token":  "P25_bar",
-                                                "type":  "P15_bar",
+                                                "token":  "P28_bar",
+                                                "type":  "P28_bar",
                                                 "chart_config":  {
                                                                      "data_source":  "threat_effectiveness.externally_attacked_hosts_top5",
                                                                      "series_name":  "攻击次数"
                                                                  },
                                                 "source":  "threat_effectiveness.externally_attacked_hosts_top5",
-                                                "cn_name":  "P25 柱状图数据"
+                                                "cn_name":  "P28 柱状图数据"
                                             },
                                             {
-                                                "token":  "P25_line",
-                                                "type":  "P15_line",
+                                                "token":  "P28_line",
+                                                "type":  "P28_line",
                                                 "chart_config":  {
                                                                      "data_source":  "threat_effectiveness.threat_trend"
                                                                  },
                                                 "source":  "threat_effectiveness.threat_trend",
-                                                "cn_name":  "P25 折线图数据"
+                                                "cn_name":  "P28 折线图数据"
                                             }
                                         ],
                        "context_policy":  "local_only"
                    },
                    {
-                       "slide_no":  26,
+                       "slide_no":  29,
                        "slide_key":  "risk_prevention_work_details",
                        "title":  "风险预防工作详情",
                        "placeholders":  [
@@ -806,28 +875,28 @@
                                                 "cn_name":  "漏洞扫描次数"
                                             },
                                             {
-                                                "token":  "P26_pie",
-                                                "type":  "P14_pie",
+                                                "token":  "P29_pie",
+                                                "type":  "P29_pie",
                                                 "chart_config":  {
                                                                      "data_source":  "risk_prevention_work_details.vulnerability_distribution"
                                                                  },
                                                 "source":  "risk_prevention_work_details.vulnerability_distribution",
-                                                "cn_name":  "P26 饼图数据"
+                                                "cn_name":  "P29 饼图数据"
                                             },
                                             {
-                                                "token":  "P26_line",
-                                                "type":  "P26_line",
+                                                "token":  "P29_line",
+                                                "type":  "P29_line",
                                                 "chart_config":  {
                                                                      "data_source":  "risk_prevention_work_details.vulnerability_trend"
                                                                  },
                                                 "source":  "risk_prevention_work_details.vulnerability_trend",
-                                                "cn_name":  "P26 折线图数据"
+                                                "cn_name":  "P29 折线图数据"
                                             }
                                         ],
                        "context_policy":  "local_only"
                    },
                    {
-                       "slide_no":  27,
+                       "slide_no":  30,
                        "slide_key":  "critical_assurance",
                        "title":  "重要时期保障成效",
                        "placeholders":  [
@@ -874,13 +943,13 @@
                                                 "cn_name":  "重要时期网络安全保障工作价值3"
                                             },
                                             {
-                                                "token":  "P27_combo",
-                                                "type":  "P16_combo",
+                                                "token":  "P30_combo",
+                                                "type":  "P30_combo",
                                                 "chart_config":  {
                                                                      "data_source":  "critical_assurance.posture_comparison"
                                                                  },
                                                 "source":  "critical_assurance.posture_comparison",
-                                                "cn_name":  "P27 组合图数据"
+                                                "cn_name":  "P30 组合图数据"
                                             }
                                         ],
                        "context_policy":  "local_only"
