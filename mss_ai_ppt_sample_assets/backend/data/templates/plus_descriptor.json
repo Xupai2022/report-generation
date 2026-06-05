@@ -734,7 +734,7 @@
                                             {
                                                 "token":  "vuln_summary",
                                                 "ai_generate":  true,
-                                                "ai_instruction":  "你要生成的是该句“后半句续写”，前置固定文案已在PPT中写好：`全年开展{{scanning}} 次漏洞扫描，`。请不要重复或改写这段前置文案，不要再次输出扫描次数，不要以“全年开展”开头。仅从逗号后继续写总结：根据已选{preference}，基于 vulnerability_effectiveness 数据，围绕已发现漏洞处置成效，详细说明与{preference}目标的差距与已达成部分，并全量点明对整体安全运营的影响。",
+                                                "ai_instruction":  "为 placeholders.vuln_summary 生成字段值。注意：最终响应必须仍然是外层指定的完整 JSON，不要直接输出本字段值本身。该字段值用于接在 PPT 固定前置文案 `全年开展{{scanning}} 次漏洞扫描，` 后面，因此字段值不要重复或改写前置文案，不要再次输出扫描次数，不要以“全年开展”开头。字段值仅写逗号后的总结内容：根据已选{preference}，基于 vulnerability_effectiveness 数据，围绕已发现漏洞处置成效，说明与{preference}目标的差距与已达成部分，并点明对整体安全运营的影响。严禁编造未提供的数据。",
                                                 "cn_name":  "脆弱性管理总结"
                                             },
                                             {

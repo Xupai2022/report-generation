@@ -48,6 +48,8 @@ class Settings:
         self.openai_api_key: Optional[str] = os.getenv("OPENAI_API_KEY")
         self.openai_base_url: Optional[str] = os.getenv("OPENAI_BASE_URL")
         self.openai_model: str = os.getenv("OPENAI_MODEL", "GLM4.7")
+        self.llm_temperature: float = float(os.getenv("LLM_TEMPERATURE", "0.3"))
+        self.llm_json_stream: bool = os.getenv("LLM_JSON_STREAM", "false").lower() == "true"
         # LLM 连接超时（秒）：TCP 建连阶段超时，通常用于快速发现不可达/拒连。
         self.llm_connect_timeout_seconds: float = float(os.getenv("LLM_CONNECT_TIMEOUT_SECONDS", "5"))
 

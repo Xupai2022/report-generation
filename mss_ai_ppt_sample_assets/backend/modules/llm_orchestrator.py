@@ -1987,7 +1987,7 @@ class LLMOrchestratorV2:
                 if isinstance(text_value, str):
                     pieces.append(text_value)
 
-        for attr_name in ("text", "reasoning_content"):
+        for attr_name in ("text",):
             attr_value = getattr(delta, attr_name, None)
             if isinstance(attr_value, str):
                 pieces.append(attr_value)
@@ -2092,13 +2092,48 @@ class LLMOrchestratorV2:
         user_prompt: str,
     ) -> str:
         """Make the actual OpenAI API call (wrapped with retry decorator)."""
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ]
+
+        if not config.settings.llm_json_stream:
+            response = self.client.chat.completions.create(
+                model=config.settings.openai_model,
+                messages=messages,
+                temperature=config.settings.llm_temperature,
+                response_format={"type": "json_object"},
+                stream=False,
+            )
+
+            content = self._extract_non_stream_content(response).strip()
+            choices = getattr(response, "choices", None) or []
+            finish_reason = getattr(choices[0], "finish_reason", None) if choices else None
+            if content:
+                logger.info("=" * 80)
+                logger.info("OPENAI API CALL SUCCESSFUL")
+                logger.info(f"Response length: {len(content)} chars")
+                logger.info(
+                    "Non-stream diagnostics: finish_reason=%s temperature=%s",
+                    finish_reason,
+                    config.settings.llm_temperature,
+                )
+                logger.info("=" * 80)
+                return content
+
+            raise self._build_empty_response_error(
+                stage="non_stream_empty",
+                extra={
+                    "finish_reason": finish_reason,
+                    "choices_count": len(choices),
+                    "response_type": type(response).__name__,
+                },
+            )
+
         stream = self.client.chat.completions.create(
             model=config.settings.openai_model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            temperature=1,
+            messages=messages,
+            temperature=config.settings.llm_temperature,
             response_format={"type": "json_object"},
             stream=True,
         )
@@ -2139,6 +2174,7 @@ class LLMOrchestratorV2:
                 non_empty_choice_chunks,
                 sorted(finish_reasons) if finish_reasons else [],
             )
+            logger.info("Temperature: %s", config.settings.llm_temperature)
             logger.info("=" * 80)
             return content
 
@@ -2155,11 +2191,8 @@ class LLMOrchestratorV2:
         logger.info("Trying non-stream fallback for empty streamed response...")
         fallback_response = self.client.chat.completions.create(
             model=config.settings.openai_model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            temperature=1,
+            messages=messages,
+            temperature=config.settings.llm_temperature,
             response_format={"type": "json_object"},
             stream=False,
         )
