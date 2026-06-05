@@ -1089,16 +1089,6 @@
     "input_id": "classic_ops_dataxlsx",
     "rating": null
   },
-  "37dd7e6a_20260525160825949770:mss_classic_ops_2": {
-    "status": "completed",
-    "created_at": "2026-05-25T08:08:45.910590+00:00",
-    "updated_at": "2026-05-25T08:09:26.194646+00:00",
-    "completed_at": "2026-05-25T08:09:26.189519+00:00",
-    "session_id": "37dd7e6a_20260525160825949770",
-    "template_id": "mss_classic_ops_2",
-    "input_id": "custom",
-    "rating": null
-  },
   "8a0b6ce5_20260601122416787000:mss_classic_ops_2": {
     "status": "completed",
     "created_at": "2026-06-01T04:24:16.837345+00:00",
@@ -1175,6 +1165,16 @@
     "updated_at": "2026-06-01T07:44:21.237730+00:00",
     "completed_at": "2026-06-01T07:44:21.235591+00:00",
     "session_id": "ac373cc3_20260601154353143000",
+    "template_id": "mss_classic_ops_2",
+    "input_id": "plus_ops_dataxlsx",
+    "rating": null
+  },
+  "49f35d52_20260601171116701000:mss_classic_ops_2": {
+    "status": "completed",
+    "created_at": "2026-06-01T09:11:16.726034+00:00",
+    "updated_at": "2026-06-01T09:11:51.384498+00:00",
+    "completed_at": "2026-06-01T09:11:51.379617+00:00",
+    "session_id": "49f35d52_20260601171116701000",
     "template_id": "mss_classic_ops_2",
     "input_id": "plus_ops_dataxlsx",
     "rating": null
