@@ -33,7 +33,7 @@
   <text x="660" y="235" text-anchor="middle" class="h">文件验证层</text>
   <text x="410" y="268" class="t">1. 扩展名校验：仅允许 .xlsx</text>
   <text x="410" y="296" class="t">2. MIME 类型校验：阻断伪装文件</text>
-  <text x="410" y="324" class="t">3. 大小校验：默认 &lt;= 10MB</text>
+  <text x="410" y="324" class="t">3. 大小校验：默认 &lt;= 200MB</text>
 
   <rect x="1020" y="233" width="180" height="76" class="danger"/>
   <text x="1110" y="278" text-anchor="middle" class="h">失败即终止</text>

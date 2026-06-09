@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 service = ReportService()
-excel_handler = ExcelHandler(max_size_mb=50, chunk_size=8192)
+excel_handler = ExcelHandler(max_size_mb=200, chunk_size=8192)
 
 
 @router.get(
@@ -204,7 +204,7 @@ async def get_input(input_id: str):
 
     ## Security Features
     - Only accepts .xlsx format (no macros)
-    - File size limit: 50MB
+    - File size limit: 200MB
     - MIME type validation
     - Session isolation storage
 

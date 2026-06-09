@@ -46,7 +46,7 @@ class ExcelValidator:
         ".csv": "CSV is not supported. Please save as .xlsx.",
     }
 
-    def __init__(self, max_size_mb: int = 10):
+    def __init__(self, max_size_mb: int = 200):
         self.max_size_bytes = max_size_mb * 1024 * 1024
 
     def validate_extension(self, filename: str) -> None:
@@ -1228,7 +1228,7 @@ ExcelDataExtractor.TEMPLATE_EXTRACTORS = {
 class ExcelHandler:
     """High-level handler for Excel file uploads."""
 
-    def __init__(self, max_size_mb: int = 10, chunk_size: int = 8192):
+    def __init__(self, max_size_mb: int = 200, chunk_size: int = 8192):
         self.validator = ExcelValidator(max_size_mb=max_size_mb)
         self.extractor = ExcelDataExtractor()
         self.chunk_size = chunk_size

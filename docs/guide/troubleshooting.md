@@ -231,7 +231,7 @@
 当前实现可直接确认：
 
 - 仅支持 `.xlsx`
-- `ExcelHandler` 文件大小限制为 50MB
+- `ExcelHandler` 文件大小限制为 200MB
 - 上传成功会返回 `session_id`
 - 前端随后把输入源切换为 `custom`
 
