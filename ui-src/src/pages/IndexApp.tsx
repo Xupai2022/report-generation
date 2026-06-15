@@ -99,7 +99,7 @@ interface ModifiedSlideSummary {
 
 function toTemplateName(tpl: TemplateItem): string {
   if (tpl.template_id === 'mss_classic_ops_2') {
-    return '价值复盘';
+    return '协同运营价值复盘';
   }
   if (typeof tpl.name === 'string' && tpl.name.trim()) {
     return tpl.name;
@@ -114,6 +114,7 @@ function getDefaultInputIdForTemplate(templateId: string, inputs: InputItem[]): 
   const fallbackByTemplate: Record<string, string> = {
     mss_classic_ops: 'classic_ops_dataxlsx',
     mss_classic_ops_2: 'plus_ops_dataxlsx',
+    mss_classic_ops_3: 'plus_ops_dataxlsx',
   };
   const fallback = fallbackByTemplate[templateId];
   if (fallback && inputs.some((item) => item.id === fallback)) return fallback;
@@ -125,6 +126,7 @@ function getTemplatePreviewImageUrl(templateId: string, frameIndex: number) {
   const folderByTemplate: Record<string, string> = {
     mss_classic_ops: '/static/previews/template_classic_preview',
     mss_classic_ops_2: '/static/previews/template_classic_ops_2_preview',
+    mss_classic_ops_3: '/static/previews/template_classic_ops_3_preview',
   };
   const folder = folderByTemplate[templateId];
   if (!folder) return '';

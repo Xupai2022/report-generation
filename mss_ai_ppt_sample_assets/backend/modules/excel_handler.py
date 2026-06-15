@@ -1222,6 +1222,11 @@ ExcelDataExtractor.TEMPLATE_EXTRACTORS = {
         "required_sheet": ExcelDataExtractor.CLASSIC_REQUIRED_SHEET,
         "extractor": ExcelDataExtractor._extract_classic_ops_2,
     },
+    "mss_classic_ops_3": {
+        "template_id": "mss_classic_ops_3",
+        "required_sheet": ExcelDataExtractor.CLASSIC_REQUIRED_SHEET,
+        "extractor": ExcelDataExtractor._extract_classic_ops_2,
+    },
 }
 
 

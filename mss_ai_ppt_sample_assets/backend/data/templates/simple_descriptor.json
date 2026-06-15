@@ -1,8 +1,8 @@
 {
-    "template_id":  "mss_classic_ops_2",
-    "name":  "协同运营价值复盘",
+    "template_id":  "mss_classic_ops_3",
+    "name":  "托管运营价值复盘",
     "version":  "1.0.0",
-    "pptx_file":  "plus.pptx",
+    "pptx_file":  "托管运营价值复盘.pptx",
     "language":  "zh-CN",
     "slides":  [
                    {
@@ -263,282 +263,8 @@
                    },
                    {
                        "slide_no":  8,
-                       "slide_key":  "typical_business_security_case1",
-                       "title":  "业务安全典型事例1",
-                       "placeholders":  [
-
-                                        ]
-                   },
-                   {
-                       "slide_no":  9,
-                       "slide_key":  "typical_business_security_case2",
-                       "title":  "业务安全典型事例2",
-                       "placeholders":  [
-
-                                        ]
-                   },
-                   {
-                       "slide_no":  10,
-                       "slide_key":  "typical_business_security_case3",
-                       "title":  "业务安全典型事例3",
-                       "placeholders":  [
-
-                                        ]
-                   },
-                   {
-                       "slide_no":  11,
-                       "slide_key":  "reduce_security_alert_risk",
-                       "title":  "降低安全通报风险",
-                       "placeholders":  [
-                                            {
-                                                "token":  "malicious_external_connection_count",
-                                                "default":  "失败",
-                                                "source":  "reduce_security_alert_risk.malicious_external_connection_count",
-                                                "cn_name":  "恶意外联次数"
-                                            },
-                                            {
-                                                "token":  "vulnerability_scan_count",
-                                                "default":  "失败",
-                                                "source":  "reduce_security_alert_risk.vulnerability_scan_count",
-                                                "cn_name":  "漏扫次数"
-                                            },
-                                            {
-                                                "token":  "fixed_vulnerability_count",
-                                                "default":  "失败",
-                                                "source":  "reduce_security_alert_risk.fixed_vulnerability_count",
-                                                "cn_name":  "已修复漏洞数"
-                                            },
-                                            {
-                                                "token":  "protected_vulnerability_count",
-                                                "default":  "失败",
-                                                "source":  "reduce_security_alert_risk.protected_vulnerability_count",
-                                                "cn_name":  "已防护漏洞数"
-                                            },
-                                            {
-                                                "token":  "reported_count",
-                                                "default":  "失败",
-                                                "source":  "reduce_security_alert_risk.reported_count",
-                                                "cn_name":  "本周期被通报次数"
-                                            },
-                                            {
-                                                "token":  "previous_service_period_reported_count",
-                                                "default":  "失败",
-                                                "source":  "reduce_security_alert_risk.previous_service_period_reported_count",
-                                                "cn_name":  "前一服务周期被通报次数"
-                                            }
-                                        ]
-                   },
-                   {
-                       "slide_no":  12,
-                       "slide_key":  "critical_period_protection",
-                       "title":  "重要时期保障",
-                       "placeholders":  [
-                                            {
-                                                "token":  "critical_period_security_log_count",
-                                                "default":  "失败",
-                                                "source":  "critical_period_protection.critical_period_security_log_count",
-                                                "cn_name":  "重要时期安全日志数"
-                                            },
-                                            {
-                                                "token":  "critical_period_alert_count",
-                                                "default":  "失败",
-                                                "source":  "critical_period_protection.critical_period_alert_count",
-                                                "cn_name":  "重要时期告警数"
-                                            },
-                                            {
-                                                "token":  "critical_period_incident_count",
-                                                "default":  "失败",
-                                                "source":  "critical_period_protection.critical_period_incident_count",
-                                                "cn_name":  "重要时期事件数"
-                                            },
-                                            {
-                                                "token":  "containment_rate",
-                                                "default":  "失败",
-                                                "source":  "critical_period_protection.containment_rate",
-                                                "cn_name":  "遏制率"
-                                            },
-                                            {
-                                                "token":  "critical_protection_periods_text",
-                                                "default":  "失败",
-                                                "source":  "critical_period_protection.critical_protection_periods_text",
-                                                "cn_name":  "重要保障时期"
-                                            }
-                                        ]
-                   },
-                   {
-                       "slide_no":  13,
-                       "slide_key":  "typical_critical_protection_case",
-                       "title":  "重保典型事例",
-                       "placeholders":  [
-
-                                        ],
-                       "context_policy":  "local_only"
-                   },
-                   {
-                       "slide_no":  14,
-                       "slide_key":  "security_level_quantification",
-                       "title":  "安全水位量化",
-                       "placeholders":  [
-                                            {
-                                                "token":  "asset_coverage_rate",
-                                                "default":  "失败",
-                                                "source":  "security_level_quantification.asset_coverage_rate",
-                                                "cn_name":  "资产覆盖率"
-                                            },
-                                            {
-                                                "token":  "threat_containment_rate",
-                                                "default":  "失败",
-                                                "source":  "security_level_quantification.threat_containment_rate",
-                                                "cn_name":  "威胁遏制率"
-                                            },
-                                            {
-                                                "token":  "high_risk_vulnerability_protection_rate",
-                                                "default":  "失败",
-                                                "source":  "security_level_quantification.high_risk_vulnerability_protection_rate",
-                                                "cn_name":  "高危漏洞防护率"
-                                            },
-                                            {
-                                                "token":  "average_analysis_time",
-                                                "default":  "失败",
-                                                "source":  "security_level_quantification.average_analysis_time",
-                                                "cn_name":  "平均分析时间"
-                                            },
-                                            {
-                                                "token":  "average_response_time",
-                                                "default":  "失败",
-                                                "source":  "security_level_quantification.average_response_time",
-                                                "cn_name":  "平均响应时间"
-                                            },
-                                            {
-                                                "token":  "closed_loop_vulnerability_count",
-                                                "default":  "失败",
-                                                "source":  "security_level_quantification.closed_loop_vulnerability_count",
-                                                "cn_name":  "已闭环漏洞数量"
-                                            },
-                                            {
-                                                "token":  "threat_and_incident_count",
-                                                "default":  "失败",
-                                                "source":  "security_level_quantification.threat_and_incident_count",
-                                                "cn_name":  "威胁和事件数量"
-                                            },
-                                            {
-                                                "token":  "two_senior_security_engineer_cost",
-                                                "default":  "失败",
-                                                "source":  "security_level_quantification.two_senior_security_engineer_cost",
-                                                "cn_name":  "两名高级安全工程师成本"
-                                            }
-                                        ]
-                   },
-                   {
-                       "slide_no":  15,
-                       "slide_key":  "chapter2",
-                       "title":  "共同的挑战与应对思路-封面",
-                       "placeholders":  [
-
-                                        ]
-                   },
-                   {
-                       "slide_no":  16,
-                       "slide_key":  "key_issue_analysis_and_solution_1",
-                       "title":  "关键问题分析与解决方案1",
-                       "placeholders":  [
-
-                                        ]
-                   },
-                   {
-                       "slide_no":  17,
-                       "slide_key":  "key_issue_analysis_and_solution_2",
-                       "title":  "关键问题分析与解决方案2",
-                       "placeholders":  [
-
-                                        ]
-                   },
-                   {
-                       "slide_no":  18,
-                       "slide_key":  "key_issue_analysis_and_solution_3",
-                       "title":  "关键问题分析与解决方案3",
-                       "placeholders":  [
-
-                                        ]
-                   },
-                   {
-                       "slide_no":  19,
-                       "slide_key":  "key_issue_1",
-                       "title":  "关键问题1",
-                       "placeholders":  [
-
-                                        ]
-                   },
-                   {
-                       "slide_no":  20,
-                       "slide_key":  "chapter4",
-                       "title":  "下阶段协同计划-封面",
-                       "placeholders":  [
-
-                                        ]
-                   },
-                   {
-                       "slide_no":  21,
-                       "slide_key":  "three_year_evolution_route",
-                       "title":  "三年演进路线",
-                       "placeholders":  [
-
-                                        ]
-                   },
-                   {
-                       "slide_no":  22,
-                       "slide_key":  "next_phase_operation_plan",
-                       "title":  "下一阶段运营规划",
-                       "placeholders":  [
-
-                                        ]
-                   },
-                   {
-                       "slide_no":  23,
-                       "slide_key":  "key_value_result_coop_update",
-                       "title":  "关键价值成果与分工协作机制刷新",
-                       "placeholders":  [
-                                            {
-                                                "token":  "company",
-                                                "source":  "cover.company",
-                                                "default":  "失败",
-                                                "cn_name":  "客户名称"
-                                            }
-                                        ]
-                   },
-                   {
-                       "slide_no":  24,
-                       "slide_key":  "next_phase_action_plan",
-                       "title":  "下一阶段行动计划",
-                       "placeholders":  [
-                                            {
-                                                "token":  "company",
-                                                "source":  "cover.company",
-                                                "default":  "失败",
-                                                "cn_name":  "客户名称"
-                                            }
-                                        ]
-                   },
-                   {
-                       "slide_no":  25,
-                       "slide_key":  "thanks",
-                       "title":  "致谢",
-                       "placeholders":  [
-
-                                        ]
-                   },
-                   {
-                       "slide_no":  26,
-                       "slide_key":  "appendix",
-                       "title":  "附录",
-                       "placeholders":  [
-
-                                        ]
-                   },
-                   {
-                       "slide_no":  27,
-                       "slide_key":  "incident_effectiveness",
-                       "title":  "安全事件管理详情",
+                       "slide_key":  "7_24h_threat_countermeasure_details_1",
+                       "title":  "7*24H威胁对抗详情-1",
                        "placeholders":  [
                                             {
                                                 "token":  "incident_total",
@@ -610,9 +336,9 @@
                        "context_policy":  "local_only"
                    },
                    {
-                       "slide_no":  28,
-                       "slide_key":  "threat_effectiveness",
-                       "title":  "威胁趋势分析",
+                       "slide_no":  9,
+                       "slide_key":  "7_24h_threat_countermeasure_details_2",
+                       "title":  "7*24H威胁对抗详情-2",
                        "placeholders":  [
                                             {
                                                 "token":  "external_attack_log_count_XDR",
@@ -727,7 +453,7 @@
                        "context_policy":  "local_only"
                    },
                    {
-                       "slide_no":  29,
+                       "slide_no":  10,
                        "slide_key":  "risk_prevention_work_details",
                        "title":  "风险预防工作详情",
                        "placeholders":  [
@@ -896,7 +622,38 @@
                        "context_policy":  "local_only"
                    },
                    {
-                       "slide_no":  30,
+                       "slide_no":  11,
+                       "slide_key":  "critical_period_protection",
+                       "title":  "重要时期保障",
+                       "placeholders":  [
+                                            {
+                                                "token":  "critical_period_security_log_count",
+                                                "default":  "失败",
+                                                "source":  "critical_period_protection.critical_period_security_log_count",
+                                                "cn_name":  "重要时期安全日志数"
+                                            },
+                                            {
+                                                "token":  "critical_period_alert_count",
+                                                "default":  "失败",
+                                                "source":  "critical_period_protection.critical_period_alert_count",
+                                                "cn_name":  "重要时期告警数"
+                                            },
+                                            {
+                                                "token":  "critical_period_incident_count",
+                                                "default":  "失败",
+                                                "source":  "critical_period_protection.critical_period_incident_count",
+                                                "cn_name":  "重要时期事件数"
+                                            },
+                                            {
+                                                "token":  "critical_protection_periods_text",
+                                                "default":  "失败",
+                                                "source":  "critical_period_protection.critical_protection_periods_text",
+                                                "cn_name":  "重要保障时期"
+                                            }
+                                        ]
+                   },
+                   {
+                       "slide_no":  12,
                        "slide_key":  "critical_assurance",
                        "title":  "重要时期保障成效",
                        "placeholders":  [
@@ -953,8 +710,115 @@
                                             }
                                         ],
                        "context_policy":  "local_only"
+                   },
+                   {
+                       "slide_no":  13,
+                       "slide_key":  "reduce_security_alert_risk",
+                       "title":  "降低安全通报风险",
+                       "placeholders":  [
+                                            {
+                                                "token":  "malicious_external_connection_count",
+                                                "default":  "失败",
+                                                "source":  "reduce_security_alert_risk.malicious_external_connection_count",
+                                                "cn_name":  "恶意外联次数"
+                                            },
+                                            {
+                                                "token":  "vulnerability_scan_count",
+                                                "default":  "失败",
+                                                "source":  "reduce_security_alert_risk.vulnerability_scan_count",
+                                                "cn_name":  "漏扫次数"
+                                            },
+                                            {
+                                                "token":  "fixed_vulnerability_count",
+                                                "default":  "失败",
+                                                "source":  "reduce_security_alert_risk.fixed_vulnerability_count",
+                                                "cn_name":  "已修复漏洞数"
+                                            },
+                                            {
+                                                "token":  "protected_vulnerability_count",
+                                                "default":  "失败",
+                                                "source":  "reduce_security_alert_risk.protected_vulnerability_count",
+                                                "cn_name":  "已防护漏洞数"
+                                            },
+                                            {
+                                                "token":  "reported_count",
+                                                "default":  "失败",
+                                                "source":  "reduce_security_alert_risk.reported_count",
+                                                "cn_name":  "本周期被通报次数"
+                                            },
+                                            {
+                                                "token":  "previous_service_period_reported_count",
+                                                "default":  "失败",
+                                                "source":  "reduce_security_alert_risk.previous_service_period_reported_count",
+                                                "cn_name":  "前一服务周期被通报次数"
+                                            }
+                                        ]
+                   },
+                   {
+                       "slide_no":  14,
+                       "slide_key":  "chapter2",
+                       "title":  "共同的挑战与应对思路-封面",
+                       "placeholders":  [
+
+                                        ]
+                   },
+                   {
+                       "slide_no":  15,
+                       "slide_key":  "key_issue_analysis_and_solution_1",
+                       "title":  "关键问题分析与解决方案1",
+                       "placeholders":  [
+
+                                        ]
+                   },
+                   {
+                       "slide_no":  16,
+                       "slide_key":  "key_issue_analysis_and_solution_2",
+                       "title":  "关键问题分析与解决方案2",
+                       "placeholders":  [
+
+                                        ]
+                   },
+                   {
+                       "slide_no":  17,
+                       "slide_key":  "chapter3",
+                       "title":  "下阶段目标与协作计划-封面",
+                       "placeholders":  [
+
+                                        ]
+                   },
+                   {
+                       "slide_no":  18,
+                       "slide_key":  "key_value_result_coop_update",
+                       "title":  "关键价值成果与分工协作机制刷新",
+                       "placeholders":  [
+                                            {
+                                                "token":  "company",
+                                                "source":  "cover.company",
+                                                "default":  "失败",
+                                                "cn_name":  "客户名称"
+                                            }
+                                        ]
+                   },
+                   {
+                       "slide_no":  19,
+                       "slide_key":  "next_phase_action_plan",
+                       "title":  "下一阶段行动计划",
+                       "placeholders":  [
+                                            {
+                                                "token":  "company",
+                                                "source":  "cover.company",
+                                                "default":  "失败",
+                                                "cn_name":  "客户名称"
+                                            }
+                                        ]
+                   },
+                   {
+                       "slide_no":  20,
+                       "slide_key":  "thanks",
+                       "title":  "致谢",
+                       "placeholders":  [
+
+                                        ]
                    }
                ]
-               
-
 }

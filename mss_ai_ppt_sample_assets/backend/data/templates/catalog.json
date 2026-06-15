@@ -19,7 +19,7 @@
     },
     {
       "template_id": "mss_classic_ops_2",
-      "name": "MSS运营服务总结（plus版）",
+      "name": "协同运营价值复盘",
       "version": "1.0.0",
       "descriptor_file": "plus_descriptor.json",
       "pptx_file": "plus.pptx",
@@ -31,6 +31,22 @@
       "features": [
         "excel_driven_content",
         "plus_layout"
+      ]
+    },
+    {
+      "template_id": "mss_classic_ops_3",
+      "name": "托管运营价值复盘",
+      "version": "1.0.0",
+      "descriptor_file": "simple_descriptor.json",
+      "pptx_file": "托管运营价值复盘.pptx",
+      "recommended_audience": [
+        "management",
+        "operations"
+      ],
+      "slides_count": 20,
+      "features": [
+        "excel_driven_content",
+        "simple_layout"
       ]
     }
   ]
