@@ -38,7 +38,7 @@
       "name": "托管运营价值复盘",
       "version": "1.0.0",
       "descriptor_file": "simple_descriptor.json",
-      "pptx_file": "托管运营价值复盘.pptx",
+      "pptx_file": "simple.pptx",
       "recommended_audience": [
         "management",
         "operations"
