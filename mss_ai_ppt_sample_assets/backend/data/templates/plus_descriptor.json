@@ -110,6 +110,37 @@
                    },
                    {
                        "slide_no":  6,
+                       "slide_key":  "success_metric-2",
+                       "title":  "成功指标-2",
+                       "placeholders":  [
+                                            {
+                                                "token":  "core_system_1",
+                                                "source":  "success_metric.core_system_1",
+                                                "default":  "失败",
+                                                "cn_name":  "核心系统1"
+                                            },
+                                            {
+                                                "token":  "core_system_2",
+                                                "source":  "success_metric.core_system_2",
+                                                "default":  "失败",
+                                                "cn_name":  "核心系统2"
+                                            },
+                                            {
+                                                "token":  "core_system_3",
+                                                "source":  "success_metric.core_system_3",
+                                                "default":  "失败",
+                                                "cn_name":  "核心系统3"
+                                            },
+                                            {
+                                                "token":  "company",
+                                                "source":  "cover.company",
+                                                "default":  "失败",
+                                                "cn_name":  "客户名称"
+                                            }
+                                        ]
+                   },
+                   {
+                       "slide_no":  7,
                        "slide_key":  "chapter1",
                        "title":  "成果回顾-封面",
                        "placeholders":  [
@@ -117,7 +148,7 @@
                                         ]
                    },
                    {
-                       "slide_no":  7,
+                       "slide_no":  8,
                        "slide_key":  "ensure_result",
                        "title":  "保障成果",
                        "placeholders":  [
@@ -262,7 +293,7 @@
                                         ]
                    },
                    {
-                       "slide_no":  8,
+                       "slide_no":  9,
                        "slide_key":  "typical_business_security_case1",
                        "title":  "业务安全典型事例1",
                        "placeholders":  [
@@ -270,7 +301,7 @@
                                         ]
                    },
                    {
-                       "slide_no":  9,
+                       "slide_no":  10,
                        "slide_key":  "typical_business_security_case2",
                        "title":  "业务安全典型事例2",
                        "placeholders":  [
@@ -278,7 +309,7 @@
                                         ]
                    },
                    {
-                       "slide_no":  10,
+                       "slide_no":  11,
                        "slide_key":  "typical_business_security_case3",
                        "title":  "业务安全典型事例3",
                        "placeholders":  [
@@ -286,7 +317,7 @@
                                         ]
                    },
                    {
-                       "slide_no":  11,
+                       "slide_no":  12,
                        "slide_key":  "reduce_security_alert_risk",
                        "title":  "降低安全通报风险",
                        "placeholders":  [
@@ -329,7 +360,7 @@
                                         ]
                    },
                    {
-                       "slide_no":  12,
+                       "slide_no":  13,
                        "slide_key":  "critical_period_protection",
                        "title":  "重要时期保障",
                        "placeholders":  [
@@ -366,7 +397,7 @@
                                         ]
                    },
                    {
-                       "slide_no":  13,
+                       "slide_no":  14,
                        "slide_key":  "typical_critical_protection_case",
                        "title":  "重保典型事例",
                        "placeholders":  [
@@ -375,7 +406,7 @@
                        "context_policy":  "local_only"
                    },
                    {
-                       "slide_no":  14,
+                       "slide_no":  15,
                        "slide_key":  "security_level_quantification",
                        "title":  "安全水位量化",
                        "placeholders":  [
@@ -430,7 +461,7 @@
                                         ]
                    },
                    {
-                       "slide_no":  15,
+                       "slide_no":  16,
                        "slide_key":  "chapter2",
                        "title":  "共同的挑战与应对思路-封面",
                        "placeholders":  [
@@ -438,7 +469,7 @@
                                         ]
                    },
                    {
-                       "slide_no":  16,
+                       "slide_no":  17,
                        "slide_key":  "key_issue_analysis_and_solution_1",
                        "title":  "关键问题分析与解决方案1",
                        "placeholders":  [
@@ -446,7 +477,7 @@
                                         ]
                    },
                    {
-                       "slide_no":  17,
+                       "slide_no":  18,
                        "slide_key":  "key_issue_analysis_and_solution_2",
                        "title":  "关键问题分析与解决方案2",
                        "placeholders":  [
@@ -454,17 +485,9 @@
                                         ]
                    },
                    {
-                       "slide_no":  18,
+                       "slide_no":  19,
                        "slide_key":  "key_issue_analysis_and_solution_3",
                        "title":  "关键问题分析与解决方案3",
-                       "placeholders":  [
-
-                                        ]
-                   },
-                   {
-                       "slide_no":  19,
-                       "slide_key":  "key_issue_1",
-                       "title":  "关键问题1",
                        "placeholders":  [
 
                                         ]
