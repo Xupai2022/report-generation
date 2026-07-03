@@ -889,30 +889,43 @@ class ExcelDataExtractor:
         ExcelDataExtractor._put_text(success_metric, "core_system_1", ws["D3"])
         ExcelDataExtractor._put_text(success_metric, "core_system_2", ws["D4"])
         ExcelDataExtractor._put_text(success_metric, "core_system_3", ws["D5"])
+        ExcelDataExtractor._put_text(success_metric, "system1_risk_count", ws["D7"])
+        ExcelDataExtractor._put_text(success_metric, "system2_risk_count", ws["D8"])
+        ExcelDataExtractor._put_text(success_metric, "system3_risk_count", ws["D9"])
+        ExcelDataExtractor._put_text(success_metric, "closed_risk_total", ws["D13"])
+        ExcelDataExtractor._put_text(success_metric, "affected_latest_vuln_count", ws["D17"])
         ExcelDataExtractor._add_section(output, "success_metric", success_metric)
 
         ensure_result: Dict[str, Any] = {}
         ensure_result_map = {
-            "vulnerability_count": "D6",
-            "system_1_vulnerability_count": "D7",
-            "system_2_vulnerability_count": "D8",
-            "system_3_vulnerability_count": "D9",
-            "weak_password_count": "D10",
-            "latest_vulnerability_intelligence_count": "D11",
-            "latest_vulnerability_affected_assets_count": "D12",
-            "closed_loop_risk_count": "D14",
-            "latest_affected_vulnerability_count": "D15",
-            "protected_vulnerability_count": "D16",
-            "fixed_vulnerability_count": "D17",
-            "vulnerability_exploitation_attempt_count": "D18",
-            "policy_optimization_count": "G4",
-            "external_threat_alert_count": "G5",
-            "average_threat_containment_time": "G6",
-            "security_incident_count": "G7",
-            "average_incident_response_time": "G8",
-            "incident_closure_rate": "G9",
-            "risk_total": "G11",
-            "event_total": "G12",
+            "security_risk_total": "D6",
+            "system1_risk_count": "D7",
+            "system2_risk_count": "D8",
+            "system3_risk_count": "D9",
+            "high_risk_exploitable_vuln_count": "D10",
+            "admin_weak_pwd_num": "D11",
+            "latest_vuln_asset_count": "D12",
+            "protected_vuln_count": "D14",
+            "fixed_vuln_count": "D15",
+            "disposed_weak_pwd_num": "D16",
+            "system1_closed_risk_count": "C18",
+            "system2_closed_risk_count": "D18",
+            "system3_closed_risk_count": "E18",
+            "security_policy_optimize_num": "G4",
+            "threat_alert_total": "G5",
+            "core_system1_threat_alert_distribution": "G6",
+            "core_system2_threat_alert_distribution": "H6",
+            "core_system3_threat_alert_distribution": "I6",
+            "threat_average_containment_time": "G7",
+            "incident_total": "G8",
+            "core_system_incident_count": "G10",
+            "incident_avg_response_time": "G9",
+            "core_system_risk_total": "G12",
+            "core_system_closed_risk_count": "G13",
+            "core_system_threat_incident_total": "G14",
+            "business_system_count": "G16",
+            "server_asset_count": "G17",
+            "pc_asset_count": "G18",
         }
         for token, addr in ensure_result_map.items():
             ExcelDataExtractor._put_text(ensure_result, token, ws[addr])
@@ -920,12 +933,16 @@ class ExcelDataExtractor:
 
         reduce_security_alert_risk: Dict[str, Any] = {}
         reduce_security_alert_risk_map = {
-            "previous_service_period_reported_count": "D20",
-            "malicious_external_connection_count": "D21",
-            "vulnerability_scan_count": "D22",
-            "fixed_vulnerability_count": "D23",
-            "protected_vulnerability_count": "D24",
-            "reported_count": "D25",
+            "notified_risk_total": "D20",
+            "external_notify_risk_times": "D21",
+            "security_policy_optimize_count": "D22",
+            "blocked_external_connection_times": "D23",
+            "closed_vulnerability_total": "G22",
+            "malicious_external_alert_count": "D24",
+            "current_report_cycle_notify_count": "D25",
+            "missed_scan_count": "G21",
+            "protected_vulnerability_count": "G23",
+            "fixed_vulnerability_count": "G24",
         }
         for token, addr in reduce_security_alert_risk_map.items():
             ExcelDataExtractor._put_text(reduce_security_alert_risk, token, ws[addr])
