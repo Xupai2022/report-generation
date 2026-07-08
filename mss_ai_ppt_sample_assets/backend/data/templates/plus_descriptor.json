@@ -604,7 +604,7 @@
                    {
                        "slide_no":  23,
                        "slide_key":  "key_value_result_coop_update",
-                       "title":  "关键价值成果与分工协作机制刷新",
+                       "title":  "关键价值成果与分工协作机制刷新1",
                        "placeholders":  [
                                             {
                                                 "token":  "company",
@@ -616,6 +616,19 @@
                    },
                    {
                        "slide_no":  24,
+                       "slide_key":  "key_value_result_coop_update",
+                       "title":  "关键价值成果与分工协作机制刷新2",
+                       "placeholders":  [
+                                            {
+                                                "token":  "company",
+                                                "source":  "cover.company",
+                                                "default":  "失败",
+                                                "cn_name":  "客户名称"
+                                            }
+                                        ]
+                   },
+                   {
+                       "slide_no":  25,
                        "slide_key":  "next_phase_action_plan",
                        "title":  "下一阶段行动计划",
                        "placeholders":  [
@@ -628,7 +641,7 @@
                                         ]
                    },
                    {
-                       "slide_no":  25,
+                       "slide_no":  26,
                        "slide_key":  "thanks",
                        "title":  "致谢",
                        "placeholders":  [
@@ -636,7 +649,7 @@
                                         ]
                    },
                    {
-                       "slide_no":  26,
+                       "slide_no":  27,
                        "slide_key":  "appendix",
                        "title":  "附录",
                        "placeholders":  [
@@ -644,7 +657,7 @@
                                         ]
                    },
                    {
-                       "slide_no":  27,
+                       "slide_no":  28,
                        "slide_key":  "incident_effectiveness",
                        "title":  "安全事件管理详情",
                        "placeholders":  [
@@ -718,7 +731,7 @@
                        "context_policy":  "local_only"
                    },
                    {
-                       "slide_no":  28,
+                       "slide_no":  29,
                        "slide_key":  "threat_effectiveness",
                        "title":  "威胁趋势分析",
                        "placeholders":  [
@@ -835,7 +848,7 @@
                        "context_policy":  "local_only"
                    },
                    {
-                       "slide_no":  29,
+                       "slide_no":  30,
                        "slide_key":  "risk_prevention_work_details",
                        "title":  "风险预防工作详情",
                        "placeholders":  [
@@ -1004,7 +1017,7 @@
                        "context_policy":  "local_only"
                    },
                    {
-                       "slide_no":  30,
+                       "slide_no":  31,
                        "slide_key":  "critical_assurance",
                        "title":  "重要时期保障成效",
                        "placeholders":  [

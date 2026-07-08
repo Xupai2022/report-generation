@@ -153,22 +153,10 @@
                        "title":  "保障成果",
                        "placeholders":  [
                                             {
-                                                "token":  "risk_total",
-                                                "source":  "ensure_result.risk_total",
+                                                "token":  "security_risk_total",
+                                                "source":  "ensure_result.security_risk_total",
                                                 "default":  "失败",
-                                                "cn_name":  "风险总数"
-                                            },
-                                            {
-                                                "token":  "event_total",
-                                                "source":  "ensure_result.event_total",
-                                                "default":  "失败",
-                                                "cn_name":  "事件总数"
-                                            },                                           
-                                            {
-                                                "token":  "vulnerability_count",
-                                                "source":  "ensure_result.vulnerability_count",
-                                                "default":  "失败",
-                                                "cn_name":  "漏洞数量"
+                                                "cn_name":  "安全风险总数"
                                             },
                                             {
                                                 "token":  "core_system_1",
@@ -189,106 +177,178 @@
                                                 "cn_name":  "核心系统3"
                                             },
                                             {
-                                                "token":  "system_1_vulnerability_count",
-                                                "source":  "ensure_result.system_1_vulnerability_count",
+                                                "token":  "system1_risk_count",
+                                                "source":  "success_metric.system1_risk_count",
                                                 "default":  "失败",
-                                                "cn_name":  "系统1漏洞数"
+                                                "cn_name":  "系统1风险数"
                                             },
                                             {
-                                                "token":  "system_2_vulnerability_count",
-                                                "source":  "ensure_result.system_2_vulnerability_count",
+                                                "token":  "system2_risk_count",
+                                                "source":  "success_metric.system2_risk_count",
                                                 "default":  "失败",
-                                                "cn_name":  "系统2漏洞数"
+                                                "cn_name":  "系统2风险数"
                                             },
                                             {
-                                                "token":  "system_3_vulnerability_count",
-                                                "source":  "ensure_result.system_3_vulnerability_count",
+                                                "token":  "system3_risk_count",
+                                                "source":  "success_metric.system3_risk_count",
                                                 "default":  "失败",
-                                                "cn_name":  "系统3漏洞数"
+                                                "cn_name":  "系统3风险数"
                                             },
                                             {
-                                                "token":  "weak_password_count",
-                                                "source":  "ensure_result.weak_password_count",
+                                                "token":  "high_risk_exploitable_vuln_count",
+                                                "source":  "ensure_result.high_risk_exploitable_vuln_count",
                                                 "default":  "失败",
-                                                "cn_name":  "弱口令数量"
+                                                "cn_name":  "高危可利用漏洞数"
                                             },
                                             {
-                                                "token":  "latest_vulnerability_intelligence_count",
-                                                "source":  "ensure_result.latest_vulnerability_intelligence_count",
+                                                "token":  "admin_weak_pwd_num",
+                                                "source":  "ensure_result.admin_weak_pwd_num",
                                                 "default":  "失败",
-                                                "cn_name":  "最新漏洞情报数量"
+                                                "cn_name":  "管理员弱口令数量"
                                             },
                                             {
-                                                "token":  "latest_vulnerability_affected_assets_count",
-                                                "source":  "ensure_result.latest_vulnerability_affected_assets_count",
+                                                "token":  "latest_vuln_asset_count",
+                                                "source":  "ensure_result.latest_vuln_asset_count",
                                                 "default":  "失败",
                                                 "cn_name":  "最新漏洞影响资产数"
                                             },
                                             {
-                                                "token":  "closed_loop_risk_count",
-                                                "source":  "ensure_result.closed_loop_risk_count",
+                                                "token":  "closed_risk_total",
+                                                "source":  "success_metric.closed_risk_total",
                                                 "default":  "失败",
-                                                "cn_name":  "已闭环风险数"
+                                                "cn_name":  "已闭环风险总数"
                                             },
                                             {
-                                                "token":  "latest_affected_vulnerability_count",
-                                                "source":  "ensure_result.latest_affected_vulnerability_count",
-                                                "default":  "失败",
-                                                "cn_name":  "受影响的最新漏洞数"
-                                            },
-                                            {
-                                                "token":  "protected_vulnerability_count",
-                                                "source":  "ensure_result.protected_vulnerability_count",
+                                                "token":  "protected_vuln_count",
+                                                "source":  "ensure_result.protected_vuln_count",
                                                 "default":  "失败",
                                                 "cn_name":  "已防护漏洞数"
                                             },
                                             {
-                                                "token":  "fixed_vulnerability_count",
-                                                "source":  "ensure_result.fixed_vulnerability_count",
+                                                "token":  "fixed_vuln_count",
+                                                "source":  "ensure_result.fixed_vuln_count",
                                                 "default":  "失败",
                                                 "cn_name":  "已修复漏洞数"
                                             },
                                             {
-                                                "token":  "vulnerability_exploitation_attempt_count",
-                                                "source":  "ensure_result.vulnerability_exploitation_attempt_count",
+                                                "token":  "disposed_weak_pwd_num",
+                                                "source":  "ensure_result.disposed_weak_pwd_num",
                                                 "default":  "失败",
-                                                "cn_name":  "漏洞利用攻击次数"
+                                                "cn_name":  "已处置弱口令数量"
                                             },
                                             {
-                                                "token":  "policy_optimization_count",
-                                                "source":  "ensure_result.policy_optimization_count",
+                                                "token":  "affected_latest_vuln_count",
+                                                "source":  "success_metric.affected_latest_vuln_count",
                                                 "default":  "失败",
-                                                "cn_name":  "策略调优数量"
+                                                "cn_name":  "受影响的最新漏洞数"
                                             },
                                             {
-                                                "token":  "external_threat_alert_count",
-                                                "source":  "ensure_result.external_threat_alert_count",
+                                                "token":  "system1_closed_risk_count",
+                                                "source":  "ensure_result.system1_closed_risk_count",
                                                 "default":  "失败",
-                                                "cn_name":  "外部威胁告警数量"
+                                                "cn_name":  "系统1已闭环风险数"
                                             },
                                             {
-                                                "token":  "average_threat_containment_time",
-                                                "source":  "ensure_result.average_threat_containment_time",
+                                                "token":  "system2_closed_risk_count",
+                                                "source":  "ensure_result.system2_closed_risk_count",
+                                                "default":  "失败",
+                                                "cn_name":  "系统2已闭环风险数"
+                                            },
+                                            {
+                                                "token":  "system3_closed_risk_count",
+                                                "source":  "ensure_result.system3_closed_risk_count",
+                                                "default":  "失败",
+                                                "cn_name":  "系统3已闭环风险数"
+                                            },
+                                            {
+                                                "token":  "security_policy_optimize_num",
+                                                "source":  "ensure_result.security_policy_optimize_num",
+                                                "default":  "失败",
+                                                "cn_name":  "安全策略调优数量"
+                                            },
+                                            {
+                                                "token":  "threat_alert_total",
+                                                "source":  "ensure_result.threat_alert_total",
+                                                "default":  "失败",
+                                                "cn_name":  "威胁告警总数"
+                                            },
+                                            {
+                                                "token":  "core_system1_threat_alert_distribution",
+                                                "source":  "ensure_result.core_system1_threat_alert_distribution",
+                                                "default":  "失败",
+                                                "cn_name":  "核心系统1威胁告警数量"
+                                            },
+                                            {
+                                                "token":  "core_system2_threat_alert_distribution",
+                                                "source":  "ensure_result.core_system2_threat_alert_distribution",
+                                                "default":  "失败",
+                                                "cn_name":  "核心系统2威胁告警数量"
+                                            },
+                                            {
+                                                "token":  "core_system3_threat_alert_distribution",
+                                                "source":  "ensure_result.core_system3_threat_alert_distribution",
+                                                "default":  "失败",
+                                                "cn_name":  "核心系统3威胁告警数量"
+                                            },
+                                            {
+                                                "token":  "threat_average_containment_time",
+                                                "source":  "ensure_result.threat_average_containment_time",
                                                 "default":  "失败",
                                                 "cn_name":  "威胁平均遏制时间"
                                             },
                                             {
-                                                "token":  "security_incident_count",
-                                                "source":  "ensure_result.security_incident_count",
+                                                "token":  "incident_total",
                                                 "default":  "失败",
-                                                "cn_name":  "安全事件数"
+                                                "source":  "ensure_result.incident_total",
+                                                "cn_name":  "安全事件总数"
                                             },
                                             {
-                                                "token":  "average_incident_response_time",
-                                                "source":  "ensure_result.average_incident_response_time",
+                                                "token":  "incident_avg_response_time",
+                                                "source":  "ensure_result.incident_avg_response_time",
                                                 "default":  "失败",
                                                 "cn_name":  "事件平均响应时长"
                                             },
                                             {
-                                                "token":  "incident_closure_rate",
-                                                "source":  "ensure_result.incident_closure_rate",
+                                                "token":  "core_system_incident_count",
+                                                "source":  "ensure_result.core_system_incident_count",
                                                 "default":  "失败",
-                                                "cn_name":  "事件闭环率"
+                                                "cn_name":  "核心系统事件数量"
+                                            },
+                                            {
+                                                "token":  "core_system_risk_total",
+                                                "source":  "ensure_result.core_system_risk_total",
+                                                "default":  "失败",
+                                                "cn_name":  "核心系统风险总数"
+                                            },
+                                            {
+                                                "token":  "core_system_closed_risk_count",
+                                                "source":  "ensure_result.core_system_closed_risk_count",
+                                                "default":  "失败",
+                                                "cn_name":  "核心系统闭环风险数"
+                                            },
+                                            {
+                                                "token":  "core_system_threat_incident_total",
+                                                "source":  "ensure_result.core_system_threat_incident_total",
+                                                "default":  "失败",
+                                                "cn_name":  "核心系统威胁事件总数"
+                                            },
+                                            {
+                                                "token":  "business_system_count",
+                                                "source":  "ensure_result.business_system_count",
+                                                "default":  "失败",
+                                                "cn_name":  "业务系统数量"
+                                            },
+                                            {
+                                                "token":  "server_asset_count",
+                                                "source":  "ensure_result.server_asset_count",
+                                                "default":  "失败",
+                                                "cn_name":  "服务器资产数量"
+                                            },
+                                            {
+                                                "token":  "pc_asset_count",
+                                                "source":  "ensure_result.pc_asset_count",
+                                                "default":  "失败",
+                                                "cn_name":  "PC资产数量"
                                             }
                                         ]
                    },
@@ -676,6 +736,12 @@
                                                 "cn_name":  "重要时期事件数"
                                             },
                                             {
+                                                "token":  "containment_rate",
+                                                "default":  "失败",
+                                                "source":  "critical_period_protection.containment_rate",
+                                                "cn_name":  "遏制率"
+                                            },
+                                            {
                                                 "token":  "critical_protection_periods_text",
                                                 "default":  "失败",
                                                 "source":  "critical_period_protection.critical_protection_periods_text",
@@ -820,7 +886,7 @@
                    {
                        "slide_no":  19,
                        "slide_key":  "key_value_result_coop_update",
-                       "title":  "关键价值成果与分工协作机制刷新",
+                       "title":  "关键价值成果与分工协作机制刷新1",
                        "placeholders":  [
                                             {
                                                 "token":  "company",
@@ -832,6 +898,19 @@
                    },
                    {
                        "slide_no":  20,
+                       "slide_key":  "key_value_result_coop_update",
+                       "title":  "关键价值成果与分工协作机制刷新2",
+                       "placeholders":  [
+                                            {
+                                                "token":  "company",
+                                                "source":  "cover.company",
+                                                "default":  "失败",
+                                                "cn_name":  "客户名称"
+                                            }
+                                        ]
+                   },
+                   {
+                       "slide_no":  21,
                        "slide_key":  "next_phase_action_plan",
                        "title":  "下一阶段行动计划",
                        "placeholders":  [
@@ -844,7 +923,7 @@
                                         ]
                    },
                    {
-                       "slide_no":  21,
+                       "slide_no":  22,
                        "slide_key":  "thanks",
                        "title":  "致谢",
                        "placeholders":  [
