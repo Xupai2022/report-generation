@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import math
 from copy import deepcopy
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
@@ -9,6 +10,31 @@ from mss_ai_ppt_sample_assets.backend.models.slidespec import SlideSpecV2
 from mss_ai_ppt_sample_assets.backend.modules.template_loader import TemplateRepository
 
 logger = logging.getLogger(__name__)
+
+
+def _calculate_nice_axis(max_value: float, target_intervals: int = 6) -> Tuple[float, float]:
+    """Return a readable major unit and upper bound for a zero-based value axis."""
+    if max_value <= 0:
+        return 1.0, 1.0
+
+    raw_unit = max_value / max(target_intervals, 1)
+    magnitude = 10 ** math.floor(math.log10(raw_unit))
+    normalized = raw_unit / magnitude
+
+    if normalized <= 1:
+        nice_unit = 1
+    elif normalized <= 2:
+        nice_unit = 2
+    elif normalized <= 2.5:
+        nice_unit = 2.5
+    elif normalized <= 5:
+        nice_unit = 5
+    else:
+        nice_unit = 10
+
+    major_unit = float(nice_unit * magnitude)
+    maximum_scale = float(math.ceil(max_value / major_unit) * major_unit)
+    return major_unit, maximum_scale
 
 
 # Professional color palettes for charts and tables
@@ -85,6 +111,8 @@ class PPTGeneratorV2:
             from pptx.chart.data import CategoryChartData
             from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
             from pptx.dml.color import RGBColor
+            from pptx.opc.constants import RELATIONSHIP_TYPE as RT
+            from pptx.parts.embeddedpackage import EmbeddedXlsxPart
 
             self._Presentation = Presentation
             self._Inches = Inches
@@ -94,6 +122,8 @@ class PPTGeneratorV2:
             self._XL_LEGEND_POSITION = XL_LEGEND_POSITION
             self._XL_LABEL_POSITION = XL_LABEL_POSITION
             self._CategoryChartData = CategoryChartData
+            self._EmbeddedXlsxPart = EmbeddedXlsxPart
+            self._RT = RT
             self._PP_ALIGN = PP_ALIGN
             self._MSO_ANCHOR = MSO_ANCHOR
             self._RGBColor = RGBColor
@@ -331,6 +361,30 @@ class PPTGeneratorV2:
                 continue
 
         return chart_shape, chart
+
+    def _replace_chart_data(self, chart, chart_data_obj) -> None:
+        """Replace chart data, converting linked workbooks to embedded ones first."""
+        workbook_r_id = chart._chartSpace.xlsx_part_rId
+        if workbook_r_id:
+            relationship = chart.part.rels[workbook_r_id]
+            if relationship.is_external:
+                linked_target = relationship.target_ref
+                chart.part.rels.pop(workbook_r_id)
+                embedded_part = self._EmbeddedXlsxPart.new(
+                    chart_data_obj.xlsx_blob,
+                    chart.part.package,
+                )
+                embedded_r_id = chart.part.relate_to(
+                    embedded_part,
+                    self._RT.PACKAGE,
+                )
+                chart._chartSpace.externalData.rId = embedded_r_id
+                logger.info(
+                    "Converted linked chart workbook to embedded data: %s",
+                    linked_target,
+                )
+
+        chart.replace_data(chart_data_obj)
 
     def _cleanup_critical_assurance_festival_paragraphs(self, slide, mapping: Dict[str, str]) -> None:
         """Remove title/value paragraph pairs for empty festival duty copy on P16."""
@@ -812,7 +866,7 @@ class PPTGeneratorV2:
                     chart_data_obj.add_series(series_name, series_values)
 
                 # Replace chart data
-                chart.replace_data(chart_data_obj)
+                self._replace_chart_data(chart, chart_data_obj)
 
                 # P11-specific styling
                 p11_bar_color = (68, 114, 196)  # Professional blue
@@ -864,77 +918,21 @@ class PPTGeneratorV2:
                 except:
                     pass  # If this fails, axis line will remain
 
-                # Smart Y-axis configuration based on data range
-                # Find max value to determine appropriate scale
+                # Keep the value axis to roughly 5-7 readable major intervals.
                 max_value = max(max(s['values']) for s in series_list if s.get('values'))
-
-                # Calculate appropriate major unit (interval between tick marks)
-                # Dynamically determine major_unit based on max_value for better readability
-                if max_value <= 100:
-                    major_unit = 20
-                    max_bound = ((max_value // 20) + 1) * 20
-                elif max_value <= 500:
-                    # For values 100-500: use 100 as interval (show 0, 100, 200, 300, 400, 500)
-                    major_unit = 100
-                    max_bound = ((int(max_value) // 100) + 2) * 100
-                elif max_value <= 1000:
-                    # For values 500-1000: use 200 as interval (show 0, 200, 400, 600, 800, 1000)
-                    major_unit = 200
-                    max_bound = ((int(max_value) // 200) + 1) * 200
-                elif max_value <= 5000:
-                    # For values 1000-5000: use 500 or 1000 as interval
-                    major_unit = 500
-                    max_bound = ((int(max_value) // 500) + 1) * 500
-                else:
-                    # For very large values (>5000): use 1000 as interval
-                    major_unit = 1000
-                    max_bound = ((int(max_value) // 1000) + 1) * 1000
+                major_unit, max_bound = _calculate_nice_axis(max_value)
 
                 value_axis.minimum_scale = 0
                 value_axis.maximum_scale = max_bound
                 value_axis.major_unit = major_unit
 
-                # Format Y-axis tick labels with 2 decimal places (e.g., 0.00, 100.00, 200.00)
-                value_axis.tick_labels.number_format = '0.00'
+                if major_unit >= 1:
+                    value_axis.tick_labels.number_format = '0'
+                elif major_unit >= 0.1:
+                    value_axis.tick_labels.number_format = '0.0'
+                else:
+                    value_axis.tick_labels.number_format = '0.00'
                 value_axis.visible = True  # Ensure axis is visible
-
-                # Try to set tick label spacing to 1 (show every label)
-                # PowerPoint defaults to skipping labels to avoid crowding
-                # We need to set tickLblSkip in the underlying XML
-                try:
-                    # Access the underlying chart XML
-                    axis_xml = value_axis._element
-
-                    # The namespace for chart elements
-                    ns = {'c': 'http://schemas.openxmlformats.org/drawingml/2006/chart'}
-
-                    # Find or create tickLblSkip element
-                    tick_lbl_skip = axis_xml.find('.//c:tickLblSkip', ns)
-
-                    if tick_lbl_skip is not None:
-                        # Element exists, set to 1 (show all labels)
-                        tick_lbl_skip.set('val', '1')
-                        logger.info("Set existing tickLblSkip to 1")
-                    else:
-                        # Element doesn't exist, we need to create it
-                        # Find a reference point (scaling element)
-                        scaling = axis_xml.find('.//c:scaling', ns)
-                        if scaling is not None:
-                            from lxml import etree
-                            # Create tickLblSkip element
-                            tick_lbl_skip = etree.Element(
-                                '{http://schemas.openxmlformats.org/drawingml/2006/chart}tickLblSkip',
-                                nsmap={'c': 'http://schemas.openxmlformats.org/drawingml/2006/chart'}
-                            )
-                            tick_lbl_skip.set('val', '1')
-
-                            # Insert after scaling element
-                            parent = scaling.getparent()
-                            idx = list(parent).index(scaling)
-                            parent.insert(idx + 1, tick_lbl_skip)
-                            logger.info("Created new tickLblSkip element with val=1")
-                except Exception as e:
-                    logger.warning(f"Could not set tick label spacing via XML: {e}")
 
                 # Set minor unit to None to avoid label crowding
                 try:
@@ -1078,7 +1076,7 @@ class PPTGeneratorV2:
                 chart_data_obj.add_series('', values)
 
                 # Replace chart data
-                chart.replace_data(chart_data_obj)
+                self._replace_chart_data(chart, chart_data_obj)
 
                 # P12-specific colors (matching the uploaded image - threat type distribution)
                 p12_colors = [
@@ -1255,7 +1253,7 @@ class PPTGeneratorV2:
                 chart_data_obj.add_series('', values)
 
                 # Replace chart data
-                chart.replace_data(chart_data_obj)
+                self._replace_chart_data(chart, chart_data_obj)
 
                 # P13-specific colors (matching the uploaded image)
                 p13_colors = [
@@ -1428,7 +1426,7 @@ class PPTGeneratorV2:
                 chart_data_obj.add_series('', values)
 
                 # Replace chart data
-                chart.replace_data(chart_data_obj)
+                self._replace_chart_data(chart, chart_data_obj)
 
                 # P14-specific colors for severity levels (高危/中危/低危)
                 p14_colors = [
@@ -1520,7 +1518,7 @@ class PPTGeneratorV2:
                 chart_data_obj = self._CategoryChartData()
                 chart_data_obj.categories = categories
                 chart_data_obj.add_series('', values)
-                chart.replace_data(chart_data_obj)
+                self._replace_chart_data(chart, chart_data_obj)
 
                 plot = chart.plots[0]
                 for idx, point in enumerate(plot.series[0].points):
@@ -1637,7 +1635,7 @@ class PPTGeneratorV2:
                 chart_data_obj.categories = categories
                 for series in series_list:
                     chart_data_obj.add_series(series.get('name', 'Series'), series.get('values', []))
-                chart.replace_data(chart_data_obj)
+                self._replace_chart_data(chart, chart_data_obj)
 
                 plot = chart.plots[0]
                 for idx, series in enumerate(plot.series):
@@ -1733,7 +1731,7 @@ class PPTGeneratorV2:
 
                 # Replace chart data
                 try:
-                    chart.replace_data(chart_data_obj)
+                    self._replace_chart_data(chart, chart_data_obj)
                 except Exception as replace_error:
                     # Chart has external data source - try to access chart part to embed it
                     logger.warning(f"Cannot replace external chart data directly: {replace_error}")
@@ -1842,7 +1840,7 @@ class PPTGeneratorV2:
                 chart_data_obj.categories = months
                 for series in series_list:
                     chart_data_obj.add_series(series.get('name', 'Series'), series.get('values', []))
-                chart.replace_data(chart_data_obj)
+                self._replace_chart_data(chart, chart_data_obj)
 
                 plot = chart.plots[0]
                 for idx, series in enumerate(plot.series):
@@ -2002,7 +2000,7 @@ class PPTGeneratorV2:
 
                 # Replace chart data
                 try:
-                    chart.replace_data(chart_data_obj)
+                    self._replace_chart_data(chart, chart_data_obj)
                 except Exception as replace_error:
                     logger.warning(f"Cannot replace external chart data: {replace_error}")
                     if len(chart.plots) == 0 or len(chart.plots[0].series) < len(series_list):
@@ -2195,7 +2193,7 @@ class PPTGeneratorV2:
                 chart_data_obj.add_series('防御率', defense_rates)
 
                 # Replace chart data only - all styling from template is preserved
-                chart.replace_data(chart_data_obj)
+                self._replace_chart_data(chart, chart_data_obj)
 
                 logger.info(f"Updated P16_combo chart with {len(categories)} categories")
 
